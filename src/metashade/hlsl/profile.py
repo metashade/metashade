@@ -13,5 +13,21 @@
 # limitations under the License.
 
 import metashade.slang.profile as slang
+import data_types
 
-Target = slang.Target
+class Generator(slang.Generator):
+    vertex_shader_input = struct
+    
+    def vertex_shader_output(self, **kwargs):        
+        position_name = 'position'
+        position_type = data_types.Vector4f
+        
+        for name, data_type in kwargs.iteritems():
+            if name == position_name or data_type == position_type:
+                raise RuntimeError('Homogenous position output already defined')
+        
+        kwargs[position_name] = position_type
+        return self.struct(**kwargs)
+    
+    pixel_shader_input = struct
+    pixel_shader_output = struct

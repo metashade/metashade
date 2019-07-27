@@ -51,5 +51,5 @@ technique10 Simple
     }}
 }}
 """
-    target.write(template.format(vs_main_name=vs_main_name,
+    target._write(template.format(vs_main_name=vs_main_name,
                                  ps_main_name=ps_main_name))

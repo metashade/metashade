@@ -15,7 +15,7 @@
 import metashade.base.context as base
 from types import NoneType  
         
-class Function(base.BaseContext):
+class Function(object):
     def __init__(self, **kwargs):
         super(Function, self).__init__(parent=None)
         
@@ -31,12 +31,12 @@ class Function(base.BaseContext):
     def define(self, sh, identifier):
         self._identifier = identifier
         self._parent = sh
-        self._target = sh.get_target()
+        self._sh = sh._get_generator()
         
         return_type = self._return_type().get_target_type_name() \
             if self._return_type != NoneType else 'void'
             
-        self._target.write('{return_type} {identifier}('.format(
+        self._sh._write('{return_type} {identifier}('.format(
             return_type = return_type,            
             identifier = self._identifier ))
         
@@ -45,37 +45,37 @@ class Function(base.BaseContext):
             if first:
                 first = False
             else:
-                self._target.write(', ')
+                self._sh._write(', ')
             arg.arg_define(self, name)
                         
-        self._target.write(')\n')
+        self._sh._write(')\n')
         
     def __getattr__(self, name):
         arg = self._args.get(name)
         return arg if arg is not None \
-            else super(Function, self).__getattr__(name)
+            else super(function, self).__getattr__(name)
         
     def __enter__(self):
-        self._target.write('{\n')
-        self._target.push_indent()
+        self._sh._write('{\n')
+        self._sh._push_indent()
         
         body = base.ScopedContext(parent=self)
-        self._target.push_context(body)        
+        self._sh._push_context(body)        
         return body
         
     def __exit__(self, exc_type, exc_value, traceback):
-        self._target.pop_context()        
-        self._target.pop_indent()
-        self._target.write('}\n\n')
+        self._sh._pop_context()        
+        self._sh._pop_indent()
+        self._sh._write('}\n\n')
     
     def return_(self, value=None):
-        mistmatch_error = 'Return value type mismatch'        
+        mismatch_error = 'Return value type mismatch'        
         if self._return_type is NoneType:
             if value is not None:
-                raise RuntimeError(mistmatch_error)
+                raise RuntimeError(mismatch_error)
         else:                
             if not self._return_type.is_type_of(value):
-                raise RuntimeError(mistmatch_error)            
+                raise RuntimeError(mismatch_error)            
             
-        self._target.write('return{};\n'.format(
+        self._sh._write('return{};\n'.format(
             ' ' + value.get_ref() if value is not None else ''))

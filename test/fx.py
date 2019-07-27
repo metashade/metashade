@@ -20,15 +20,14 @@ Currently fails.
 import sys
 
 import metashade.hlsl.profile as profile
-import metashade.hlsl.stage_interface as si
 import metashade.hlsl.data_types as t
 import metashade.hlsl.fx as fx
 
 def test_simple():
     sh = profile.Target(sys.stderr)
     
-    sh.VsIn = si.VertexShaderIn(position = t.Point3f)
-    sh.VsOut = si.VertexShaderOut()
+    sh.vertex_shader_input.VsIn(position = t.Point3f)
+    sh.vertex_shader_output.VsOut()
     
     with sh.VertexShaderMain('VsMain',
                              return_type = sh.VsOut,

@@ -48,30 +48,30 @@ class StructDef(object):
     def __init__(self, **kwargs):
         self._member_defs = kwargs
         
-    def get_target(self):
-        return self._target
+    def _get_generator(self):
+        return self._sh
     
     """
     Called by the wrapping context.
     """
     def define(self, sh, identifier):
         self._identifier = identifier
-        self._target = sh.get_target()
+        self._sh = sh._get_generator()
             
-        self._target.write('struct {identifier}\n{{\n'.format(
+        self._sh._write('struct {identifier}\n{{\n'.format(
             identifier = self._identifier ))        
-        self._target.push_indent()
+        self._sh._push_indent()
         
         first = True
         for member_name, member_type in self._member_defs.iteritems():
             if first:
                 first = False
             else:
-                self._target.write(',\n')
-            member_type.define_member(self._target, member_name)
+                self._sh._write(',\n')
+            member_type.define_member(self._sh, member_name)
                         
-        self._target.pop_indent()
-        self._target.write('};\n\n')
+        self._sh._pop_indent()
+        self._sh._write('};\n\n')
         
     def __call__(self):
         return Struct(self)

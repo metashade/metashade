@@ -15,8 +15,11 @@
 import metashade.base.profile as base
 import context
 
-class Target(base.Target):
-    def Function(self, identifier, **kwargs):
+class Generator(base.Generator):
+    def function(self, identifier, **kwargs):
         function = context.Function(**kwargs)
         setattr(self, identifier, function)
         return function
+    
+    def struct(self, identifier, **kwargs):
+        return self.struct(kwargs)
