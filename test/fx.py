@@ -24,23 +24,19 @@ import metashade.hlsl.data_types as t
 import metashade.hlsl.fx as fx
 
 def test_simple():
-    sh = profile.Target(sys.stderr)
+    sh = profile.Generator(sys.stderr)
     
-    sh.vertex_shader_input.VsIn(position = t.Point3f)
-    sh.vertex_shader_output.VsOut()
+    sh.vertex_shader_input('VsIn')(position = t.Point3f)
+    sh.vertex_shader_output('VsOut')()
     
-    with sh.VertexShaderMain('VsMain',
-                             return_type = sh.VsOut,
-                             i = sh.VsIn):
-        sh.o = sh.VsOut()
-        
+    with sh.vertex_shader_main('VsMain', sh.VsOut)(i = sh.VsIn):
+        sh.o = sh.VsOut()        
         sh.o.position._ = t.Vector4f((0, 0, 0, 1))
         sh.return_(sh.o)
     
-    sh.PsOut = si.PixelShaderOut(color = t.RGBA)
+    sh.pixel_shader_output('PsOut')(color = t.RGBA)
     
-    with sh.PixelShaderMain('PsMain',
-                            return_type = sh.PsOut):
+    with sh.pixel_shader_main('PsMain', sh.PsOut)():
         sh.o = sh.PsOut()
         sh.o.color._ = t.RGBA((1, 0, 1, 1))
         sh.return_(sh.o)

@@ -23,8 +23,8 @@ class BaseType(base.BaseType):
             identifier = self._identifier,
             initializer = '' if self._value is None else ' = {}'.format(self._value) ))
         
-    def arg_define(self, sh, identifier):
-        self._bind(sh, identifier, allow_defaults=False)
+    def arg_define(self, function, identifier):
+        self._bind(function, identifier, allow_defaults=False)
         
         self._sh._write('{type_name} {identifier}'.format(
             type_name = self.get_target_type_name(),

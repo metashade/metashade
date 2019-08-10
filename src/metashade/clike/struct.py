@@ -45,21 +45,13 @@ class Struct(metashade.clike.data_types.BaseType):
         super(Struct, self).__setattr__(name, value)
 
 class StructDef(object):
-    def __init__(self, **kwargs):
-        self._member_defs = kwargs
-        
-    def _get_generator(self):
-        return self._sh
-    
-    """
-    Called by the wrapping context.
-    """
-    def define(self, sh, identifier):
+    def __init__(self, sh, identifier, member_defs):
+        self._sh = sh
         self._identifier = identifier
-        self._sh = sh._get_generator()
-            
+        self._member_defs = member_defs
+        
         self._sh._write('struct {identifier}\n{{\n'.format(
-            identifier = self._identifier ))        
+            identifier = self._identifier ))
         self._sh._push_indent()
         
         first = True
@@ -71,7 +63,7 @@ class StructDef(object):
             member_type.define_member(self._sh, member_name)
                         
         self._sh._pop_indent()
-        self._sh._write('};\n\n')
+        self._sh._write('};\n\n')    
         
     def __call__(self):
         return Struct(self)

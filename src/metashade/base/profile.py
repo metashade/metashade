@@ -28,9 +28,6 @@ class Generator(object):
         
         self._context_stack = list()
         
-    def _get_generator(self):
-        return self
-    
     def _push_indent(self):
         self._indent += self._indent_delta
         
@@ -41,7 +38,7 @@ class Generator(object):
         return self._indent_char * (self._indent * self._indent_delta)
     
     def _write(self, line):
-        self._file._write(self._get_indent() + line)
+        self._file.write(self._get_indent() + line)
         
     def _push_context(self, context):
         self._context_stack.append(context)
@@ -49,14 +46,16 @@ class Generator(object):
     def _pop_context(self):
         self._context_stack.pop()            
 
-    def __getattr__(self, name):        
-        return getattr(self._context_stack[-1], name)
-    
+    def __getattr__(self, name):
+        for context in reversed(self._context_stack):
+            try:
+                return getattr(context, name)
+            except AttributeError:
+                pass
+        raise AttributeError 
+
     def __setattr__(self, name, value):
-        if name.startswith('_'): #private variables are never meta
-            object.__setattr__(self, name, value)
+        if not name.startswith('_') and self.__dict__.get('_context_stack'):
+            setattr(self._context_stack[-1], name, value)
         else:
-            if self.__dict__.get('_context_stack'):
-                setattr(self._context_stack[-1], name, value)
-            else:
-                super(Generator, self).__setattr__(name, value)            
+            object.__setattr__(self, name, value)

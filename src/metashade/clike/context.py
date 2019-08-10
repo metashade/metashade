@@ -16,28 +16,26 @@ import metashade.base.context as base
 from types import NoneType  
         
 class Function(object):
-    def __init__(self, **kwargs):
-        super(Function, self).__init__(parent=None)
-        
-        self._args = dict()
-        self._return_type = NoneType
-        
-        for name, arg_type in kwargs.iteritems():
-            if name == 'return_type':
-                self._return_type = arg_type
-            else:
-                self._args[name] = arg_type()
-        
-    def define(self, sh, identifier):
+    def __init__(self, sh, identifier, return_type=NoneType):
+        self._sh = sh
         self._identifier = identifier
-        self._parent = sh
-        self._sh = sh._get_generator()
+        self._return_type = return_type
+        self._args = dict()
+
+    def __call__(self, **kwargs):
+        self._args = {name : arg_type() \
+                      for name, arg_type in kwargs.iteritems()}
+        return self
+
+    def __getattr__(self, name):
+        return self._args.get(name)
         
+    def __enter__(self):
         return_type = self._return_type().get_target_type_name() \
             if self._return_type != NoneType else 'void'
-            
+
         self._sh._write('{return_type} {identifier}('.format(
-            return_type = return_type,            
+            return_type = return_type,
             identifier = self._identifier ))
         
         first = True
@@ -49,33 +47,27 @@ class Function(object):
             arg.arg_define(self, name)
                         
         self._sh._write(')\n')
-        
-    def __getattr__(self, name):
-        arg = self._args.get(name)
-        return arg if arg is not None \
-            else super(function, self).__getattr__(name)
-        
-    def __enter__(self):
         self._sh._write('{\n')
         self._sh._push_indent()
         
-        body = base.ScopedContext(parent=self)
-        self._sh._push_context(body)        
+        body = base.ScopedContext(self._sh)
+        self._sh._push_context(body)
         return body
         
     def __exit__(self, exc_type, exc_value, traceback):
-        self._sh._pop_context()        
+        self._sh._pop_context() # pop the function body
+        self._sh._pop_context() # pop the function definition
         self._sh._pop_indent()
         self._sh._write('}\n\n')
     
     def return_(self, value=None):
-        mismatch_error = 'Return value type mismatch'        
+        mismatch_error = 'Return value type mismatch'
         if self._return_type is NoneType:
             if value is not None:
                 raise RuntimeError(mismatch_error)
         else:                
             if not self._return_type.is_type_of(value):
-                raise RuntimeError(mismatch_error)            
+                raise RuntimeError(mismatch_error)
             
         self._sh._write('return{};\n'.format(
             ' ' + value.get_ref() if value is not None else ''))

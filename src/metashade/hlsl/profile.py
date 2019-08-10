@@ -13,21 +13,29 @@
 # limitations under the License.
 
 import metashade.slang.profile as slang
+import metashade.clike.struct as struct
 import data_types
 
 class Generator(slang.Generator):
-    vertex_shader_input = struct
+    vertex_shader_input = slang.Generator.struct
     
-    def vertex_shader_output(self, **kwargs):        
-        position_name = 'position'
-        position_type = data_types.Vector4f
+    def vertex_shader_output(self, identifier):
+        def impl(**kwargs):
+            position_name = 'position'
+            position_type = data_types.Vector4f
+            
+            for name, data_type in kwargs.iteritems():
+                if name == position_name or data_type == position_type:
+                    raise RuntimeError(
+                        'Homogenous position output already defined')
+            
+            kwargs[position_name] = position_type
         
-        for name, data_type in kwargs.iteritems():
-            if name == position_name or data_type == position_type:
-                raise RuntimeError('Homogenous position output already defined')
-        
-        kwargs[position_name] = position_type
-        return self.struct(**kwargs)
+            struct_def = struct.StructDef(self, identifier, kwargs)
+            setattr(self, identifier, struct_def)
+            return struct_def
+                
+        return impl
     
-    pixel_shader_input = struct
-    pixel_shader_output = struct
+    pixel_shader_input = slang.Generator.struct
+    pixel_shader_output = slang.Generator.struct
