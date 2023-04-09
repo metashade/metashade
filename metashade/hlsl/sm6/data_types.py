@@ -104,7 +104,7 @@ class Float4(_RawVector, rtsl.Float4):
 
 class _RawMatrixF(_MulMixin, _AnyLayoutMixin, rtsl._RawMatrix):
     # This is the HLSL default but should ideally be configurable
-    _row_major = False
+    _row_major = True
     _element_type = Float
 
     @classmethod

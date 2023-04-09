@@ -24,7 +24,7 @@ def _generate_vs_out(sh, primitive):
     with sh.vs_output('VsOut') as VsOut:
         VsOut.SV_Position('Pclip', sh.Vector4f)
         
-        VsOut.texCoord('Pw', sh.Vector3f)
+        VsOut.texCoord('Pw', sh.Point3f)
         VsOut.texCoord('Nw', sh.Vector3f)
 
         if primitive.attributes.TANGENT is not None:
@@ -56,7 +56,7 @@ def _generate_per_frame_uniform_buffer(sh):
         sh.uniform('g_VpXf', sh.Matrix4x4f)
         sh.uniform('g_prevVpXf', sh.Matrix4x4f)
         sh.uniform('g_VpIXf', sh.Matrix4x4f)
-        sh.uniform('g_cameraPw', sh.Vector3f)
+        sh.uniform('g_cameraPw', sh.Point3f)
         sh.uniform('g_cameraPw_fPadding', sh.Float)
         sh.uniform('g_fIblFactor', sh.Float)
         sh.uniform('g_fPerFrameEmissiveFactor', sh.Float)
@@ -92,8 +92,10 @@ def _generate_per_object_uniform_buffer(sh, is_ps : bool):
         )
 
     with sh.uniform_buffer(register = 1, name = 'cbPerObject'):
-        sh.uniform('g_WorldXf', sh.Matrix4x4f) # should be 3x3
-        sh.uniform('g_prevWorldXf', sh.Matrix4x4f) # should be 3x3
+        sh.uniform('g_WorldXf', sh.Matrix4x3f)
+        sh.uniform('g_WorldXf_f4Padding', sh.Float4)
+        sh.uniform('g_prevWorldXf', sh.Matrix4x3f)
+        sh.uniform('g_prevWorldXf_f4Padding', sh.Float4)
         if is_ps:
             sh.uniform('g_perObjectPbrFactors', sh.PbrFactors)
 
@@ -101,6 +103,8 @@ _vs_main = 'mainVS'
 
 def _generate_vs(vs_file, primitive):
     sh = vs_6_0.Generator(vs_file)
+
+    sh._emit('#pragma pack_matrix( row_major )\n')
 
     _generate_per_frame_uniform_buffer(sh)
     _generate_per_object_uniform_buffer(sh, is_ps = False)
@@ -157,6 +161,8 @@ _ps_main = 'mainPS'
 
 def _generate_ps(ps_file, material, primitive):
     sh = ps_6_0.Generator(ps_file)
+
+    # sh._emit('#pragma pack_matrix( row_major )\n')
 
     _generate_per_frame_uniform_buffer(sh)
     _generate_per_object_uniform_buffer(sh, is_ps = True)
