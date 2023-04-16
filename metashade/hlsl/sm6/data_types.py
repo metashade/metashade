@@ -153,30 +153,38 @@ class _MatrixF(rtsl._Matrix, _RawMatrixF):
     def _get_row_type_name(cls):
         return f'Vector{cls._dims[1]}f'
     
-    def _xform(self, vector, result_type):
+    def _xform(self, rhs, result_type):
         if self._sh._matrix_post_multiplication:
-            return self.mul(vector, result_type = result_type)
+            return self.mul(rhs, result_type = result_type)
         else:
-            return vector.mul(self, result_type = result_type)
+            return rhs.mul(self, result_type = result_type)
 
 class Matrix3x3f(_MatrixF, Float3x3):
     def __init__(self, expression : str = None, rows = None):
         _MatrixF.__init__(self, expression = expression, rows = rows)
 
-    def xform(self, vector):
-        return self._xform(vector, vector.__class__)
+    def xform(self, rhs):
+        return self._xform(rhs, rhs.__class__)
 
 class Matrix4x3f(_MatrixF, Float4x3):
-    def xform(self, vector):
-        if vector._dim != 3:
+    def xform(self, rhs):
+        if rhs._dim != 3:
             raise RuntimeError(
                 'Only 3-element inputs are supported by Matrix4x3f'
             )
-        return self._xform(vector.as_vector4(), vector.__class__)
+        return self._xform(rhs.as_vector4(), rhs.__class__)
+    
+class Matrix3x4f(_MatrixF, Float3x4):
+    def xform(self, rhs):
+        if rhs._dim != 3:
+            raise RuntimeError(
+                'Only 3-element inputs are supported by Matrix3x4f'
+            )
+        return self._xform(rhs.as_vector4(), rhs.__class__)
 
 class Matrix4x4f(_MatrixF, Float4x4):
-    def xform(self, vector):
-        return self._xform(vector.as_vector4(), Vector4f)
+    def xform(self, rhs):
+        return self._xform(rhs.as_vector4(), Vector4f)
 
 class Vector4f(rtsl.Vector4, Float4):
     pass

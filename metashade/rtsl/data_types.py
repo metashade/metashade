@@ -167,7 +167,8 @@ class _RawMatrix(clike.ArithmeticType):
         return getattr(sys.modules[cls.__module__], type_name)
 
     def _check_mul(self, vector):
-        if self.__class__._dims[0] != vector.__class__._dim:
+        dim_idx = 1 if self._sh._matrix_post_multiplication else 0
+        if self.__class__._dims[dim_idx] != vector.__class__._dim:
             raise ArithmeticError(
                 'The number of columns in the matrix must be equal to the size'
                 'of the vector'
