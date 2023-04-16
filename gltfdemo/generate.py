@@ -379,6 +379,7 @@ def _generate_ps(ps_file, material, primitive):
         sh.psOut = sh.PsOut()
         sh.psOut.rgbaColor.rgb = sh.applySpotLight(
             light = sh.g_light0,
+            Pw = sh.psIn.Pw,
             Nw = sh.Nw,
             Vw = sh.Vw,
             pbrParams = sh.pbrParams
