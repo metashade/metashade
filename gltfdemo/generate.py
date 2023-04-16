@@ -24,7 +24,7 @@ def _generate_vs_out(sh, primitive):
     with sh.vs_output('VsOut') as VsOut:
         VsOut.SV_Position('Pclip', sh.Vector4f)
         
-        VsOut.texCoord('Pw', sh.Vector3f)
+        VsOut.texCoord('Pw', sh.Point3f)
         VsOut.texCoord('Nw', sh.Vector3f)
 
         if primitive.attributes.TANGENT is not None:
@@ -56,7 +56,7 @@ def _generate_per_frame_uniform_buffer(sh):
         sh.uniform('g_VpXf', sh.Matrix4x4f)
         sh.uniform('g_prevVpXf', sh.Matrix4x4f)
         sh.uniform('g_VpIXf', sh.Matrix4x4f)
-        sh.uniform('g_cameraPw', sh.Vector3f)
+        sh.uniform('g_cameraPw', sh.Point3f)
         sh.uniform('g_cameraPw_fPadding', sh.Float)
         sh.uniform('g_fIblFactor', sh.Float)
         sh.uniform('g_fPerFrameEmissiveFactor', sh.Float)
