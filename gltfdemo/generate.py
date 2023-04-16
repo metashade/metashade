@@ -92,8 +92,8 @@ def _generate_per_object_uniform_buffer(sh, is_ps : bool):
         )
 
     with sh.uniform_buffer(register = 1, name = 'cbPerObject'):
-        sh.uniform('g_WorldXf', sh.Matrix4x4f) # should be 3x3
-        sh.uniform('g_prevWorldXf', sh.Matrix4x4f) # should be 3x3
+        sh.uniform('g_WorldXf', sh.Matrix3x4f)
+        sh.uniform('g_prevWorldXf', sh.Matrix3x4f)
         if is_ps:
             sh.uniform('g_perObjectPbrFactors', sh.PbrFactors)
 
