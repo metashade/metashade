@@ -59,7 +59,6 @@ class TestFunctions(_base.Base):
         hlsl_path = self._get_hlsl_path('test_kwarg_reorder')
         with self._open_file(hlsl_path) as ps_file:
             sh = ps_6_0.Generator(ps_file)
-            self._generate_add_func(sh)
             self._generate_test_uniforms(sh)
 
             sh.function('func', sh.Float4)(
