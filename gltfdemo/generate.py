@@ -351,14 +351,15 @@ def _generate_ps(ps_file, material, primitive):
         pbrParams = sh.PbrParams
     ):
         sh.L = sh.light.Pw - sh.Pw
-        sh.d = sh.L.length()
-
+        sh.fRangeAttenuation = sh.getRangeAttenuation(
+            light = sh.light, d = sh.L.length()
+        )
         sh.return_( sh.pbrBrdf(
             L = sh.L.normalize(),
             N = sh.Nw,
             V = sh.Vw,
             pbrParams = sh.pbrParams
-        ) * sh.light.fIntensity * sh.light.rgbColor )
+        ) * sh.light.fIntensity * sh.light.rgbColor * sh.fRangeAttenuation)
 
     with sh.main(_ps_main, sh.PsOut)(psIn = sh.VsOut):
         normalSample = _sample_texture('normal')

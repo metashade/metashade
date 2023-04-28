@@ -43,7 +43,7 @@ class Base:
         assert 0 == compile(
             path = hlsl_path,
             entry_point_name = self._entry_point_name,
-            profile = 'lib_6_6' if as_lib else 'ps_6_0',
+            profile = 'lib_6_5' if as_lib else 'ps_6_0',
             include_paths = [
                 pathlib.Path(sys.modules[self.__module__].__file__).parent
             ]

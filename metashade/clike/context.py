@@ -115,22 +115,21 @@ class Function:
         self._def = definition
 
     def __call__(self, **kwargs):
-        parameters_to_fill = {name for name in self._def._parameters.keys()}
+        arg_list = []
 
-        def _get_value_ref(name, arg) -> str:
-            parameter = self._def._parameters.get(name)
-            if parameter is None:
-                raise RuntimeError(f'Unknown parameter "{name}"')
-            ref = parameter.__class__._get_value_ref(arg)
+        for param_name, param in self._def._parameters.items():
+            arg = kwargs.get(param_name)
+            if param is None:
+                raise RuntimeError(f'Parameter "{param_name}" missing')
+            ref = param.__class__._get_value_ref(arg)
             if ref is None:
-                raise RuntimeError(f'Parameter "{name}" type mismatch')
-            parameters_to_fill.remove(name)
-            return str(ref)
+                raise RuntimeError(f'Parameter "{param_name}" type mismatch')
+            
+            arg_list.append(str(ref))
+            kwargs.pop(param_name)
 
-        args_str = ', '.join(
-            [ _get_value_ref(name, arg) for name, arg in kwargs.items() ]
-        )
-
-        if parameters_to_fill:
-            raise RuntimeError(f'Missing arguments: {parameters_to_fill}')
-        return self._def._return_type(f'{self._def._name}({args_str})')
+        if kwargs:
+            raise RuntimeError(f'Missing arguments: {kwargs}')
+        
+        arg_str = ', '.join(arg_list)
+        return self._def._return_type(f'{self._def._name}({arg_str})')
