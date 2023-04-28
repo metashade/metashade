@@ -22,6 +22,22 @@ def compile(
     include_paths = None
 ) -> int:
     args = [
+        'where',
+        'dxc'
+    ]
+
+    dxc_result = subprocess.run( args, capture_output = True )
+    print( dxc_result.stdout.decode() )
+    
+    args = [
+        'dxc',
+        '--version'
+    ]
+
+    dxc_result = subprocess.run( args, capture_output = True )
+    print( dxc_result.stdout.decode() )
+
+    args = [
         'dxc',
         '-T', profile,
         '-E', entry_point_name,
