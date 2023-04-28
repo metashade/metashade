@@ -55,6 +55,22 @@ class TestFunctions(_base.Base):
             self._correct_ps_main(sh)
         self._compile(hlsl_path)
 
+    def test_kwarg_reorder(self):
+        hlsl_path = self._get_hlsl_path('test_kwarg_reorder')
+        with self._open_file(hlsl_path) as ps_file:
+            sh = ps_6_0.Generator(ps_file)
+            self._generate_test_uniforms(sh)
+
+            sh.function('func', sh.Float4)(
+                a = sh.Float4, c = sh.Float3
+            ).declare()
+
+            with self._generate_ps_main(sh):
+                sh.result = sh.PsOut()
+                sh.result.color = sh.func(c = sh.g_f3C, a = sh.g_f4A)
+                sh.return_(sh.result)
+        self._compile(hlsl_path, as_lib = True)
+
     def test_function_decl_call(self):
         hlsl_path = self._get_hlsl_path('test_function_decl_call')
         with self._open_file(hlsl_path) as ps_file:
