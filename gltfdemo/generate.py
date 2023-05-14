@@ -356,9 +356,9 @@ def _generate_ps(ps_file, material, primitive):
         )
         sh.Lw = sh.Lw.normalize()
 
-        sh.DdotL = sh.light.v3DirectionW.dot(-sh.Lw)
+        sh.DdotL = sh.light.v3DirectionW.dot(sh.Lw)
         sh.fSpotAttenuation = sh.DdotL.smoothstep(
-            sh.light.fInnerConeCos, sh.light.fOuterConeCos
+            sh.light.fOuterConeCos, sh.light.fInnerConeCos
         )
 
         sh.fLightAttenuation = sh.fRangeAttenuation * sh.fSpotAttenuation
