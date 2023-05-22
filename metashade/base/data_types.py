@@ -13,6 +13,12 @@
 # limitations under the License.
 
 class BaseType:
+    _sh = None
+
+    @classmethod
+    def _set_generator(cls, sh)
+        
+
     """
     The base class for all Metashade data types. Can represent either an
     lvalue or an rvalue.

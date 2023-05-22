@@ -140,11 +140,12 @@ class Generator(rtsl.Generator):
     def ps_output(self, name):
         return stage_interface.PsOutputDef(self, name)
 
-# Reference all the data types from the generator class
+# Reference all the data types in the generator
 for name, cls in inspect.getmembers(
     sys.modules[data_types.__name__],
     lambda member: (inspect.isclass(member)
         and member.__module__ == data_types.__name__
         and not member.__name__.startswith('_')
     )):
+        cls._set_generator()
         setattr(Generator, name, cls)
