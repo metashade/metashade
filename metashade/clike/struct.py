@@ -29,11 +29,11 @@ class StructBase:
             setattr(self, member_name, member_def.dtype(member_expression))
         self._constructed = True
 
-    def _bind_members(self, sh, struct_instance_name):
+    def _bind_members(self, struct_instance_name):
         for member_name, member in vars(self).items():
             if not member_name.startswith('_'):
                 nested_name = '.'.join([struct_instance_name, member_name])
-                member._bind(sh, nested_name, allow_init = True)
+                member._bind(nested_name, allow_init = True)
     
     def _set_member(self, name, value):
         if name.startswith('_') or not hasattr(self, '_constructed'):
@@ -54,9 +54,9 @@ class Struct(BaseType, StructBase):
         BaseType.__init__(self, expression)
         StructBase.__init__(self, expression)
 
-    def _bind(self, sh, identifier, allow_init):
-        super()._bind(sh, identifier, allow_init)
-        self._bind_members(sh, identifier)
+    def _bind(self, identifier, allow_init):
+        super()._bind(identifier, allow_init)
+        self._bind_members(identifier)
 
     def __setattr__(self, name, value):
         if not self._set_member(name, value):
@@ -90,6 +90,8 @@ class StructDef:
         define_struct(
             self._sh,
             self._name,
-            { name : StructMemberDef(dtype) for name, dtype in kwargs.items() }
+            { name : StructMemberDef(dtype_factory._dtype)
+                for name, dtype_factory in kwargs.items()
+            }
         )
 

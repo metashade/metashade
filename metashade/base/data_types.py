@@ -13,12 +13,6 @@
 # limitations under the License.
 
 class BaseType:
-    _sh = None
-
-    @classmethod
-    def _set_generator(cls, sh)
-        
-
     """
     The base class for all Metashade data types. Can represent either an
     lvalue or an rvalue.
@@ -29,16 +23,16 @@ class BaseType:
         can only be assigned by the generator later by calling _bind()
         The value can be optionally initialized.
         """
+        self._sh = None
         self._name = None
         self._expression = expression
         
-    def _bind(self, sh, name, allow_init):
+    def _bind(self, name, allow_init):
         if not allow_init and self._expression is not None:
             raise RuntimeError('Initializers are not supported.')
         
         self._name = name
-        self._sh = sh
-        
+
     def __str__(self) -> str:
         if self._name is not None:
             return self._name

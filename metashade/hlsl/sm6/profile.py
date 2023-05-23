@@ -16,7 +16,6 @@ import metashade.rtsl.profile as rtsl
 import metashade.clike.struct as struct
 from . import data_types
 from . import samplers
-import sys, inspect
 
 class UniformBuffer:
     def __init__(self, sh, register : int, name : str = None):
@@ -64,6 +63,8 @@ class Generator(rtsl.Generator):
             self.__class__._UsedRegisterSet('Texture')
         self._used_sampler_registers = \
             self.__class__._UsedRegisterSet('Sampler')
+
+        self._register_dtypes(data_types.__name__)
 
     def uniform_buffer(self, register : int, name : str = None):
         self._used_uniform_buffer_registers.check_candidate(register)
@@ -139,13 +140,3 @@ class Generator(rtsl.Generator):
 
     def ps_output(self, name):
         return stage_interface.PsOutputDef(self, name)
-
-# Reference all the data types in the generator
-for name, cls in inspect.getmembers(
-    sys.modules[data_types.__name__],
-    lambda member: (inspect.isclass(member)
-        and member.__module__ == data_types.__name__
-        and not member.__name__.startswith('_')
-    )):
-        cls._set_generator()
-        setattr(Generator, name, cls)
