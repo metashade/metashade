@@ -38,7 +38,8 @@ class Generator:
 
         def __call__(self, *args, **kwargs):
             value = self._dtype(*args, **kwargs)
-            value._sh = self._sh
+            value._set_generator(self._sh)
+            return value
 
     def _register_dtypes(self, dtype_module_name : str):
         for dtype_name, dtype in inspect.getmembers(

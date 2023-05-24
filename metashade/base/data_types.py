@@ -26,7 +26,10 @@ class BaseType:
         self._sh = None
         self._name = None
         self._expression = expression
-        
+
+    def _set_generator(self, sh):
+        self._sh = sh
+
     def _bind(self, name, allow_init):
         if not allow_init and self._expression is not None:
             raise RuntimeError('Initializers are not supported.')

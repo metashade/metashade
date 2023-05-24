@@ -29,6 +29,12 @@ class StructBase:
             setattr(self, member_name, member_def.dtype(member_expression))
         self._constructed = True
 
+    def _set_generator(self, sh):
+        super()._set_generator(sh)
+        for member_name, member in vars(self).items():
+            if not member_name.startswith('_'):
+                member._set_generator(sh)
+
     def _bind_members(self, struct_instance_name):
         for member_name, member in vars(self).items():
             if not member_name.startswith('_'):
@@ -57,6 +63,10 @@ class Struct(BaseType, StructBase):
     def _bind(self, identifier, allow_init):
         super()._bind(identifier, allow_init)
         self._bind_members(identifier)
+
+    def _set_generator(self, sh):
+        BaseType._set_generator(sh)
+        StructBase._set_generator(sh)
 
     def __setattr__(self, name, value):
         if not self._set_member(name, value):

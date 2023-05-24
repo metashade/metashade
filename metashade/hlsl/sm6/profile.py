@@ -74,7 +74,7 @@ class Generator(rtsl.Generator):
     def uniform(
         self,
         name : str,
-        dtype,
+        dtype_factory,
         semantic : str = None,
         annotations = None
     ):
@@ -93,7 +93,7 @@ class Generator(rtsl.Generator):
                     "semantic."
                 )
 
-        value = dtype() #TODO: make it immutable
+        value = dtype_factory() #TODO: make it immutable
         self._set_global(name, value)
         self._emit_indent()
         value._define(self, name, semantic, annotations = annotations)
