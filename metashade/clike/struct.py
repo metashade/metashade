@@ -31,9 +31,7 @@ class StructBase:
 
     def _set_generator(self, sh):
         super()._set_generator(sh)
-        for member_name, member in vars(self).items():
-            if not member_name.startswith('_'):
-                member._set_generator(sh)
+        
 
     def _bind_members(self, struct_instance_name):
         for member_name, member in vars(self).items():
@@ -59,14 +57,20 @@ class Struct(BaseType, StructBase):
     def __init__(self, expression : str = None):
         BaseType.__init__(self, expression)
         StructBase.__init__(self, expression)
+        
+        self._sh = self.__class__._sh
+        for member_name, member in vars(self).items():
+            if not member_name.startswith('_'):
+                member._set_generator(self._sh)
 
     def _bind(self, identifier, allow_init):
         super()._bind(identifier, allow_init)
         self._bind_members(identifier)
 
     def _set_generator(self, sh):
-        BaseType._set_generator(sh)
-        StructBase._set_generator(sh)
+        # Do nothing, because the generator is known to structs at
+        # construction time
+        pass
 
     def __setattr__(self, name, value):
         if not self._set_member(name, value):
@@ -76,7 +80,10 @@ def define_struct(sh, name, member_defs):
     struct_type = type(
         name,
         (Struct,),
-        {'_member_defs' : member_defs}
+        {
+            '_sh' : sh,
+            '_member_defs' : member_defs
+        }
     )
     sh._set_global(name, struct_type)
 
