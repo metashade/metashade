@@ -32,7 +32,7 @@ class StageInterfaceDefMeta(type):
                     attribute_name,
                     semantic_name,
                     semantic_def,
-                    dtype_factory._dtype
+                    dtype_factory._get_dtype()
                 )
 
             return semantic_func

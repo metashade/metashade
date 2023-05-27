@@ -24,7 +24,10 @@ class FunctionDecl:
     def __init__(self, sh, name, return_type):
         self._sh = sh
         self._name = name
-        self._return_type = type(None) if return_type is None else return_type
+        self._return_type = (
+            type(None) if return_type is None
+            else return_type._get_dtype()
+        )
         self._parameters = dict()
 
     def __getattr__(self, name):

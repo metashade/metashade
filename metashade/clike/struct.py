@@ -67,6 +67,11 @@ class Struct(BaseType, StructBase):
         super()._bind(identifier, allow_init)
         self._bind_members(identifier)
 
+    @classmethod
+    def _get_dtype(cls):
+        # structs act as their own dtype factories
+        return cls
+
     def _set_generator(self, sh):
         # Do nothing, because the generator is known to structs at
         # construction time
@@ -107,7 +112,7 @@ class StructDef:
         define_struct(
             self._sh,
             self._name,
-            { name : StructMemberDef(dtype_factory._dtype)
+            { name : StructMemberDef(dtype_factory._get_dtype())
                 for name, dtype_factory in kwargs.items()
             }
         )

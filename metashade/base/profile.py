@@ -31,10 +31,13 @@ class Generator:
         self._globals = dict()
         self._context_stack = list()
 
-    class _TypeFactory:
+    class _DtypeFactory:
         def __init__(self, sh, dtype):
             self._sh = sh
             self._dtype = dtype
+
+        def _get_dtype(self):
+            return self._dtype
 
         def __call__(self, *args, **kwargs):
             value = self._dtype(*args, **kwargs)
@@ -48,7 +51,7 @@ class Generator:
                 and member.__module__ == dtype_module_name
                 and not member.__name__.startswith('_')
         )):
-            setattr(self, dtype_name, self._TypeFactory(self, dtype))
+            setattr(self, dtype_name, self._DtypeFactory(self, dtype))
         
     def _push_indent(self):
         self._indent += self._indent_delta
@@ -111,7 +114,7 @@ class Generator:
 
     def __setattr__(self, name, value):
         if ( name.startswith('_')
-            or isinstance(value, self._TypeFactory)
+            or isinstance(value, self._DtypeFactory)
         ):
             object.__setattr__(self, name, value)
             return
