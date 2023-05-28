@@ -219,9 +219,9 @@ class RgbaF(rtsl.RgbaF, Float4, struct.StructBase):
         Float4.__init__(self, _ = _, xyz = rgb, w = a)
         struct.StructBase.__init__(self, self._expression)
 
-    def _bind(self, identifier, allow_init):
-        super()._bind(identifier, allow_init)
-        self._bind_members(identifier)
+    def _bind(self, sh, identifier, allow_init):
+        super()._bind(sh, identifier, allow_init)
+        self._bind_members(sh, identifier)
 
     def __setattr__(self, name, value):
         if not self._set_member(name, value):

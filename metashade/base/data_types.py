@@ -28,13 +28,17 @@ class BaseType:
         self._expression = expression
 
     def _set_generator(self, sh):
-        self._sh = sh
+        if self._sh is None:
+            self._sh = sh
+        elif self._sh != sh:
+            raise RuntimeError("Generator can't be reset")
 
-    def _bind(self, name, allow_init):
+    def _bind(self, sh, name, allow_init):
         if not allow_init and self._expression is not None:
             raise RuntimeError('Initializers are not supported.')
-        
+
         self._name = name
+        self._set_generator(sh)
 
     def __str__(self) -> str:
         if self._name is not None:

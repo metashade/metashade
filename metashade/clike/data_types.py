@@ -47,7 +47,7 @@ class BaseType(base.BaseType):
         self, sh, identifier,
         semantic = None, allow_init = True, annotations = None
     ):
-        self._bind(identifier, allow_init)
+        self._bind(sh, identifier, allow_init)
         self.__class__._define_static(
             sh, self._name, initializer = self._expression,
             semantic = semantic, annotations = annotations
