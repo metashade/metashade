@@ -52,10 +52,14 @@ class Generator:
                 and not member.__name__.startswith('_')
         )):
             setattr(self, dtype_name, self._DtypeFactory(self, dtype))
-        
+
+    def _instantiate_dtype(self, dtype, *args, **kwargs):
+        dtype_factory = getattr(self, dtype.__name__)
+        return dtype_factory(*args, **kwargs)
+
     def _push_indent(self):
         self._indent += self._indent_delta
-        
+
     def _pop_indent(self):
         self._indent -= self._indent_delta
         

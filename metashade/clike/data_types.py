@@ -85,7 +85,8 @@ class ArithmeticType(BaseType):
         if rhs_ref is None:
             return NotImplemented
 
-        return self.__class__(
+        return self._sh._instantiate_dtype(
+            self.__class__,
             self.__class__._format_binary_operator(
                 lhs = self,
                 rhs = rhs_ref,
