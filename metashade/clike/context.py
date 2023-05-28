@@ -25,7 +25,7 @@ class FunctionDecl:
         self._sh = sh
         self._name = name
         self._return_type = (
-            type(None) if return_type is None
+            type(None) if ( return_type is None or return_type == type(None) )
             else return_type._get_dtype()
         )
         self._parameters = dict()
