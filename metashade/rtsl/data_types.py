@@ -53,7 +53,10 @@ class _RawVector(clike.ArithmeticType):
 
         if is_valid_swizzle:
             dtype = self._get_related_type(len(name))
-            return dtype('.'.join((str(self), name)))
+            return self._sh._instantiate_dtype(
+                dtype,
+                '.'.join((str(self), name))
+            )
         else:
             raise AttributeError
 
@@ -128,7 +131,10 @@ class _RawVector(clike.ArithmeticType):
 
     def dot(self, rhs):
         self._check_dims(rhs)
-        return self.__class__._element_type( f'dot({self}, {rhs})' )
+        return self._sh._instantiate_dtype(
+            self.__class__._element_type,
+            f'dot({self}, {rhs})'
+        )
 
 class Float1(_RawVector):
     _dim = 1
@@ -144,7 +150,9 @@ class Float3(_RawVector):
             raise ArithmeticError(
                 'Cross product operands must have the same type (3D vector)'
             )
-        return self.__class__( f'cross({self}, {rhs})' )
+        return self._sh._instantiate_dtype(
+            self.__class__, f'cross({self}, {rhs})'
+        )
 
 class Float4(_RawVector):
     _dim = 4
@@ -178,7 +186,7 @@ class _RawMatrix(clike.ArithmeticType):
         result_type = self._get_related_type(
             (self.__class__._dims[1], self.__class__._dims[0])
         )
-        return result_type( f'transpose({self})' )
+        return self._sh._instantiate_dtype( result_type, f'transpose({self})' )
 
 # Generate all concrete matrix types to avoid copy-and-paste
 for rows in range(1, 5):
@@ -213,7 +221,7 @@ class Vector3(_Vector):
 
     def as_vector4(self):
         vector4_type = self.__class__._get_related_type(4)
-        return vector4_type(xyz = self, w = 0.0)
+        return self._sh._instantiate_dtype(vector4_type, xyz = self, w = 0.0)
 
 class Vector4(_Vector):
     _dim = 4
@@ -245,7 +253,7 @@ class Point3(_Point):
             sys.modules[self.__class__.__module__],
             _get_vector_type_name(self.__class__._element_type, 4)
         )
-        return vector4_type(xyz = self, w = 1.0)
+        return self._sh._instantiate_dtype(vector4_type, xyz = self, w = 1.0)
 
 class RgbF:
     pass

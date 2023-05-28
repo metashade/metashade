@@ -38,7 +38,7 @@ class _AnyLayoutMixin(
 class _MulMixin:
     def mul(self, rhs, result_type):
         self._check_mul(rhs)
-        return result_type( f'mul({self}, {rhs})' )
+        return self._sh._instantiate_dtype(result_type, f'mul({self}, {rhs})')
 
 class Float(rtsl.Float, _AnyLayoutMixin):
     def __init__(self, _ = None):
@@ -64,7 +64,10 @@ class _RawVector(rtsl._RawVector, _MulMixin, _AnyLayoutMixin):
         return self.__class__( f'normalize({self})' )
 
     def length(self):
-        return self.__class__._element_type( f'length({self})' )
+        return self._sh._instantiate_dtype(
+            self.__class__._element_type,
+            f'length({self})'
+        )
 
 class Float1(_RawVector, rtsl.Float1):
     _target_name = 'float1'

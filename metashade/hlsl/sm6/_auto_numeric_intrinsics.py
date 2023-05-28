@@ -19,47 +19,47 @@ from . import _intrinsics_base
 
 class AnyLayoutMixin(_intrinsics_base.Mixin):
 	def EvaluateAttributeCentroid(self):
-		return self.__class__( f'EvaluateAttributeCentroid({self})' )
+		return self._sh._instantiate_dtype( self.__class__, f'EvaluateAttributeCentroid({self})' )
 
 	def QuadReadAcrossDiagonal(self):
-		return self.__class__( f'QuadReadAcrossDiagonal({self})' )
+		return self._sh._instantiate_dtype( self.__class__, f'QuadReadAcrossDiagonal({self})' )
 
 	def QuadReadAcrossX(self):
-		return self.__class__( f'QuadReadAcrossX({self})' )
+		return self._sh._instantiate_dtype( self.__class__, f'QuadReadAcrossX({self})' )
 
 	def QuadReadAcrossY(self):
-		return self.__class__( f'QuadReadAcrossY({self})' )
+		return self._sh._instantiate_dtype( self.__class__, f'QuadReadAcrossY({self})' )
 
 	def WaveActiveMax(self):
-		return self.__class__( f'WaveActiveMax({self})' )
+		return self._sh._instantiate_dtype( self.__class__, f'WaveActiveMax({self})' )
 
 	def WaveActiveMin(self):
-		return self.__class__( f'WaveActiveMin({self})' )
+		return self._sh._instantiate_dtype( self.__class__, f'WaveActiveMin({self})' )
 
 	def WaveActiveProduct(self):
-		return self.__class__( f'WaveActiveProduct({self})' )
+		return self._sh._instantiate_dtype( self.__class__, f'WaveActiveProduct({self})' )
 
 	def WaveActiveSum(self):
-		return self.__class__( f'WaveActiveSum({self})' )
+		return self._sh._instantiate_dtype( self.__class__, f'WaveActiveSum({self})' )
 
 	def WavePrefixProduct(self):
-		return self.__class__( f'WavePrefixProduct({self})' )
+		return self._sh._instantiate_dtype( self.__class__, f'WavePrefixProduct({self})' )
 
 	def WavePrefixSum(self):
-		return self.__class__( f'WavePrefixSum({self})' )
+		return self._sh._instantiate_dtype( self.__class__, f'WavePrefixSum({self})' )
 
 	def abs(self):
-		return self.__class__( f'abs({self})' )
+		return self._sh._instantiate_dtype( self.__class__, f'abs({self})' )
 
 	def clamp(self, min, max):
-		return self.__class__( f'clamp({self}, {min}, {max})' )
+		return self._sh._instantiate_dtype( self.__class__, f'clamp({self}, {min}, {max})' )
 
 	def mad(self, b, c):
-		return self.__class__( f'mad({self}, {b}, {c})' )
+		return self._sh._instantiate_dtype( self.__class__, f'mad({self}, {b}, {c})' )
 
 	def max(self, b):
-		return self.__class__( f'max({self}, {b})' )
+		return self._sh._instantiate_dtype( self.__class__, f'max({self}, {b})' )
 
 	def min(self, b):
-		return self.__class__( f'min({self}, {b})' )
+		return self._sh._instantiate_dtype( self.__class__, f'min({self}, {b})' )
 

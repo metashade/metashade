@@ -110,7 +110,7 @@ class ArithmeticType(BaseType):
         return self._rhs_binary_operator(rhs, '/')
     
     def __neg__(self):
-        return self.__class__(f'-{self}')
+        return self._sh._instantiate_dtype(self.__class__, f'-{self}')
 
 class Float(ArithmeticType):
     _target_name = 'float'
