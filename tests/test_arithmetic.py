@@ -24,7 +24,7 @@ class TestArithmetic(_base.Base):
             with sh.ps_output('PsOut') as PsOut:
                 PsOut.SV_Target('color', sh.Float4)
 
-            with sh.main(self._entry_point_name, sh.PsOut)():
+            with sh.function('test_arithmetic', sh.Float2)():
                 sh.fD = sh.Float(-1)
 
                 sh.f2A = sh.Float2(0)
@@ -47,5 +47,6 @@ class TestArithmetic(_base.Base):
 
                 sh.f2C = sh.f2A / sh.fD
                 sh.f2C /= sh.fD
+                sh.return_(sh.f2C)
 
-        self._compile(hlsl_path)
+        self._compile(hlsl_path, as_lib = True)
