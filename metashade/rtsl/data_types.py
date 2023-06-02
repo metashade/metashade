@@ -51,14 +51,39 @@ class _RawVector(clike.ArithmeticType):
         except ValueError:
             pass
 
-        if is_valid_swizzle:
-            dtype = self._get_related_type(len(name))
-            return self._sh._instantiate_dtype(
-                dtype,
-                '.'.join((str(self), name))
-            )
-        else:
+        if not is_valid_swizzle:
             raise AttributeError
+        dtype = self._get_related_type(len(name))
+        return self._sh._instantiate_dtype(
+            dtype,
+            '.'.join((str(self), name))
+        )
+
+    def _assign_write_mask(self, name, value) -> bool:
+        if len(name) > 4:
+            return False
+        
+        num_mask_chars = [0] * self.__class__._dim
+        try:
+            for ch in name:
+                ich = self.__class__._swizzle_str.index(ch)
+                if ich >= self.__class__._dim or num_mask_chars[ich] > 0:
+                    return False
+                num_mask_chars[ich] += 1
+        except ValueError:
+            return False
+        
+        dtype = self._get_related_type(len(name))
+        lvalue = self._sh._instantiate_dtype(
+            dtype,
+            '.'.join((str(self), name))
+        )
+        lvalue._assign(value)
+        return True
+        
+    def __setattr__(self, name, value):
+        if not self._assign_write_mask(name, value):
+            super().__setattr__(name, value)
 
     def _check_dims(self, rhs):
         if rhs.__class__._dim != self.__class__._dim:
