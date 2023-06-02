@@ -349,6 +349,16 @@ def _generate_ps(ps_file, material, primitive):
             (sh.d / sh.light.fRange).lerp(sh.Float(1), sh.Float(0)).saturate()
         )
 
+    with sh.function('getSpotShadow', sh.Float)(
+        light = sh.Light, Pw = sh.Point3f
+    ):
+        sh.p4Shadow = sh.light.VpXf.xform(sh.Pw)
+        sh.p4Shadow.xyz /= sh.p4Shadow.w
+        sh.p4Shadow.xy = (
+            sh.Float2(1.0) + sh.Float2(sh.p4Shadow.x, -sh.p4Shadow.y)
+        ) * sh.Float(0.5)
+        sh.p4Shadow.z -= sh.light.fDepthBias
+
     with sh.function('applySpotLight', sh.RgbF)(
         light = sh.Light,
         Nw = sh.Vector3f,
