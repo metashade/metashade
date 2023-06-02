@@ -109,25 +109,31 @@ class _RawVector(clike.ArithmeticType):
         )
 
     @classmethod
-    def _scalar_mul(cls, lhs : str, rhs : str):
-        return cls(cls._format_binary_operator(lhs, rhs, '*'))
-
-    def __mul__(self, rhs):
-        per_element_result = self._rhs_binary_operator(rhs, '*')
+    def _scalar_op(cls, lhs : str, rhs : str, op : str):
+        return cls(cls._format_binary_operator(lhs, rhs, op))
+    
+    def _per_element_or_scalar(self, rhs, op : str):
+        per_element_result = self._rhs_binary_operator(rhs, op)
         if per_element_result != NotImplemented:
             return per_element_result
 
         if rhs.__class__ == self._element_type:
-            return self.__class__._scalar_mul(self, rhs)
+            return self.__class__._scalar_op(self, rhs, op)
         else:
             return NotImplemented
+
+    def __mul__(self, rhs):
+        return self._per_element_or_scalar(rhs, '*')
 
     def __rmul__(self, lhs):
         lhs_ref = self._element_type._get_value_ref(lhs)
         if lhs_ref is not None:
-            return self.__class__._scalar_mul(lhs_ref, self)
+            return self.__class__._scalar_op(lhs_ref, self, '*')
         else:
             return NotImplemented
+        
+    def __truediv__ (self, rhs):
+        return self._per_element_or_scalar(rhs, '/')
 
     def dot(self, rhs):
         self._check_dims(rhs)
