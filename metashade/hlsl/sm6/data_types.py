@@ -207,26 +207,30 @@ class Point3f(rtsl.Point3, Float3):
 class RgbF(rtsl.RgbF, Float3):
     _swizzle_str = 'rgb'
 
-class RgbaF(rtsl.RgbaF, Float4, struct.StructBase):
-    _member_defs = {
-        'rgb' : struct.StructMemberDef(RgbF),
-        'a' : struct.StructMemberDef(Float)
-    }
-
+class RgbaF(rtsl.RgbaF, Float4):
     _swizzle_str = 'rgba'
 
     def __init__(self, _ = None, rgb = None, a = None):
         if ( isinstance(rgb, Float3) and not isinstance(rgb, RgbF) ):
             raise RuntimeError('"rgb" must be convertible to RgbF')
 
-        Float4.__init__(self, _ = _, xyz = rgb, w = a)
-        struct.StructBase.__init__(self, self._expression)
+        super().__init__(_ = _, xyz = rgb, w = a)
 
-    def _bind(self, sh, identifier, allow_init):
-        super()._bind(sh, identifier, allow_init)
-        self._bind_members(sh, identifier)
+    def __getattr__(self, name):
+        if name == 'rgb':
+            return self._sh._instantiate_dtype(
+                RgbF,
+                '.'.join((str(self), name))
+            )
+        else:
+            return super().__getattr__(name)
 
     def __setattr__(self, name, value):
-        if not self._set_member(name, value):
+        if name == 'rgb':
+            lvalue = self._sh._instantiate_dtype(
+                RgbF,
+                '.'.join((str(self), name))
+            )
+            lvalue._assign(value)
+        else:
             super().__setattr__(name, value)
-
