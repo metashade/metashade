@@ -26,6 +26,7 @@ class TestSwizzling(_base.Base):
             ):
                 sh.r = sh.rgb.r
                 sh.g = sh.rgba.g
+                sh.rb = sh.rgba.rg
                 sh.return_(sh.r + sh.g)
 
         self._compile(hlsl_path, as_lib = True)
