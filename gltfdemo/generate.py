@@ -355,9 +355,11 @@ def _generate_ps(ps_file, material, primitive):
         sh.p4Shadow = sh.light.VpXf.xform(sh.Pw)
         sh.p4Shadow.xyz /= sh.p4Shadow.w
         sh.p4Shadow.xy = (
-            sh.Float2(1.0) + sh.Float2(sh.p4Shadow.x, -sh.p4Shadow.y)
+            sh.Vector2f(1.0) + sh.Vector2f((sh.p4Shadow.x, -sh.p4Shadow.y))
         ) * sh.Float(0.5)
         sh.p4Shadow.z -= sh.light.fDepthBias
+
+        sh.return_(sh.Float(1))
 
     with sh.function('applySpotLight', sh.RgbF)(
         light = sh.Light,
