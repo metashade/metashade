@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import argparse, math, os, pathlib
+import multiprocessing
 from collections import namedtuple
 from pygltflib import GLTF2
 
@@ -416,8 +417,8 @@ def _generate_ps(ps_file, material, primitive):
 
         sh.return_(sh.psOut)
 
-def main(gltf_dir : str, out_dir : str, compile : bool):
-    os.makedirs(out_dir, exist_ok = True)
+def process_asset(gltf_file_path : str) -> str:
+
 
     for gltf_file_path in pathlib.Path(gltf_dir).glob('**/*.gltf'):
         with util.TimedScope(f'Loading glTF asset {gltf_file_path} '):
@@ -461,6 +462,10 @@ def main(gltf_dir : str, out_dir : str, compile : bool):
                         profile = 'ps_6_0'
                     )
 
+def main(gltf_dir : str, out_dir : str, compile : bool):
+    os.makedirs(out_dir, exist_ok = True)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description = "Generate shaders from glTF materials."
@@ -476,5 +481,12 @@ if __name__ == "__main__":
     
     if not os.path.isdir(args.gltf_dir):
         raise NotADirectoryError(args.gltf_dir)
+    
+    with multiprocessing.Pool() as pool:
+        for log in pool.imap_unordered(
+            process_asset,
+            pathlib.Path(args.gltf_dir).glob('**/*.gltf')
+        ):
+            print(log)
 
     main(args.gltf_dir, args.out_dir, args.compile)
