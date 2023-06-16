@@ -367,8 +367,10 @@ def _generate_ps(ps_file, material, primitive):
             sh.Point2f(1.0) + sh.Point2f((sh.p4Shadow.x, -sh.p4Shadow.y))
         ) * sh.Float(0.5)
         sh.fCompareValue = sh.p4Shadow.z - sh.light.fDepthBias
-
-        sh.return_( sh.shadowSampler(sh.uvShadow, sh.fCompareValue) )
+        sh.fShadowSample = sh.shadowSampler(
+            sh.uvShadow, cmp_value = sh.fCompareValue, lod = 0
+        )
+        sh.return_(sh.fShadowSample)
 
     with sh.function('applySpotLight', sh.RgbF)(
         light = sh.Light,
