@@ -44,8 +44,18 @@ class TestSamplers(_base.Base):
 
             with sh.main(self._entry_point_name, sh.PsOut)(psIn = sh.VsOut):
                 sh.psOut = sh.PsOut()
-                sh.psOut.color = sh.colorSampler1(sh.psIn.uv0) * \
-                    sh.shadowSampler(sh.psIn.uv0, sh.Float(0.5))
+                sh.rgbaSample = sh.colorSampler1(sh.psIn.uv0)
+                sh.fShadowSample0 = sh.shadowSampler(
+                    sh.psIn.uv0,
+                    cmp_value = sh.Float(0.5)
+                )
+                sh.fShadowSample1 = sh.shadowSampler(
+                    sh.psIn.uv0,
+                    cmp_value = sh.Float(0.1),
+                    lod = 0
+                )
+                sh.psOut.color = \
+                    sh.rgbaSample * sh.fShadowSample0 * sh.fShadowSample1
                 sh.return_(sh.psOut)
 
         self._compile(hlsl_path, as_lib = False)

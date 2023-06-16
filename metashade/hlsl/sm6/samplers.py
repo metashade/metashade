@@ -32,7 +32,7 @@ class Sampler:
         object_name = 'SamplerComparisonState' if cmp else 'SamplerState'
         sh._emit( f'{object_name} {name} : register(s{register});\n\n' )
 
-    def __call__(self, tex_coord, compare_value = None):
+    def __call__(self, tex_coord, lod = None, cmp_value = None):
         if self._texture is None:
             raise RuntimeError("Sampler hasn't been combined with any texture")
     
@@ -47,15 +47,30 @@ class Sampler:
                 raise RuntimeError(
                     "Comparison samplers don't support custom texel types"
                 )
-            if compare_value is None:
+            if cmp_value is None:
                 raise RuntimeError(
                     "Missing sampler comparison value"
                 )
-            return self._sh.Float(
-                f'{self._texture._name}.SampleCmp({self._name}, {tex_coord}, {compare_value}).r'
-            )
+            
+            def _format(method_name : str) -> str:
+                return (
+                    f'{self._texture._name}.{method_name}'
+                    + f'({self._name}, {tex_coord}, {cmp_value}).r'
+                )
+
+            if lod is not None:
+                if lod == 0:
+                    expression = _format('SampleCmpLevelZero')
+                else:
+                    raise RuntimeError(
+                        "Only LOD 0 can be explicitly sampled"
+                        " by comparison samplers"
+                    )
+            else:
+                expression = _format('SampleCmp')
+            return self._sh.Float(expression)
         else:
-            if compare_value is not None:
+            if cmp_value is not None:
                 raise RuntimeError(
                     "Comparison value passed to a non-comparison sampler"
                 )

@@ -20,7 +20,10 @@ struct PsOut
 PsOut psMain(VsOut psIn)
 {
 	PsOut psOut;
-	psOut.color = (colorTexture1.Sample(colorSampler1, psIn.uv0) * shadowMap.SampleCmp(shadowSampler, psIn.uv0, 0.5).r);
+	float4 rgbaSample = colorTexture1.Sample(colorSampler1, psIn.uv0);
+	float fShadowSample0 = shadowMap.SampleCmp(shadowSampler, psIn.uv0, 0.5).r;
+	float fShadowSample1 = shadowMap.SampleCmpLevelZero(shadowSampler, psIn.uv0, 0.1).r;
+	psOut.color = ((rgbaSample * fShadowSample0) * fShadowSample1);
 	return psOut;
 }
 
