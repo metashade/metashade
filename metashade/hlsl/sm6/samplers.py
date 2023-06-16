@@ -15,7 +15,7 @@
 from . import data_types
 
 class Texture2d:
-    _tex_coord_type = data_types.Point2f
+    _tex_coord_type = data_types.Float2
 
     def __init__(self, sh, name : str, register : int, texel_type = None):
         self._name = name
