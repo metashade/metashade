@@ -20,27 +20,49 @@ class Texture2d:
     def __init__(self, sh, name : str, register : int, texel_type = None):
         self._name = name
         self._sh = sh
-        self._texel_type = texel_type if texel_type is not None else sh.Float4
+        self._texel_type = texel_type
         sh._emit( f'Texture2D {name} : register(t{register});\n' )
 
-    def sample(self, sampler, tex_coord):
-        if tex_coord.__class__ != self.__class__._tex_coord_type:
-            raise RuntimeError(
-                'Expected texture coordinate type ' \
-                    + str(self.__class__._tex_coord_type)
-            )
-        return self._texel_type(
-            _ = f'{self._name}.Sample({sampler._name}, {tex_coord})'
-        )
-
 class Sampler:
-    def __init__(self, sh, name : str, register : int, texture):
-        self._name = name
+    def __init__(self, sh, name : str, register : int, cmp : bool, texture):
         self._sh = sh
+        self._name = name
+        self._cmp = cmp
         self._texture = texture
-        sh._emit( f'SamplerState {name} : register(s{register});\n\n' )
+        object_name = 'SamplerComparisonState' if cmp else 'SamplerState'
+        sh._emit( f'{object_name} {name} : register(s{register});\n\n' )
 
-    def __call__(self, tex_coord):
+    def __call__(self, tex_coord, compare_value = None):
         if self._texture is None:
             raise RuntimeError("Sampler hasn't been combined with any texture")
-        return self._texture.sample(self, tex_coord)
+    
+        tex_coord_type = self._texture.__class__._tex_coord_type
+        if not isinstance(tex_coord, tex_coord_type):
+            raise RuntimeError(
+                f'Expected texture coordinate type {tex_coord_type}'
+            )
+        
+        if self._cmp:
+            if self._texture._texel_type is not None:
+                raise RuntimeError(
+                    "Comparison samplers don't support custom texel types"
+                )
+            if compare_value is None:
+                raise RuntimeError(
+                    "Missing sampler comparison value"
+                )
+            return self._sh.Float(
+                f'{self._texture._name}.SampleCmp({self._name}, {tex_coord}, {compare_value}).r'
+            )
+        else:
+            if compare_value is not None:
+                raise RuntimeError(
+                    "Comparison value passed to a non-comparison sampler"
+                )
+            texel_type = self._texture._texel_type
+            if texel_type is None:
+                texel_type = self._sh.Float4
+
+            return texel_type(
+                _ = f'{self._texture._name}.Sample({self._name}, {tex_coord})'
+            )
