@@ -219,6 +219,14 @@ def _generate_ps(ps_file, material, primitive):
             texel_type = texture_record.texel_type
         )
 
+    sh.combined_sampler_2d(
+        texture_name = 'shadowMap',
+        texture_register = 9,
+        sampler_name = 'shadowSampler',
+        sampler_register = 9,
+        cmp = True
+    )
+
     def _sample_texture(texture_name : str):
         texture_name += 'Texture'
         texture_record = texture_dict.get(texture_name)
@@ -354,12 +362,13 @@ def _generate_ps(ps_file, material, primitive):
     ):
         sh.p4Shadow = sh.light.VpXf.xform(sh.Pw)
         sh.p4Shadow.xyz /= sh.p4Shadow.w
-        sh.p4Shadow.xy = (
-            sh.Vector2f(1.0) + sh.Vector2f((sh.p4Shadow.x, -sh.p4Shadow.y))
+        
+        sh.uvShadow = (
+            sh.Point2f(1.0) + sh.Point2f((sh.p4Shadow.x, -sh.p4Shadow.y))
         ) * sh.Float(0.5)
-        sh.p4Shadow.z -= sh.light.fDepthBias
+        sh.fCompareValue = sh.p4Shadow.z - sh.light.fDepthBias
 
-        sh.return_(sh.Float(1))
+        sh.return_( sh.shadowSampler(sh.uvShadow, sh.fCompareValue) )
 
     with sh.function('applySpotLight', sh.RgbF)(
         light = sh.Light,
