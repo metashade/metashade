@@ -32,6 +32,11 @@ class Sampler:
         object_name = 'SamplerComparisonState' if cmp else 'SamplerState'
         sh._emit( f'{object_name} {name} : register(s{register});\n\n' )
 
+class CombinedSampler:
+    def __init__(self, texture, sampler):
+        self._texture = texture
+        self._sampler = sampler
+
     def __call__(self, tex_coord, lod = None, lod_bias = None, cmp_value = None):
         if self._texture is None:
             raise RuntimeError("Sampler hasn't been combined with any texture")
