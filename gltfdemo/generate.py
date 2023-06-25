@@ -229,10 +229,14 @@ def _generate_ps(ps_file, material, primitive):
         uv_set_idx = texture_record.gltf_texture.texCoord
         if uv_set_idx is None:
             uv_set_idx = 0
+
         uv = getattr(sh.psIn, f'uv{uv_set_idx}')
         sampler = getattr(sh, texture_name + 'Sampler')
-        setattr(sh, texture_name + 'Sample', sampler(uv))
-        return getattr(sh, texture_name + 'Sample')
+
+        sample = sampler(uv, lod_bias = sh.g_lodBias)
+        sample_var_name = texture_name + 'Sample'
+        setattr(sh, sample_var_name, sample)
+        return getattr(sh, sample_var_name)
 
     sh.struct('PbrParams')(
         rgbDiffuse = sh.RgbF,

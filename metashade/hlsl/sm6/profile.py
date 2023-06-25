@@ -103,7 +103,8 @@ class Generator(rtsl.Generator):
         self,
         texture_name : str, texture_register : int,
         sampler_name : str, sampler_register : int,
-        texel_type = None
+        texel_type = None,
+        cmp = False
     ):
         self._check_public_name(texture_name)
         self._check_public_name(sampler_name)
@@ -127,7 +128,11 @@ class Generator(rtsl.Generator):
         self._used_texture_registers.add(texture_register)
 
         sampler = samplers.Sampler(
-            self, sampler_name, sampler_register, texture
+            sh = self,
+            name = sampler_name,
+            register = sampler_register,
+            texture = texture,
+            cmp = cmp
         )
         self._set_global(sampler_name, sampler)
         self._used_sampler_registers.add(sampler_register)
