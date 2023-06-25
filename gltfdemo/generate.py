@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import argparse, math, os, pathlib
-import multiprocessing
+import argparse, io, math, os, pathlib, sys
+import multiprocessing as mp
 from collections import namedtuple
 from pygltflib import GLTF2
 
@@ -421,54 +421,86 @@ def _generate_ps(ps_file, material, primitive):
 
         sh.return_(sh.psOut)
 
-def process_asset(gltf_file_path : str) -> str:
+class _Shader:
+    def __init__(self, file_path):
+        self._file_path = file_path
 
+    @staticmethod
+    def _get_entry_point_name():
+        return None
+    
+    @staticmethod
+    def _get_profile():
+        return None
 
-    for gltf_file_path in pathlib.Path(gltf_dir).glob('**/*.gltf'):
-        with util.TimedScope(f'Loading glTF asset {gltf_file_path} '):
-            gltf_asset = GLTF2().load(gltf_file_path)
+    def compile(self):
+        log = io.StringIO()
+        sys.stdout = log
+        hlsl_common.compile(
+            path = self._file_path,
+            entry_point_name = self._get_entry_point_name(),
+            profile = self._get_profile()
+        )
+        return log
 
-        for mesh_idx, mesh in enumerate(gltf_asset.meshes):
-            mesh_name = ( mesh.name if mesh.name is not None
-                else f'UnnamedMesh{mesh_idx}'
-            )
+class _VertexShader:
+    @staticmethod
+    def _get_entry_point_name():
+        return _vs_main
+    
+    @staticmethod
+    def _get_profile():
+        return 'vs_6_0'
+    
+class _PixelShader:
+    @staticmethod
+    def _get_entry_point_name():
+        return _ps_main
+    
+    @staticmethod
+    def _get_profile():
+        return 'ps_6_0'
 
-            for primitive_idx, primitive in enumerate(mesh.primitives):
-                def _file_name(stage : str):
-                    return os.path.join(
-                        out_dir,
-                        f'{mesh_name}-{primitive_idx}-{stage}.hlsl'
-                    )
+_AssetResult = namedtuple('_AssetResult', 'log shaders')
 
-                file_name = _file_name('VS')
-                with util.TimedScope(f'Generating {file_name} ', 'Done'), \
-                    open(file_name, 'w') as vs_file:
-                    _generate_vs(vs_file, primitive)
-                if compile:
-                    assert 0 == hlsl_common.compile(
-                        path = file_name,
-                        entry_point_name = _vs_main,
-                        profile = 'vs_6_0'
-                    )
+def process_asset(gltf_file_path : str) -> _AssetResult:
+    result = _AssetResult(io.StringIO(), [])
+    sys.stdout = result.log
+    
+    with util.TimedScope(f'Loading glTF asset {gltf_file_path} '):
+        gltf_asset = GLTF2().load(gltf_file_path)
 
-                file_name = _file_name('PS')
-                with util.TimedScope(f'Generating {file_name} ', 'Done'), \
-                    open(file_name, 'w') as ps_file:
-                    _generate_ps(
-                        ps_file,
-                        gltf_asset.materials[primitive.material],
-                        primitive
-                    )
-                if compile:
-                    assert 0 == hlsl_common.compile(
-                        path = file_name,
-                        entry_point_name = _ps_main,
-                        profile = 'ps_6_0'
-                    )
+    for mesh_idx, mesh in enumerate(gltf_asset.meshes):
+        mesh_name = ( mesh.name if mesh.name is not None
+            else f'UnnamedMesh{mesh_idx}'
+        )
 
-def main(gltf_dir : str, out_dir : str, compile : bool):
-    os.makedirs(out_dir, exist_ok = True)
+        for primitive_idx, primitive in enumerate(mesh.primitives):
+            def _get_file_path(stage : str):
+                global args
+                return os.path.join(
+                    args.out_dir,
+                    f'{mesh_name}-{primitive_idx}-{stage}.hlsl'
+                )
+            
+            file_path = _get_file_path('VS')
+            with util.TimedScope(f'Generating {file_path} ', 'Done'), \
+                open(result.vs_path, 'w') as vs_file:
+                #
+                _generate_vs(vs_file, primitive)
+            result.shaders.append(_VertexShader(file_path))
 
+            file_path = _get_file_path('PS')
+            result.ps_paths.append(file_path)
+            with util.TimedScope(f'Generating {file_path} ', 'Done'), \
+                open(file_path, 'w') as ps_file:
+                #
+                _generate_ps(
+                    ps_file,
+                    gltf_asset.materials[primitive.material],
+                    primitive
+                )
+            result.shaders.append(_PixelShader(file_path))
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -486,11 +518,17 @@ if __name__ == "__main__":
     if not os.path.isdir(args.gltf_dir):
         raise NotADirectoryError(args.gltf_dir)
     
-    with multiprocessing.Pool() as pool:
-        for log in pool.imap_unordered(
+    os.makedirs(args.out_dir, exist_ok = True)
+
+    shaders = []
+    with mp.Pool() as pool:
+        for asset_result in pool.imap_unordered(
             process_asset,
             pathlib.Path(args.gltf_dir).glob('**/*.gltf')
         ):
-            print(log)
+            print(asset_result.log)
+            shaders += asset_result.shaders
 
-    main(args.gltf_dir, args.out_dir, args.compile)
+    with mp.Pool() as pool:
+        for shader_result in pool.imap_unordered(_Shader.compile, shaders):
+            print(shader_result)
