@@ -21,20 +21,14 @@ class TestSamplers(_base.Base):
         with self._open_file(hlsl_path) as ps_file:
             sh = ps_6_0.Generator(ps_file)
 
-            sh.combined_sampler_2d(
-                texture_name = 'g_tColor0', texture_register = 0,
-                sampler_name = 'g_sColor0', sampler_register = 1
-            )
-            sh.combined_sampler_2d(
-                texture_name = 'g_tColor1', texture_register = 1,
-                sampler_name = 'g_sColor1', sampler_register = 0,
-                texel_type = sh.RgbaF
-            )
-            sh.combined_sampler_2d(
-                texture_name = 'g_tShadow', texture_register = 2,
-                sampler_name = 'g_sShadow', sampler_register = 2,
-                cmp = True
-            )
+            sh.g_tColor0 = sh.Texture2d(register = 0)
+            sh.g_sColor0 = sh.Sampler(register = 1)
+
+            sh.g_tColor1 = sh.Texture2d(register = 1)
+            sh.g_sColor1 = sh.Sampler(register = 0)
+
+            sh.g_tShadow = sh.Texture2d(register = 2)
+            sh.g_sShadow = sh.Sampler(register = 2, cmp = True)
 
             with sh.vs_output('VsOut') as VsOut:
                 VsOut.texCoord('uv0', sh.Point2f)
@@ -45,15 +39,17 @@ class TestSamplers(_base.Base):
             with sh.main(self._entry_point_name, sh.PsOut)(psIn = sh.VsOut):
                 sh.psOut = sh.PsOut()
 
-                sh.rgbaSample0 = sh.g_sColor1(sh.psIn.uv0)
-                sh.rgbaSample1 = sh.g_sColor1(sh.psIn.uv0, lod = sh.Float(0.9))
-                sh.rgbaSample2 = sh.g_sColor1(sh.psIn.uv0, lod_bias = sh.Float(0.1))
+                sh.rgbaSample0 = sh.g_sColor1(sh.g_tTexture1)(sh.psIn.uv0)
 
-                sh.fShadowSample0 = sh.g_sShadow(
+                combined_sampler = sh.g_sColor1(sh.g_tTexture1)
+                sh.rgbaSample1 = combined_sampler(sh.psIn.uv0, lod = sh.Float(0.9))
+                sh.rgbaSample2 = combined_sampler(sh.psIn.uv0, lod_bias = sh.Float(0.1))
+
+                sh.fShadowSample0 = sh.g_sShadow(sh.g_tShadow)(
                     sh.psIn.uv0,
                     cmp_value = sh.Float(0.5)
                 )                
-                sh.fShadowSample1 = sh.g_sShadow(
+                sh.fShadowSample1 = sh.g_sShadow(sh.g_tShadow)(
                     sh.psIn.uv0,
                     cmp_value = sh.Float(0.1),
                     lod = 0
