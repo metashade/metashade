@@ -22,17 +22,17 @@ class TestSamplers(_base.Base):
             sh = ps_6_0.Generator(ps_file)
 
             sh.combined_sampler_2d(
-                texture_name = 'colorTexture0', texture_register = 0,
-                sampler_name = 'colorSampler0', sampler_register = 1
+                texture_name = 'g_tColor0', texture_register = 0,
+                sampler_name = 'g_sColor0', sampler_register = 1
             )
             sh.combined_sampler_2d(
-                texture_name = 'colorTexture1', texture_register = 1,
-                sampler_name = 'colorSampler1', sampler_register = 0,
+                texture_name = 'g_tColor1', texture_register = 1,
+                sampler_name = 'g_sColor1', sampler_register = 0,
                 texel_type = sh.RgbaF
             )
             sh.combined_sampler_2d(
-                texture_name = 'shadowMap', texture_register = 2,
-                sampler_name = 'shadowSampler', sampler_register = 2,
+                texture_name = 'g_tShadow', texture_register = 2,
+                sampler_name = 'g_sShadow', sampler_register = 2,
                 cmp = True
             )
 
@@ -45,15 +45,15 @@ class TestSamplers(_base.Base):
             with sh.main(self._entry_point_name, sh.PsOut)(psIn = sh.VsOut):
                 sh.psOut = sh.PsOut()
 
-                sh.rgbaSample0 = sh.colorSampler1(sh.psIn.uv0)
-                sh.rgbaSample1 = sh.colorSampler1(sh.psIn.uv0, lod = sh.Float(0.9))
-                sh.rgbaSample2 = sh.colorSampler1(sh.psIn.uv0, lod_bias = sh.Float(0.1))
+                sh.rgbaSample0 = sh.g_sColor1(sh.psIn.uv0)
+                sh.rgbaSample1 = sh.g_sColor1(sh.psIn.uv0, lod = sh.Float(0.9))
+                sh.rgbaSample2 = sh.g_sColor1(sh.psIn.uv0, lod_bias = sh.Float(0.1))
 
-                sh.fShadowSample0 = sh.shadowSampler(
+                sh.fShadowSample0 = sh.g_sShadow(
                     sh.psIn.uv0,
                     cmp_value = sh.Float(0.5)
                 )                
-                sh.fShadowSample1 = sh.shadowSampler(
+                sh.fShadowSample1 = sh.g_sShadow(
                     sh.psIn.uv0,
                     cmp_value = sh.Float(0.1),
                     lod = 0
