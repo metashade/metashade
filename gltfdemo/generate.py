@@ -225,7 +225,15 @@ def _generate_ps(ps_file, material, primitive):
             texel_type = texture_record.texel_type
         )
 
-    def _sample_texture(texture_name : str):        
+    sh.combined_sampler_2d(
+        texture_name = 'shadowMap',
+        texture_register = 9,
+        sampler_name = 'shadowSampler',
+        sampler_register = 9,
+        cmp = True
+    )
+
+    def _sample_texture(texture_name : str):
         texture_record = texture_dict.get(texture_name)
         if texture_record is None:
             return None
@@ -358,6 +366,21 @@ def _generate_ps(ps_file, material, primitive):
             (sh.d / sh.light.fRange).lerp(sh.Float(1), sh.Float(0)).saturate()
         )
 
+    with sh.function('getSpotShadow', sh.Float)(
+        light = sh.Light, Pw = sh.Point3f
+    ):
+        sh.p4Shadow = sh.light.VpXf.xform(sh.Pw)
+        sh.p4Shadow.xyz /= sh.p4Shadow.w
+        
+        sh.uvShadow = (
+            sh.Point2f(1.0) + sh.Point2f((sh.p4Shadow.x, -sh.p4Shadow.y))
+        ) * sh.Float(0.5)
+        sh.fCompareValue = sh.p4Shadow.z - sh.light.fDepthBias
+        sh.fShadowSample = sh.shadowSampler(
+            sh.uvShadow, cmp_value = sh.fCompareValue, lod = 0
+        )
+        sh.return_(sh.fShadowSample)
+
     with sh.function('applySpotLight', sh.RgbF)(
         light = sh.Light,
         Nw = sh.Vector3f,
@@ -378,13 +401,14 @@ def _generate_ps(ps_file, material, primitive):
 
         sh.fLightAttenuation = sh.fRangeAttenuation * sh.fSpotAttenuation
         sh.rgbLightColor = sh.light.fIntensity * sh.light.rgbColor
+        sh.fShadow = sh.getSpotShadow(light = sh.light, Pw = sh.Pw)
 
         sh.return_( sh.pbrBrdf(
             L = sh.Lw,
             N = sh.Nw,
             V = sh.Vw,
             pbrParams = sh.pbrParams
-        ) * sh.fLightAttenuation * sh.rgbLightColor )
+        ) * sh.fLightAttenuation * sh.rgbLightColor * sh.fShadow )
 
     with sh.main(_ps_main, sh.PsOut)(psIn = sh.VsOut):
         normalSample = _sample_texture('normal')
