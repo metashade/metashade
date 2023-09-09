@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import argparse, math, os, pathlib
+import argparse, io, math, os, pathlib, sys
+import multiprocessing as mp
 from collections import namedtuple
 from pygltflib import GLTF2
 
@@ -178,8 +179,7 @@ def _generate_ps(ps_file, material, primitive):
     _TextureRecord = namedtuple('_TextureRecord', 'gltf_texture texel_type')
 
     def _add_texture(parent, name: str, texel_type = None):
-        name += 'Texture'
-        gltf_texture = getattr(parent, name)
+        gltf_texture = getattr(parent, name + 'Texture')
         if gltf_texture is not None:
             texture_dict[name] = _TextureRecord(gltf_texture, texel_type)
 
@@ -206,15 +206,21 @@ def _generate_ps(ps_file, material, primitive):
                 'KHR_materials_pbrSpecularGlossiness is not implemented yet, '
                 'see https://github.com/ppenenko/metashade/issues/18'
             )
+    
+    def _get_texture_uniform_name(name: str) -> str:
+        return 'g_t' + name[0].upper() + name[1:]
+    
+    def _get_sampler_uniform_name(name: str) -> str:
+        return 'g_s' + name[0].upper() + name[1:]
 
     # We're sorting material textures by name
     for texture_idx, (texture_name, texture_record) in enumerate(
         sorted(texture_dict.items())
-    ):
+    ):  
         sh.combined_sampler_2d(
-            texture_name = texture_name,
+            texture_name = _get_texture_uniform_name(texture_name),
             texture_register = texture_idx,
-            sampler_name = texture_name + 'Sampler',
+            sampler_name = _get_sampler_uniform_name(texture_name),
             sampler_register = texture_idx,
             texel_type = texture_record.texel_type
         )
@@ -228,7 +234,6 @@ def _generate_ps(ps_file, material, primitive):
     )
 
     def _sample_texture(texture_name : str):
-        texture_name += 'Texture'
         texture_record = texture_dict.get(texture_name)
         if texture_record is None:
             return None
@@ -236,10 +241,14 @@ def _generate_ps(ps_file, material, primitive):
         uv_set_idx = texture_record.gltf_texture.texCoord
         if uv_set_idx is None:
             uv_set_idx = 0
+
         uv = getattr(sh.psIn, f'uv{uv_set_idx}')
-        sampler = getattr(sh, texture_name + 'Sampler')
-        setattr(sh, texture_name + 'Sample', sampler(uv))
-        return getattr(sh, texture_name + 'Sample')
+        sampler = getattr(sh, _get_sampler_uniform_name(texture_name))
+
+        sample = sampler(uv, lod_bias = sh.g_lodBias)
+        sample_var_name = texture_name + 'Sample'
+        setattr(sh, sample_var_name, sample)
+        return getattr(sh, sample_var_name)
 
     sh.struct('PbrParams')(
         rgbDiffuse = sh.RgbF,
@@ -249,7 +258,7 @@ def _generate_ps(ps_file, material, primitive):
     )
 
     with sh.function('metallicRoughness', sh.PbrParams)(psIn = sh.VsOut):
-        sh.rgbaBaseColor = sh.baseColorTextureSampler(sh.psIn.uv0) \
+        sh.rgbaBaseColor = sh.g_sBaseColor(sh.psIn.uv0) \
             * sh.g_perObjectPbrFactors.rgbaBaseColor
         if hasattr(sh.psIn, 'rgbaColor0'):
             sh.rgbaBaseColor *= sh.psIn.rgbaColor0
@@ -440,10 +449,56 @@ def _generate_ps(ps_file, material, primitive):
 
         sh.return_(sh.psOut)
 
-def main(gltf_dir : str, out_dir : str, compile : bool):
-    os.makedirs(out_dir, exist_ok = True)
+class _Shader:
+    def __init__(self, file_path):
+        self._file_path = file_path
 
-    for gltf_file_path in pathlib.Path(gltf_dir).glob('**/*.gltf'):
+    @staticmethod
+    def _get_entry_point_name():
+        return None
+    
+    @staticmethod
+    def _get_profile():
+        return None
+
+    def compile(self) -> str:
+        log = io.StringIO()
+        sys.stdout = log
+        hlsl_common.compile(
+            path = self._file_path,
+            entry_point_name = self._get_entry_point_name(),
+            profile = self._get_profile()
+        )
+        return log.getvalue()
+
+class _VertexShader(_Shader):
+    @staticmethod
+    def _get_entry_point_name():
+        return _vs_main
+    
+    @staticmethod
+    def _get_profile():
+        return 'vs_6_0'
+    
+class _PixelShader(_Shader):
+    @staticmethod
+    def _get_entry_point_name():
+        return _ps_main
+    
+    @staticmethod
+    def _get_profile():
+        return 'ps_6_0'
+
+_AssetResult = namedtuple('_AssetResult', 'log shaders')
+
+class _AssetProcessor:
+    def __init__(self, out_dir):
+        self._out_dir = out_dir
+
+    def __call__(self, gltf_file_path : str) -> _AssetResult:
+        shaders = []
+        sys.stdout = io.StringIO()
+        
         with util.TimedScope(f'Loading glTF asset {gltf_file_path} '):
             gltf_asset = GLTF2().load(gltf_file_path)
 
@@ -453,37 +508,30 @@ def main(gltf_dir : str, out_dir : str, compile : bool):
             )
 
             for primitive_idx, primitive in enumerate(mesh.primitives):
-                def _file_name(stage : str):
+                def _get_file_path(stage : str):
                     return os.path.join(
-                        out_dir,
+                        self._out_dir,
                         f'{mesh_name}-{primitive_idx}-{stage}.hlsl'
                     )
-
-                file_name = _file_name('VS')
-                with util.TimedScope(f'Generating {file_name} ', 'Done'), \
-                    open(file_name, 'w') as vs_file:
+                
+                file_path = _get_file_path('VS')
+                with util.TimedScope(f'Generating {file_path} ', 'Done'), \
+                    open(file_path, 'w') as vs_file:
+                    #
                     _generate_vs(vs_file, primitive)
-                if compile:
-                    assert 0 == hlsl_common.compile(
-                        path = file_name,
-                        entry_point_name = _vs_main,
-                        profile = 'vs_6_0'
-                    )
+                shaders.append(_VertexShader(file_path))
 
-                file_name = _file_name('PS')
-                with util.TimedScope(f'Generating {file_name} ', 'Done'), \
-                    open(file_name, 'w') as ps_file:
+                file_path = _get_file_path('PS')
+                with util.TimedScope(f'Generating {file_path} ', 'Done'), \
+                    open(file_path, 'w') as ps_file:
+                    #
                     _generate_ps(
                         ps_file,
                         gltf_asset.materials[primitive.material],
                         primitive
                     )
-                if compile:
-                    assert 0 == hlsl_common.compile(
-                        path = file_name,
-                        entry_point_name = _ps_main,
-                        profile = 'ps_6_0'
-                    )
+                shaders.append(_PixelShader(file_path))
+        return _AssetResult(sys.stdout.getvalue(), shaders)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -500,5 +548,19 @@ if __name__ == "__main__":
     
     if not os.path.isdir(args.gltf_dir):
         raise NotADirectoryError(args.gltf_dir)
+    
+    os.makedirs(args.out_dir, exist_ok = True)
 
-    main(args.gltf_dir, args.out_dir, args.compile)
+    shaders = []
+    with mp.Pool() as pool:
+        for asset_result in pool.imap_unordered(
+            _AssetProcessor(args.out_dir),
+            pathlib.Path(args.gltf_dir).glob('**/*.gltf')
+        ):
+            print(asset_result.log)
+            shaders += asset_result.shaders
+
+    if args.compile:
+        with mp.Pool() as pool:
+            for compilation_log in pool.imap_unordered(_Shader.compile, shaders):
+                print(compilation_log)

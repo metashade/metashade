@@ -32,7 +32,7 @@ class Sampler:
         object_name = 'SamplerComparisonState' if cmp else 'SamplerState'
         sh._emit( f'{object_name} {name} : register(s{register});\n\n' )
 
-    def __call__(self, tex_coord, lod = None, cmp_value = None):
+    def __call__(self, tex_coord, lod = None, lod_bias = None, cmp_value = None):
         if self._texture is None:
             raise RuntimeError("Sampler hasn't been combined with any texture")
     
@@ -43,6 +43,10 @@ class Sampler:
             )
         
         if self._cmp:
+            if lod_bias is not None:
+                raise RuntimeError(
+                    "Comparison samplers don't support LOD bias"
+                )
             if self._texture._texel_type is not None:
                 raise RuntimeError(
                     "Comparison samplers don't support custom texel types"
@@ -57,7 +61,6 @@ class Sampler:
                     f'{self._texture._name}.{method_name}'
                     + f'({self._name}, {tex_coord}, {cmp_value}).r'
                 )
-
             if lod is not None:
                 if lod == 0:
                     expression = _format('SampleCmpLevelZero')
@@ -78,6 +81,19 @@ class Sampler:
             if texel_type is None:
                 texel_type = self._sh.Float4
 
-            return texel_type(
-                _ = f'{self._texture._name}.Sample({self._name}, {tex_coord})'
-            )
+            if lod is not None:
+                if lod_bias is not None:
+                    raise RuntimeError(
+                        "Explicit LOD and LOD bias are mutually exclusive"
+                    )
+                return texel_type(
+                    _ = f'{self._texture._name}.SampleLevel({self._name}, {tex_coord}, {lod})'
+                )
+            elif lod_bias is not None:
+                return texel_type(
+                    _ = f'{self._texture._name}.SampleBias({self._name}, {tex_coord}, {lod_bias})'
+                )
+            else:
+                return texel_type(
+                    _ = f'{self._texture._name}.Sample({self._name}, {tex_coord})'
+                )
