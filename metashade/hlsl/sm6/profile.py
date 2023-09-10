@@ -65,6 +65,7 @@ class Generator(rtsl.Generator):
             self.__class__._UsedRegisterSet('Sampler')
 
         self._register_dtypes(data_types.__name__)
+        self._register_dtypes(samplers.__name__)
 
     def uniform_buffer(self, register : int, name : str = None):
         self._used_uniform_buffer_registers.check_candidate(register)

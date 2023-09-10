@@ -13,26 +13,25 @@
 # limitations under the License.
 
 from . import data_types
+import metashade.clike.data_types as clike_dtypes
 
-class Texture2d:
+class Texture2d(clike_dtypes.BaseType):
     _tex_coord_type = data_types.Float2
 
-    def __init__(self, sh, name : str, register : int, texel_type = None):
+    def __init__(self, name : str, register : int, texel_type = None):
         self._name = name
-        self._sh = sh
         self._texel_type = texel_type
         sh._emit( f'Texture2D {name} : register(t{register});\n' )
 
-class Sampler:
-    def __init__(self, sh, name : str, register : int, cmp : bool, texture):
-        self._sh = sh
+class Sampler(clike_dtypes.BaseType):
+    def __init__(self, name : str, register : int, cmp : bool, texture):
         self._name = name
         self._cmp = cmp
         self._texture = texture
         object_name = 'SamplerComparisonState' if cmp else 'SamplerState'
         sh._emit( f'{object_name} {name} : register(s{register});\n\n' )
 
-class CombinedSampler:
+class CombinedSampler(clike_dtypes.BaseType):
     def __init__(self, texture, sampler):
         self._texture = texture
         self._sampler = sampler
