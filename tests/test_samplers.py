@@ -28,7 +28,7 @@ class TestSamplers(_base.Base):
             sh.uniform('g_sColor1', sh.Sampler, register = 0)
 
             sh.uniform('g_tShadow', sh.Texture2d, register = 2)
-            #sh.uniform('g_sShadow', sh.Sampler(cmp = True), register = 2)
+            sh.uniform('g_sShadow', sh.SamplerCmp, register = 2)
 
             with sh.vs_output('VsOut') as VsOut:
                 VsOut.texCoord('uv0', sh.Point2f)
@@ -45,17 +45,17 @@ class TestSamplers(_base.Base):
                 sh.rgbaSample1 = combined_sampler(sh.psIn.uv0, lod = sh.Float(0.9))
                 sh.rgbaSample2 = combined_sampler(sh.psIn.uv0, lod_bias = sh.Float(0.1))
 
-                # sh.fShadowSample0 = sh.g_sShadow(sh.g_tShadow)(
-                #     sh.psIn.uv0,
-                #     cmp_value = sh.Float(0.5)
-                # )
-                # sh.fShadowSample1 = sh.g_sShadow(sh.g_tShadow)(
-                #     sh.psIn.uv0,
-                #     cmp_value = sh.Float(0.1),
-                #     lod = 0
-                # )
+                sh.fShadowSample0 = sh.g_sShadow(sh.g_tShadow)(
+                    sh.psIn.uv0,
+                    cmp_value = sh.Float(0.5)
+                )
+                sh.fShadowSample1 = sh.g_sShadow(sh.g_tShadow)(
+                    sh.psIn.uv0,
+                    cmp_value = sh.Float(0.1),
+                    lod = 0
+                )
                 sh.psOut.color = \
-                    sh.rgbaSample0 * sh.rgbaSample1 * sh.rgbaSample2 #* sh.fShadowSample0 * sh.fShadowSample1
+                    sh.rgbaSample0 * sh.rgbaSample1 * sh.rgbaSample2 * sh.fShadowSample0 * sh.fShadowSample1
                 sh.return_(sh.psOut)
 
         self._compile(hlsl_path, as_lib = False)

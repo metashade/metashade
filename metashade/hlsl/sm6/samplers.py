@@ -26,7 +26,6 @@ class Texture2d(clike_dtypes.BaseType):
     def __init__(self, texel_type = None):
         super().__init__()
         self._texel_type = texel_type
-        #sh._emit( f'Texture2D {name} : register(t{register});\n' )
 
 class Sampler(clike_dtypes.BaseType):
     _target_name = 'SamplerState'
@@ -35,13 +34,11 @@ class Sampler(clike_dtypes.BaseType):
     def _format_uniform_register(cls, register_idx : int) -> str:
         return f's{register_idx}'
 
-    def __init__(self):
-        super().__init__()
-        # object_name = 'SamplerComparisonState' if cmp else 'SamplerState'
-        # sh._emit( f'{object_name} {name} : register(s{register});\n\n' )
-
     def __call__(self, texture):
         return CombinedSampler(texture = texture, sampler = self)
+    
+class SamplerCmp(Sampler):
+    _target_name = 'SamplerComparisonState'
 
 class CombinedSampler(clike_dtypes.BaseType):
     def __init__(self, texture, sampler):
@@ -58,7 +55,7 @@ class CombinedSampler(clike_dtypes.BaseType):
                 f'Expected texture coordinate type {tex_coord_type}'
             )
         
-        if False: #self._cmp:
+        if isinstance(self._sampler, SamplerCmp):   #TODO: refactor
             if lod_bias is not None:
                 raise RuntimeError(
                     "Comparison samplers don't support LOD bias"
@@ -75,7 +72,7 @@ class CombinedSampler(clike_dtypes.BaseType):
             def _format(method_name : str) -> str:
                 return (
                     f'{self._texture._name}.{method_name}'
-                    + f'({self._name}, {tex_coord}, {cmp_value}).r'
+                    + f'({self._sampler._name}, {tex_coord}, {cmp_value}).r'
                 )
             if lod is not None:
                 if lod == 0:
@@ -87,7 +84,7 @@ class CombinedSampler(clike_dtypes.BaseType):
                     )
             else:
                 expression = _format('SampleCmp')
-            return self._sh.Float(expression)
+            return self._sampler._sh.Float(expression)
         else:
             if cmp_value is not None:
                 raise RuntimeError(
