@@ -110,44 +110,6 @@ class Generator(rtsl.Generator):
         )
         self._emit(';\n')
 
-    def combined_sampler_2d(
-        self,
-        texture_name : str, texture_register : int,
-        sampler_name : str, sampler_register : int,
-        texel_type = None,
-        cmp = False
-    ):
-        self._check_public_name(texture_name)   # covered in `uniform`
-        self._check_public_name(sampler_name)
-
-        if not self._check_global_scope():
-            raise RuntimeError(
-                "Uniform textures and samplers "
-                "can only be defined at the global scope"
-            )
-
-        self._used_texture_registers.check_candidate(texture_register)
-        self._used_sampler_registers.check_candidate(sampler_register)
-
-        texture = samplers.Texture2d(
-            self,
-            texture_name,
-            texture_register,
-            texel_type
-        )
-        self._set_global(texture_name, texture)
-        self._used_texture_registers.add(texture_register)
-
-        sampler = samplers.Sampler(
-            sh = self,
-            name = sampler_name,
-            register = sampler_register,
-            texture = texture,
-            cmp = cmp
-        )
-        self._set_global(sampler_name, sampler)
-        self._used_sampler_registers.add(sampler_register)
-
     def vs_input(self, name):
         return stage_interface.VsInputDef(self, name)
     
