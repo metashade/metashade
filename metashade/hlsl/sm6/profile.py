@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from metashade.base.data_types import BaseType
 import metashade.rtsl.profile as rtsl
 import metashade.clike.struct as struct
 from . import data_types
@@ -98,7 +99,11 @@ class Generator(rtsl.Generator):
                 name
             )
 
-        value = dtype_factory() #TODO: make it immutable
+        #TODO: make it immutable
+        value = ( dtype_factory if isinstance(dtype_factory, BaseType)
+            else dtype_factory()
+        )
+
         self._set_global(name, value)
         self._emit_indent()
         value._define(

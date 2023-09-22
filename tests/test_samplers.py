@@ -24,7 +24,7 @@ class TestSamplers(_base.Base):
             sh.uniform('g_tColor0', sh.Texture2d, register = 0)
             sh.uniform('g_sColor0', sh.Sampler, register = 1)
 
-            sh.uniform('g_tColor1', sh.Texture2d, register = 1)
+            sh.uniform('g_tColor1', sh.Texture2d(texel_type = sh.Float4), register = 1)
             sh.uniform('g_sColor1', sh.Sampler, register = 0)
 
             sh.uniform('g_tShadow', sh.Texture2d, register = 2)

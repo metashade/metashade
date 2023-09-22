@@ -63,11 +63,6 @@ class Struct(BaseType, StructBase):
         super()._bind(sh, identifier, allow_init)
         self._bind_members(sh, identifier)
 
-    @classmethod
-    def _get_dtype(cls):
-        # structs act as their own dtype factories
-        return cls
-
     def __setattr__(self, name, value):
         if not self._set_member(name, value):
             super().__setattr__(name, value)
