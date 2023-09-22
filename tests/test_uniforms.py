@@ -22,11 +22,21 @@ class TestUniforms(_base.Base):
             sh = ps_6_0.Generator(ps_file)
 
             with sh.uniform_buffer(register = 0, name = 'cb0'):
-                sh.uniform('f0', sh.Float4)
+                sh.uniform('g_f0', sh.Float4)
 
             with sh.uniform_buffer(register = 1, name = 'cb1'):
-                sh.uniform('f1', sh.Float4)
+                sh.uniform('g_f1', sh.Float4)
 
             with pytest.raises(Exception):
                 with sh.uniform_buffer(register = 0, name = 'cb2'):
-                    sh.uniform('f2', sh.Float4)
+                    sh.uniform('g_f2', sh.Float4)
+
+    def test_texture_register_clash(self):
+        with self._open_file() as ps_file:
+            sh = ps_6_0.Generator(ps_file)
+
+            sh.uniform('g_t0', sh.Texture2d, register = 0)
+            sh.uniform('g_t1', sh.Texture2d, register = 1)
+            
+            with pytest.raises(Exception):
+                sh.uniform('g_t2', sh.Texture2d, register = 0)

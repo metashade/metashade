@@ -51,15 +51,19 @@ class Generator(rtsl.Generator):
         self._register_dtypes(data_types.__name__)
         self._register_dtypes(samplers.__name__)
 
-    def uniform_buffer(self, register : int, name : str = None):
-        register_name = f'b{register}'
+    def _check_unique_uniform_register(self, register_name : str, new_name :str):
         existing = self._uniforms_by_register.get(register_name)
         if existing is not None:
-             raise RuntimeError(f'Uniform register {register_name} already used by {existing}')
-        
-        cbuffer = UniformBuffer(self, register = register, name = name)
-        self._uniforms_by_register[register_name] = cbuffer
-        return cbuffer
+             raise RuntimeError(
+                 f'Uniform register {register_name} already used by {existing}'
+            )
+        self._uniforms_by_register[register_name] = new_name
+
+    def uniform_buffer(self, register : int, name : str = None):
+        self._check_unique_uniform_register(
+            register_name = f'b{register}', name = name
+        )
+        return UniformBuffer(self, register = register, name = name)
     
     def uniform(
         self,
@@ -87,6 +91,12 @@ class Generator(rtsl.Generator):
                     f"because uniform '{existing._name}' already uses that "
                     "semantic."
                 )
+            
+        if register is not None:
+            self._check_unique_uniform_register(
+                dtype_factory._get_dtype()._format_uniform_register(register),
+                name
+            )
 
         value = dtype_factory() #TODO: make it immutable
         self._set_global(name, value)
