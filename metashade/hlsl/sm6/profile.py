@@ -41,36 +41,25 @@ class UniformBuffer:
 class Generator(rtsl.Generator):
     _is_pixel_shader = False
 
-    class _UsedRegisterSet(set):
-        def __init__(self, category : str):
-            self._category = category
-
-        def check_candidate(self, register : int):
-            if register < 0:
-                raise RuntimeError('Invalid register value')
-            if register in self:
-                raise RuntimeError(self._category + ' register already in use')
-
     def __init__(self, file_, matrix_post_multiplication = False):
         super(Generator, self).__init__(file_)
         self._matrix_post_multiplication = matrix_post_multiplication
 
         self._uniforms_by_semantic = dict()
-
-        self._used_uniform_buffer_registers = \
-            self.__class__._UsedRegisterSet('Uniform buffer')
-        self._used_texture_registers = \
-            self.__class__._UsedRegisterSet('Texture')
-        self._used_sampler_registers = \
-            self.__class__._UsedRegisterSet('Sampler')
+        self._uniforms_by_register = dict()
 
         self._register_dtypes(data_types.__name__)
         self._register_dtypes(samplers.__name__)
 
     def uniform_buffer(self, register : int, name : str = None):
-        self._used_uniform_buffer_registers.check_candidate(register)
-        self._used_uniform_buffer_registers.add(register)
-        return UniformBuffer(self, register = register, name = name)
+        register_name = f'b{register}'
+        existing = self._uniforms_by_register.get(register_name)
+        if existing is not None:
+             raise RuntimeError(f'Uniform register {register_name} already used by {existing}')
+        
+        cbuffer = UniformBuffer(self, register = register, name = name)
+        self._uniforms_by_register[register_name] = cbuffer
+        return cbuffer
     
     def uniform(
         self,
