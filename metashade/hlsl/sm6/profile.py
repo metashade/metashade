@@ -61,7 +61,7 @@ class Generator(rtsl.Generator):
 
     def uniform_buffer(self, register : int, name : str = None):
         self._check_unique_uniform_register(
-            register_name = f'b{register}', name = name
+            register_name = f'b{register}', new_name = name
         )
         return UniformBuffer(self, register = register, name = name)
     
