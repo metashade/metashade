@@ -18,18 +18,16 @@ import metashade.clike.data_types as clike_dtypes
 class Texture2d(clike_dtypes.BaseType):
     _tex_coord_type = data_types.Float2
 
-    def __init__(self, name : str, register : int, texel_type = None):
-        self._name = name
+    def __init__(self, texel_type = None):
+        super().__init__()
         self._texel_type = texel_type
-        sh._emit( f'Texture2D {name} : register(t{register});\n' )
+        #sh._emit( f'Texture2D {name} : register(t{register});\n' )
 
 class Sampler(clike_dtypes.BaseType):
-    def __init__(self, name : str, register : int, cmp : bool, texture):
-        self._name = name
-        self._cmp = cmp
-        self._texture = texture
-        object_name = 'SamplerComparisonState' if cmp else 'SamplerState'
-        sh._emit( f'{object_name} {name} : register(s{register});\n\n' )
+    def __init__(self):
+        super().__init__()
+        # object_name = 'SamplerComparisonState' if cmp else 'SamplerState'
+        # sh._emit( f'{object_name} {name} : register(s{register});\n\n' )
 
 class CombinedSampler(clike_dtypes.BaseType):
     def __init__(self, texture, sampler):
