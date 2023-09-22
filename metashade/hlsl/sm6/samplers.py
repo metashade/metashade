@@ -17,6 +17,11 @@ import metashade.clike.data_types as clike_dtypes
 
 class Texture2d(clike_dtypes.BaseType):
     _tex_coord_type = data_types.Float2
+    _target_name = 'Texture2D'
+
+    @classmethod
+    def _format_uniform_register(cls, register_idx : int) -> str:
+        return f't{register_idx}'
 
     def __init__(self, texel_type = None):
         super().__init__()
@@ -24,6 +29,12 @@ class Texture2d(clike_dtypes.BaseType):
         #sh._emit( f'Texture2D {name} : register(t{register});\n' )
 
 class Sampler(clike_dtypes.BaseType):
+    _target_name = 'SamplerState'
+
+    @classmethod
+    def _format_uniform_register(cls, register_idx : int) -> str:
+        return f's{register_idx}'
+
     def __init__(self):
         super().__init__()
         # object_name = 'SamplerComparisonState' if cmp else 'SamplerState'

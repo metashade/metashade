@@ -70,15 +70,19 @@ class Generator(rtsl.Generator):
     def uniform_buffer(self, register : int, name : str = None):
         self._used_uniform_buffer_registers.check_candidate(register)
         return UniformBuffer(self, register = register, name = name)
-
-    # TODO: registers, packoffset
+    
     def uniform(
         self,
         name : str,
         dtype_factory,
         semantic : str = None,
+        register : int = None,
         annotations = None
     ):
+        '''
+        https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-variable-syntax
+        # TODO: packoffset
+        '''
         self._check_public_name(name)
         if not self._check_global_scope():
             raise RuntimeError(
@@ -97,7 +101,13 @@ class Generator(rtsl.Generator):
         value = dtype_factory() #TODO: make it immutable
         self._set_global(name, value)
         self._emit_indent()
-        value._define(self, name, semantic, annotations = annotations)
+        value._define(
+            self,
+            name,
+            semantic = semantic,
+            register = register,
+            annotations = annotations
+        )
         self._emit(';\n')
 
     def combined_sampler_2d(

@@ -17,18 +17,32 @@ import numbers
 
 class BaseType(base.BaseType):
     @classmethod
+    def _format_uniform_register(cls, register_idx : int) -> str:
+        raise RuntimeError('Uniform registers not supported for {cls}')
+
+    @classmethod
     def _define_static(
         cls, sh, identifier,
-        semantic = None, initializer = None, annotations = None
+        semantic = None,
+        register : int = None,
+        annotations = None,
+        initializer = None
     ):
+        '''
+        https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-variable-syntax
+        '''
         sh._emit(
-            '{type_name} {identifier}{semantic}'.format(
+            '{type_name} {identifier}'.format(
                 type_name = cls._get_target_type_name(),
-                identifier = identifier,
-                semantic = '' if semantic is None \
-                    else f' : {semantic}'
+                identifier = identifier
             )
         )
+
+        if semantic is not None:
+            sh._emit(f' : {semantic}')
+
+        if register is not None:
+            sh._emit(f' : register({cls._format_uniform_register(register)})')
 
         if annotations is not None and annotations:
             sh._emit(' <\n')
@@ -45,12 +59,18 @@ class BaseType(base.BaseType):
 
     def _define(
         self, sh, identifier,
-        semantic = None, allow_init = True, annotations = None
+        allow_init = True,
+        semantic = None,
+        register = None,
+        annotations = None
     ):
         self._bind(sh, identifier, allow_init)
         self.__class__._define_static(
-            sh, self._name, initializer = self._expression,
-            semantic = semantic, annotations = annotations
+            sh, self._name,
+            initializer = self._expression,
+            semantic = semantic,
+            register = register,
+            annotations = annotations
         )
 
     def _assign(self, value):

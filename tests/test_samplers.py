@@ -21,14 +21,14 @@ class TestSamplers(_base.Base):
         with self._open_file(hlsl_path) as ps_file:
             sh = ps_6_0.Generator(ps_file)
 
-            sh.uniform('g_tColor0', sh.Texture2d)
-            sh.uniform('g_sColor0', sh.Sampler)
+            sh.uniform('g_tColor0', sh.Texture2d, register = 0)
+            sh.uniform('g_sColor0', sh.Sampler, register = 1)
 
-            sh.uniform('g_tColor1', sh.Texture2d)
-            sh.uniform('g_sColor1', sh.Sampler)
+            sh.uniform('g_tColor1', sh.Texture2d, register = 1)
+            sh.uniform('g_sColor1', sh.Sampler, register = 0)
 
-            sh.uniform('g_tShadow', sh.Texture2d)
-            #sh.uniform('g_sShadow', sh.Sampler(cmp = True))
+            sh.uniform('g_tShadow', sh.Texture2d, register = 2)
+            #sh.uniform('g_sShadow', sh.Sampler(cmp = True), register = 2)
 
             with sh.vs_output('VsOut') as VsOut:
                 VsOut.texCoord('uv0', sh.Point2f)
