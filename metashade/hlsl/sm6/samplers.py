@@ -29,6 +29,9 @@ class Sampler(clike_dtypes.BaseType):
         # object_name = 'SamplerComparisonState' if cmp else 'SamplerState'
         # sh._emit( f'{object_name} {name} : register(s{register});\n\n' )
 
+    def __call__(self, texture):
+        return CombinedSampler(texture = texture, sampler = self)
+
 class CombinedSampler(clike_dtypes.BaseType):
     def __init__(self, texture, sampler):
         self._texture = texture
@@ -44,7 +47,7 @@ class CombinedSampler(clike_dtypes.BaseType):
                 f'Expected texture coordinate type {tex_coord_type}'
             )
         
-        if self._cmp:
+        if False: #self._cmp:
             if lod_bias is not None:
                 raise RuntimeError(
                     "Comparison samplers don't support LOD bias"
@@ -81,7 +84,7 @@ class CombinedSampler(clike_dtypes.BaseType):
                 )
             texel_type = self._texture._texel_type
             if texel_type is None:
-                texel_type = self._sh.Float4
+                texel_type = self._sampler._sh.Float4
 
             if lod is not None:
                 if lod_bias is not None:
@@ -89,13 +92,13 @@ class CombinedSampler(clike_dtypes.BaseType):
                         "Explicit LOD and LOD bias are mutually exclusive"
                     )
                 return texel_type(
-                    _ = f'{self._texture._name}.SampleLevel({self._name}, {tex_coord}, {lod})'
+                    _ = f'{self._texture._name}.SampleLevel({self._sampler._name}, {tex_coord}, {lod})'
                 )
             elif lod_bias is not None:
                 return texel_type(
-                    _ = f'{self._texture._name}.SampleBias({self._name}, {tex_coord}, {lod_bias})'
+                    _ = f'{self._texture._name}.SampleBias({self._sampler._name}, {tex_coord}, {lod_bias})'
                 )
             else:
                 return texel_type(
-                    _ = f'{self._texture._name}.Sample({self._name}, {tex_coord})'
+                    _ = f'{self._texture._name}.Sample({self._sampler._name}, {tex_coord})'
                 )

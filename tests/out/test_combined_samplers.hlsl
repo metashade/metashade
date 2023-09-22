@@ -1,12 +1,8 @@
-Texture2D g_tColor0 : register(t0);
-SamplerState g_sColor0 : register(s1);
-
-Texture2D g_tColor1 : register(t1);
-SamplerState g_sColor1 : register(s0);
-
-Texture2D g_tShadow : register(t2);
-SamplerComparisonState g_sShadow : register(s2);
-
+Texture2d g_tColor0;
+Sampler g_sColor0;
+Texture2d g_tColor1;
+Sampler g_sColor1;
+Texture2d g_tShadow;
 struct VsOut
 {
 	float2 uv0 : TEXCOORD;
@@ -23,9 +19,7 @@ PsOut psMain(VsOut psIn)
 	float4 rgbaSample0 = g_tColor1.Sample(g_sColor1, psIn.uv0);
 	float4 rgbaSample1 = g_tColor1.SampleLevel(g_sColor1, psIn.uv0, 0.9);
 	float4 rgbaSample2 = g_tColor1.SampleBias(g_sColor1, psIn.uv0, 0.1);
-	float fShadowSample0 = g_tShadow.SampleCmp(g_sShadow, psIn.uv0, 0.5).r;
-	float fShadowSample1 = g_tShadow.SampleCmpLevelZero(g_sShadow, psIn.uv0, 0.1).r;
-	psOut.color = ((((rgbaSample0 * rgbaSample1) * rgbaSample2) * fShadowSample0) * fShadowSample1);
+	psOut.color = ((rgbaSample0 * rgbaSample1) * rgbaSample2);
 	return psOut;
 }
 
