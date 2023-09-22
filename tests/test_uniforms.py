@@ -40,3 +40,13 @@ class TestUniforms(_base.Base):
             
             with pytest.raises(Exception):
                 sh.uniform('g_t2', sh.Texture2d, register = 0)
+
+    def test_sampler_register_clash(self):
+        with self._open_file() as ps_file:
+            sh = ps_6_0.Generator(ps_file)
+
+            sh.uniform('g_s0', sh.Sampler, register = 0)
+            sh.uniform('g_s1', sh.Sampler, register = 1)
+            
+            with pytest.raises(Exception):
+                sh.uniform('g_s2', sh.Sampler, register = 0)
