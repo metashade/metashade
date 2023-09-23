@@ -216,22 +216,21 @@ def _generate_ps(ps_file, material, primitive):
     # We're sorting material textures by name
     for texture_idx, (texture_name, texture_record) in enumerate(
         sorted(texture_dict.items())
-    ):  
-        sh.combined_sampler_2d(
-            texture_name = _get_texture_uniform_name(texture_name),
-            texture_register = texture_idx,
-            sampler_name = _get_sampler_uniform_name(texture_name),
-            sampler_register = texture_idx,
-            texel_type = texture_record.texel_type
+    ):
+        sh.uniform(
+            _get_texture_uniform_name(texture_name),
+            sh.Texture2d(texel_type = texture_record.texel_type),
+            register = texture_idx
+        )
+        sh.uniform(
+            _get_sampler_uniform_name(texture_name),
+            sh.Sampler,
+            register = texture_idx
         )
 
-    sh.combined_sampler_2d(
-        texture_name = 'shadowMap',
-        texture_register = 9,
-        sampler_name = 'shadowSampler',
-        sampler_register = 9,
-        cmp = True
-    )
+    shadow_map_register = 9
+    sh.uniform('g_tShadowMap', sh.Texture2d, register = shadow_map_register)
+    sh.uniform('g_sShadowMap', sh.SamplerCmp, register = shadow_map_register)
 
     def _sample_texture(texture_name : str):
         texture_record = texture_dict.get(texture_name)
@@ -243,9 +242,10 @@ def _generate_ps(ps_file, material, primitive):
             uv_set_idx = 0
 
         uv = getattr(sh.psIn, f'uv{uv_set_idx}')
+        texture = getattr(sh, _get_texture_uniform_name(texture_name))
         sampler = getattr(sh, _get_sampler_uniform_name(texture_name))
 
-        sample = sampler(uv, lod_bias = sh.g_lodBias)
+        sample = sampler(texture)(uv, lod_bias = sh.g_lodBias)
         sample_var_name = texture_name + 'Sample'
         setattr(sh, sample_var_name, sample)
         return getattr(sh, sample_var_name)
@@ -258,8 +258,9 @@ def _generate_ps(ps_file, material, primitive):
     )
 
     with sh.function('metallicRoughness', sh.PbrParams)(psIn = sh.VsOut):
-        sh.rgbaBaseColor = sh.g_sBaseColor(sh.psIn.uv0) \
+        sh.rgbaBaseColor = ( sh.g_sBaseColor(sh.g_tBaseColor)(sh.psIn.uv0)
             * sh.g_perObjectPbrFactors.rgbaBaseColor
+        )
         if hasattr(sh.psIn, 'rgbaColor0'):
             sh.rgbaBaseColor *= sh.psIn.rgbaColor0
 
@@ -376,7 +377,8 @@ def _generate_ps(ps_file, material, primitive):
             sh.Point2f(1.0) + sh.Point2f((sh.p4Shadow.x, -sh.p4Shadow.y))
         ) * sh.Float(0.5)
         sh.fCompareValue = sh.p4Shadow.z - sh.light.fDepthBias
-        sh.fShadowSample = sh.shadowSampler(
+        
+        sh.fShadowSample = sh.g_sShadowMap(sh.g_tShadowMap)(
             sh.uvShadow, cmp_value = sh.fCompareValue, lod = 0
         )
         sh.return_(sh.fShadowSample)
