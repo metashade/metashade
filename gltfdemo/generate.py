@@ -430,6 +430,31 @@ def _generate_ps(ps_file, material, primitive):
             pbrParams = sh.pbrParams
         ) * sh.fLightAttenuation * sh.rgbLightColor * sh.fShadow )
 
+    with sh.function('get_ibl', sh.RgbF)(
+        pbrParams = sh.PbrParams,
+        N = sh.Vector3f,
+        V = sh.Vector3f
+    ):
+        sh.NdotV = sh.N.dot(sh.V).saturate()
+        sh.fNumMips = sh.Float(9)
+        sh.fLod = sh.pbrParams.fPerceptualRoughness * sh.fNumMips
+        sh.R = (-sh.V).reflect(sh.N).normalize()
+
+        sh.f2brdfSamplePoint = sh.Float2(
+            sh.NdotV, sh.pbrParams.fPerceptualRoughness
+        ).saturate()
+
+        sh.f2Brdf = sh.sIblBrdfLut(sh.tIblBrdfLut)(sh.f2brdfSamplePoint).xy
+
+        sh.rgbDiffuseLight = sh.sIblDiffuse(sh.tIblDiffuse)(sh.N).rgb
+        sh.rgbSpecularLight = sh.sIblSpecular(sh.tIblSpecular)(sh.R, lod = sh.fLod).rgb
+
+        sh.rgbDiffuse = sh.rgbDiffuseLight * sh.pbrParams.rgbDiffuseColor
+        sh.rgbSpecular = sh.rgbSpecularLight * (
+            sh.pbrParams.rgbSpecularColor * sh.f2Brdf.x + sh.f2Brdf.y
+        )
+        sh.return_(sh.rgbDiffuse + sh.rgbSpecular)
+
     with sh.main(_ps_main, sh.PsOut)(psIn = sh.VsOut):
         normalSample = _sample_material_texture('normal')
         if (normalSample is not None
