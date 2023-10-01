@@ -229,9 +229,9 @@ def _generate_ps(ps_file, material, primitive):
         )
 
     for ibl_texture_def in [
-        ('iblBrdfLut', sh.Texture2d),
-        ('iblDiffuse', sh.TextureCube),
-        ('iblSpecular', sh.TextureCube)
+        ('iblBrdfLut',  sh.Texture2d),
+        ('iblDiffuse',  sh.TextureCube(sh.RgbaF)),
+        ('iblSpecular', sh.TextureCube(sh.RgbaF))
     ]:
         texture_idx += 1
         texture_name = ibl_texture_def[0]
@@ -441,17 +441,17 @@ def _generate_ps(ps_file, material, primitive):
         sh.R = (-sh.V).reflect(sh.N).normalize()
 
         sh.f2brdfSamplePoint = sh.Float2(
-            sh.NdotV, sh.pbrParams.fPerceptualRoughness
+            (sh.NdotV, sh.pbrParams.fPerceptualRoughness)
         ).saturate()
 
-        sh.f2Brdf = sh.sIblBrdfLut(sh.tIblBrdfLut)(sh.f2brdfSamplePoint).xy
+        sh.f2Brdf = sh.g_sIblBrdfLut(sh.g_tIblBrdfLut)(sh.f2brdfSamplePoint).xy
 
-        sh.rgbDiffuseLight = sh.sIblDiffuse(sh.tIblDiffuse)(sh.N).rgb
-        sh.rgbSpecularLight = sh.sIblSpecular(sh.tIblSpecular)(sh.R, lod = sh.fLod).rgb
+        sh.rgbDiffuseLight = sh.g_sIblDiffuse(sh.g_tIblDiffuse)(sh.N).rgb
+        sh.rgbSpecularLight = sh.g_sIblSpecular(sh.g_tIblSpecular)(sh.R, lod = sh.fLod).rgb
 
-        sh.rgbDiffuse = sh.rgbDiffuseLight * sh.pbrParams.rgbDiffuseColor
+        sh.rgbDiffuse = sh.rgbDiffuseLight * sh.pbrParams.rgbDiffuse
         sh.rgbSpecular = sh.rgbSpecularLight * (
-            sh.pbrParams.rgbSpecularColor * sh.f2Brdf.x + sh.f2Brdf.y
+            sh.pbrParams.rgbF0 * sh.f2Brdf.x + sh.RgbF(sh.f2Brdf.y)
         )
         sh.return_(sh.rgbDiffuse + sh.rgbSpecular)
 
