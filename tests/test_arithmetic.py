@@ -58,8 +58,17 @@ class TestArithmetic(_base.Base):
 
     def test_arithmetic_float(self):
         self._test_arithmetic(
-            hlsl_file_name = 'test_arithmetic',
+            hlsl_file_name = 'test_arithmetic_float',
             scalar_type = 'Float',
             vector2_type = 'Float2'
         )
+
+    def test_arithmetic_int(self):
+        self._test_arithmetic(
+            hlsl_file_name = 'test_arithmetic_int',
+            scalar_type = 'Int',
+            vector2_type = 'Int2'
+        )
+
+
 
