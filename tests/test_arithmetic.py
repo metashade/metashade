@@ -25,9 +25,6 @@ class TestArithmetic(_base.Base):
         hlsl_path = self._get_hlsl_path(hlsl_file_name)
         with self._open_file(hlsl_path) as ps_file:
             sh = ps_6_0.Generator(ps_file)
-            
-            with sh.ps_output('PsOut') as PsOut:
-                PsOut.SV_Target('color', sh.Float4)
 
             with sh.function(
                 'test_arithmetic', getattr(sh, vector2_type)

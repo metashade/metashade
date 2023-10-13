@@ -1,8 +1,3 @@
-struct PsOut
-{
-	float4 color : SV_TARGET;
-};
-
 int2 test_arithmetic()
 {
 	int fD = -1;
