@@ -110,6 +110,18 @@ class Float4(_RawVectorF, rtsl.RawVector4):
             )
             super().__init__(expression)
 
+class Int1(_RawVectorI, rtsl.RawVector1):
+    _target_name = 'int1'
+
+class Int2(_RawVectorI, rtsl.RawVector2):
+    _target_name = 'int2'
+
+class Int3(_RawVectorI, rtsl.RawVector3):
+    _target_name = 'int3'
+
+class Int4(_RawVectorI, rtsl.RawVector4):
+    _target_name = 'int4'
+
 class _RawMatrixF(_MulMixin, _AnyLayoutMixin, rtsl._RawMatrixF):
     _element_type = Float
 

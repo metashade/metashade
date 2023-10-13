@@ -29,7 +29,9 @@ class TestArithmetic(_base.Base):
             with sh.ps_output('PsOut') as PsOut:
                 PsOut.SV_Target('color', sh.Float4)
 
-            with sh.function('test_arithmetic', sh.Float2)():
+            with sh.function(
+                'test_arithmetic', getattr(sh, vector2_type)
+            )():
                 sh.fD = getattr(sh, scalar_type)(-1)
 
                 sh.f2A = getattr(sh, vector2_type)(0)
