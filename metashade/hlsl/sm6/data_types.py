@@ -46,14 +46,15 @@ class Int(rtsl.Int, _AnyLayoutMixin):
     pass
 
 class _RawVector(rtsl._RawVector, _MulMixin, _AnyLayoutMixin):
-    _element_type = Float
-
     def __init__(self, _ = None):
         element_ref = self.__class__._element_type._get_value_ref(_)
         super().__init__(
             '.'.join((str(element_ref), 'x' * self.__class__._dim))
                 if element_ref is not None else _
         )
+
+class _RawVectorF(_RawVector):
+    _element_type = Float
 
     # TODO: auto-generate a mixin for the following methods:
     # https://github.com/ppenenko/metashade/issues/9
@@ -69,17 +70,20 @@ class _RawVector(rtsl._RawVector, _MulMixin, _AnyLayoutMixin):
     
     def reflect(self, rhs):
         return self.__class__( f'reflect({self}, {rhs})' )
+    
+class _RawVectorI(_RawVector):
+    _element_type = Int
 
-class Float1(_RawVector, rtsl.Float1):
+class Float1(_RawVectorF, rtsl.RawVector1):
     _target_name = 'float1'
 
-class Float2(_RawVector, rtsl.Float2):
+class Float2(_RawVectorF, rtsl.RawVector2):
     _target_name = 'float2'
 
-class Float3(_RawVector, rtsl.Float3):
+class Float3(_RawVectorF, rtsl.RawVector3):
     _target_name = 'float3'
 
-class Float4(_RawVector, rtsl.Float4):
+class Float4(_RawVectorF, rtsl.RawVector4):
     _target_name = 'float4'
 
     def __init__(self, _ = None, xyz = None, w = None):
@@ -106,7 +110,7 @@ class Float4(_RawVector, rtsl.Float4):
             )
             super().__init__(expression)
 
-class _RawMatrixF(_MulMixin, _AnyLayoutMixin, rtsl._RawMatrix):
+class _RawMatrixF(_MulMixin, _AnyLayoutMixin, rtsl._RawMatrixF):
     _element_type = Float
 
     @classmethod
@@ -115,7 +119,7 @@ class _RawMatrixF(_MulMixin, _AnyLayoutMixin, rtsl._RawMatrix):
 
     def __init__(self, _ = None, rows = None):
         if rows is None:
-            rtsl._RawMatrix.__init__(self, _ = _)
+            rtsl._RawMatrixF.__init__(self, _ = _)
         else:
             if _ is not None:
                 raise RuntimeError(
@@ -133,7 +137,7 @@ class _RawMatrixF(_MulMixin, _AnyLayoutMixin, rtsl._RawMatrix):
                     'Unexpected row type in matrix constructor'
                 )
             
-            rtsl._RawMatrix.__init__(
+            rtsl._RawMatrixF.__init__(
                 self,
                 _ = '{dtype}({rows})'.format(
                     dtype = self.__class__._target_name,
@@ -152,7 +156,7 @@ for rows in range(1, 5):
             {'_target_name' : target_name}
         )
 
-class _MatrixF(rtsl._Matrix, _RawMatrixF):
+class _MatrixF(rtsl._MatrixF, _RawMatrixF):
     @classmethod
     def _get_row_type_name(cls):
         return f'Vector{cls._dims[1]}f'

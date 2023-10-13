@@ -21,7 +21,7 @@ class _RawVector(clike.ArithmeticType):
 
     @classmethod
     def _get_related_type_name(cls, dim : int):
-        return f'Float{dim}'
+        return f'{cls._element_type.__name__}{dim}'
 
     @classmethod
     def _get_related_type(cls, dim : int):
@@ -35,6 +35,7 @@ class _RawVector(clike.ArithmeticType):
         return getattr(sys.modules[cls.__module__], type_name)
 
     def __getattr__(self, name):
+        '''Implements swizzling.'''
         is_valid_swizzle = False
         try:
             is_valid_swizzle = len(name) <= 4 and all(
@@ -46,13 +47,14 @@ class _RawVector(clike.ArithmeticType):
 
         if not is_valid_swizzle:
             raise AttributeError
-        dtype = self._get_related_type(len(name))
+        result_dtype = self._get_related_type(dim = len(name))
         return self._sh._instantiate_dtype(
-            dtype,
+            result_dtype,
             '.'.join((str(self), name))
         )
 
     def _assign_write_mask(self, name, value) -> bool:
+        '''Implements assignment with a swizzling mask.'''
         if len(name) > 4:
             return False
         
@@ -162,13 +164,13 @@ class _RawVector(clike.ArithmeticType):
             f'dot({self}, {rhs})'
         )
 
-class Float1(_RawVector):
+class RawVector1(_RawVector):
     _dim = 1
 
-class Float2(_RawVector):
+class RawVector2(_RawVector):
     _dim = 2
 
-class Float3(_RawVector):
+class RawVector3(_RawVector):
     _dim = 3
 
     def cross(self, rhs):
@@ -180,10 +182,10 @@ class Float3(_RawVector):
             self.__class__, f'cross({self}, {rhs})'
         )
 
-class Float4(_RawVector):
+class RawVector4(_RawVector):
     _dim = 4
 
-class _RawMatrix(clike.ArithmeticType):
+class _RawMatrixF(clike.ArithmeticType):
     @classmethod
     def _get_related_type_name(cls, dims):
         return 'Float{rows}x{cols}'.format(rows = dims[0], cols = dims[1])
@@ -219,11 +221,11 @@ for rows in range(1, 5):
         name = f'Float{rows}x{cols}'
         globals()[name] = type(
             name,
-            (_RawMatrix,),
+            (_RawMatrixF,),
             {'_dims' : (rows, cols)}
         )
 
-class _Matrix(_RawMatrix):
+class _MatrixF(_RawMatrixF):
     @classmethod
     def _get_related_type_name(cls, dims):
         return 'Matrix{rows}x{cols}f'.format(rows = dims[0], cols = dims[1])
