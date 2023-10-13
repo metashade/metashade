@@ -14,20 +14,13 @@
 
 import collections, numbers, sys
 import metashade.clike.data_types as clike
-from metashade.clike.data_types import Float
-
-def _check_float_type(dtype):
-    if not issubclass(dtype, Float):
-        raise RuntimeError(
-            'Vectors of types other than 32-bit float are not implemented yet'
-        )
+from metashade.clike.data_types import Float, Int
 
 class _RawVector(clike.ArithmeticType):
     _swizzle_str = 'xyzw'
 
     @classmethod
     def _get_related_type_name(cls, dim : int):
-        _check_float_type(cls._element_type)
         return f'Float{dim}'
 
     @classmethod
@@ -193,7 +186,6 @@ class Float4(_RawVector):
 class _RawMatrix(clike.ArithmeticType):
     @classmethod
     def _get_related_type_name(cls, dims):
-        _check_float_type(cls._element_type)
         return 'Float{rows}x{cols}'.format(rows = dims[0], cols = dims[1])
 
     @classmethod
@@ -234,11 +226,9 @@ for rows in range(1, 5):
 class _Matrix(_RawMatrix):
     @classmethod
     def _get_related_type_name(cls, dims):
-        _check_float_type(cls._element_type)
         return 'Matrix{rows}x{cols}f'.format(rows = dims[0], cols = dims[1])
 
 def _get_vector_type_name(element_type, dim : int):
-    _check_float_type(element_type)
     return f'Vector{dim}f'
 
 class _Vector(_RawVector):
@@ -264,7 +254,6 @@ class Vector4(_Vector):
 class _Point(_RawVector):
     @classmethod
     def _get_related_type_name(cls, dim : int):
-        _check_float_type(cls._element_type)
         return f'Point{dim}f'
     
     @classmethod
