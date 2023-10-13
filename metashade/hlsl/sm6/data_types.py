@@ -42,6 +42,9 @@ class _MulMixin:
 class Float(rtsl.Float, _AnyLayoutMixin):
     pass
 
+class Int(rtsl.Int, _AnyLayoutMixin):
+    pass
+
 class _RawVector(rtsl._RawVector, _MulMixin, _AnyLayoutMixin):
     _element_type = Float
 

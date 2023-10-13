@@ -131,11 +131,15 @@ class ArithmeticType(BaseType):
     def __neg__(self):
         return self._sh._instantiate_dtype(self.__class__, f'-{self}')
 
-class Float(ArithmeticType):
-    _target_name = 'float'
-
+class Scalar(ArithmeticType):
     @staticmethod
     def _get_value_ref_static(concrete_cls, value):
         return (str(value) if isinstance(value, numbers.Number)
             else super()._get_value_ref_static(concrete_cls, value)
         )
+
+class Float(Scalar):
+    _target_name = 'float'
+
+class Int(Scalar):
+    _target_name = 'int'

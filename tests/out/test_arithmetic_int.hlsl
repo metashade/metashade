@@ -5,5 +5,6 @@ struct PsOut
 
 float2 test_arithmetic()
 {
+	int fD = -1;
 }
 
