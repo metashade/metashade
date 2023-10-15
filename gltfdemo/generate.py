@@ -482,7 +482,7 @@ def _generate_ps(ps_file, material, primitive):
         )
         sh.return_(sh.rgbDiffuse + sh.rgbSpecular)
 
-    with sh.main(_ps_main, sh.PsOut)(psIn = sh.VsOut):
+    with sh.function('getNormal', sh.Vector3f)(psIn = sh.VsOut):
         normalSample = _sample_material_texture('normal')
         if (normalSample is not None
             and primitive.attributes.TANGENT is not None
@@ -491,10 +491,14 @@ def _generate_ps(ps_file, material, primitive):
             sh.tbn = sh.tbn.transpose()
             sh.Nw = sh.tbn.xform(2.0 * normalSample.xyz - sh.Vector3f(1.0))
         else:
-            sh.uvNormal = _get_material_uv('normal')
+            #sh.uvNormal = _get_material_uv('normal')
             sh.Nw = sh.psIn.Nw
         sh.Nw = sh.Nw.normalize()
+        sh.return_(sh.Nw)
+
+    with sh.main(_ps_main, sh.PsOut)(psIn = sh.VsOut):
         sh.Vw = (sh.g_cameraPw - sh.psIn.Pw).normalize()
+        sh.Nw = sh.getNormal(psIn = sh.psIn)
         
         sh.pbrParams = sh.metallicRoughness(psIn = sh.psIn)
 
