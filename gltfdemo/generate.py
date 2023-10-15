@@ -250,7 +250,7 @@ def _generate_ps(ps_file, material, primitive):
     sh.uniform('g_tShadowMap', sh.Texture2d, register = shadow_map_register)
     sh.uniform('g_sShadowMap', sh.SamplerCmp, register = shadow_map_register)
 
-    def _sample_material_texture(texture_name : str):
+    def _get_material_uv(texture_name : str):
         material_texture = material_textures.get(texture_name)
         if material_texture is None:
             return None
@@ -259,7 +259,13 @@ def _generate_ps(ps_file, material, primitive):
         if uv_set_idx is None:
             uv_set_idx = 0
 
-        uv = getattr(sh.psIn, f'uv{uv_set_idx}')
+        return getattr(sh.psIn, f'uv{uv_set_idx}')
+
+    def _sample_material_texture(texture_name : str):
+        uv = _get_material_uv(texture_name)
+        if uv is None:
+            return None
+
         texture = getattr(sh, _get_texture_uniform_name(texture_name))
         sampler = getattr(sh, _get_sampler_uniform_name(texture_name))
 
@@ -485,7 +491,7 @@ def _generate_ps(ps_file, material, primitive):
             sh.tbn = sh.tbn.transpose()
             sh.Nw = sh.tbn.xform(2.0 * normalSample.xyz - sh.Vector3f(1.0))
         else:
-            print ('TODO: https://github.com/ppenenko/metashade/issues/19')
+            sh.uvNormal = _get_material_uv('normal')
             sh.Nw = sh.psIn.Nw
         sh.Nw = sh.Nw.normalize()
         sh.Vw = (sh.g_cameraPw - sh.psIn.Pw).normalize()
