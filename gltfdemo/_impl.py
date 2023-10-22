@@ -12,14 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import argparse, io, math, os, pathlib, sys
-import multiprocessing as mp
+import math
 from collections import namedtuple
-from pygltflib import GLTF2
-
 from metashade.hlsl.sm6 import ps_6_0, vs_6_0
-import metashade.hlsl.common as hlsl_common
-import metashade.util as util
 
 def _generate_vs_out(sh, primitive):
     with sh.vs_output('VsOut') as VsOut:

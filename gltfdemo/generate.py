@@ -12,16 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import argparse, io, math, os, pathlib, sys
+import argparse, io, os, pathlib, sys
 import multiprocessing as mp
 from collections import namedtuple
 from pygltflib import GLTF2
 
-from metashade.hlsl.sm6 import ps_6_0, vs_6_0
 import metashade.hlsl.common as hlsl_common
 import metashade.util as util
 
-import shaders as sh
+import _impl
 
 class _Shader:
     def __init__(self, file_path):
@@ -48,7 +47,7 @@ class _Shader:
 class _VertexShader(_Shader):
     @staticmethod
     def _get_entry_point_name():
-        return _vs_main
+        return _impl._vs_main
     
     @staticmethod
     def _get_profile():
@@ -57,7 +56,7 @@ class _VertexShader(_Shader):
 class _PixelShader(_Shader):
     @staticmethod
     def _get_entry_point_name():
-        return _ps_main
+        return _impl._ps_main
     
     @staticmethod
     def _get_profile():
@@ -92,14 +91,14 @@ class _AssetProcessor:
                 with util.TimedScope(f'Generating {file_path} ', 'Done'), \
                     open(file_path, 'w') as vs_file:
                     #
-                    sh._generate_vs(vs_file, primitive)
+                    _impl._generate_vs(vs_file, primitive)
                 shaders.append(_VertexShader(file_path))
 
                 file_path = _get_file_path('PS')
                 with util.TimedScope(f'Generating {file_path} ', 'Done'), \
                     open(file_path, 'w') as ps_file:
                     #
-                    sh._generate_ps(
+                    _impl._generate_ps(
                         ps_file,
                         gltf_asset.materials[primitive.material],
                         primitive
