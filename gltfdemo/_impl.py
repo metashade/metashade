@@ -93,9 +93,9 @@ def _generate_per_object_uniform_buffer(sh, is_ps : bool):
         if is_ps:
             sh.uniform('g_perObjectPbrFactors', sh.PbrFactors)
 
-_vs_main = 'mainVS'
+vs_main = 'mainVS'
 
-def _generate_vs(vs_file, primitive):
+def generate_vs(vs_file, primitive):
     sh = vs_6_0.Generator(
         vs_file,
         # the host app supplies transposed matrix uniforms
@@ -135,7 +135,7 @@ def _generate_vs(vs_file, primitive):
 
     _generate_vs_out(sh, primitive)
 
-    with sh.main(_vs_main, sh.VsOut)(vsIn = sh.VsIn):
+    with sh.main(vs_main, sh.VsOut)(vsIn = sh.VsIn):
         sh.Pw = sh.g_WorldXf.xform(sh.vsIn.Pobj)
         sh.vsOut = sh.VsOut()
         sh.vsOut.Pclip = sh.g_VpXf.xform(sh.Pw)
@@ -153,9 +153,9 @@ def _generate_vs(vs_file, primitive):
 
         sh.return_(sh.vsOut)
 
-_ps_main = 'mainPS'
+ps_main = 'mainPS'
 
-def _generate_ps(ps_file, material, primitive):
+def generate_ps(ps_file, material, primitive):
     sh = ps_6_0.Generator(
         ps_file,
         # the host app supplies transposed matrix uniforms
@@ -508,7 +508,7 @@ def _generate_ps(ps_file, material, primitive):
 
         sh.return_(sh.Nw)
 
-    with sh.main(_ps_main, sh.PsOut)(psIn = sh.VsOut):
+    with sh.main(ps_main, sh.PsOut)(psIn = sh.VsOut):
         sh.Vw = (sh.g_cameraPw - sh.psIn.Pw).normalize()
         sh.Nw = sh.getNormal(psIn = sh.psIn)
         
