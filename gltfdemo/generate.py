@@ -12,10 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import argparse, io, os, pathlib, sys
-import functools
+import argparse, functools, io, os, pathlib, sys
 import multiprocessing as mp
-from typing import Any, List, NamedTuple
+from typing import List, NamedTuple
 from pygltflib import GLTF2
 
 import metashade.hlsl.common as hlsl_common
@@ -35,13 +34,14 @@ class _Shader:
     def _get_profile():
         return None
 
-    def compile(self) -> str:
+    def compile(self, to_spirv : bool) -> str:
         log = io.StringIO()
         sys.stdout = log
         hlsl_common.compile(
             path = self._file_path,
             entry_point_name = self._get_entry_point_name(),
-            profile = self._get_profile()
+            profile = self._get_profile(),
+            spirv = to_spirv
         )
         return log.getvalue()
 
@@ -69,8 +69,7 @@ class _AssetResult(NamedTuple):
 
 def _process_asset(
         gltf_file_path : str,
-        out_dir : str,
-        to_spirv : bool
+        out_dir : str
 ) -> _AssetResult:
     shaders = []
     sys.stdout = io.StringIO()
@@ -137,8 +136,7 @@ if __name__ == "__main__":
         for asset_result in pool.imap_unordered(
             functools.partial(
                 _process_asset,
-                out_dir = args.out_dir,
-                to_spirv = args.spirv
+                out_dir = args.out_dir
             ),
             pathlib.Path(args.gltf_dir).glob('**/*.gltf')
         ):
@@ -148,6 +146,10 @@ if __name__ == "__main__":
     if args.compile:
         with mp.Pool() as pool:
             for compilation_log in pool.imap_unordered(
-                _Shader.compile, shaders
+                functools.partial(
+                    _Shader.compile,
+                    to_spirv = args.spirv
+                ),
+                shaders
             ):
                 print(compilation_log)
