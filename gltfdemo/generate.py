@@ -18,7 +18,7 @@ from typing import List, NamedTuple
 from pygltflib import GLTF2
 
 import metashade.hlsl.common as hlsl_common
-import metashade.util as util
+import metashade.util.perf as perf
 
 import _impl
 
@@ -75,7 +75,7 @@ def _process_asset(
     shaders = []
     sys.stdout = io.StringIO()
     
-    with util.TimedScope(f'Loading glTF asset {gltf_file_path} '):
+    with perf.TimedScope(f'Loading glTF asset {gltf_file_path} '):
         gltf_asset = GLTF2().load(gltf_file_path)
 
     for mesh_idx, mesh in enumerate(gltf_asset.meshes):
@@ -91,14 +91,14 @@ def _process_asset(
                 )
             
             file_path = _get_file_path('VS')
-            with util.TimedScope(f'Generating {file_path} ', 'Done'), \
+            with perf.TimedScope(f'Generating {file_path} ', 'Done'), \
                 open(file_path, 'w') as vs_file:
                 #
                 _impl.generate_vs(vs_file, primitive)
             shaders.append(_VertexShader(file_path))
 
             file_path = _get_file_path('PS')
-            with util.TimedScope(f'Generating {file_path} ', 'Done'), \
+            with perf.TimedScope(f'Generating {file_path} ', 'Done'), \
                 open(file_path, 'w') as ps_file:
                 #
                 _impl.generate_ps(
@@ -121,9 +121,9 @@ if __name__ == "__main__":
         help = "Compile the generated shaders with DXC (has to be in PATH)"
     )
     parser.add_argument(
-        "--spirv",
+        "--to_glsl",
         action = 'store_true',
-        help = "Compile to SPIR-V"
+        help = "Cross-compile to GLSL with SPIRV-Cross"
     )
     args = parser.parse_args()
     
@@ -151,7 +151,7 @@ if __name__ == "__main__":
             for compilation_log in pool.imap_unordered(
                 functools.partial(
                     _Shader.compile,
-                    to_spirv = args.spirv
+                    to_spirv = args.to_glsl
                 ),
                 shaders
             ):

@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import pathlib, shutil, subprocess
-import metashade.util as util
+import metashade.util.perf as perf
 
 def identify_dxc():
     print(f'Found DXC executable: {shutil.which("dxc")}')
@@ -55,7 +55,7 @@ def compile(
         args += ['-Fo', out_path]
         message += f' {out_path}'
 
-    with util.TimedScope(message):
+    with perf.TimedScope(message):
         dxc_result = subprocess.run( args, capture_output = True )
 
     if dxc_result.returncode != 0:
