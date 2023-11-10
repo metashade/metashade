@@ -64,11 +64,12 @@ class _PixelShader(_Shader):
 
 class _AssetResult(NamedTuple):
     log : io.StringIO
-    shaders : List[Any]
+    shaders : List[_Shader]
 
 class _AssetProcessor:
-    def __init__(self, out_dir):
+    def __init__(self, out_dir, to_spirv):
         self._out_dir = out_dir
+        self._to_spirv = to_spirv
 
     def __call__(self, gltf_file_path : str) -> _AssetResult:
         shaders = []
@@ -119,6 +120,11 @@ if __name__ == "__main__":
         action = 'store_true',
         help = "Compile the generated shaders with DXC (has to be in PATH)"
     )
+    parser.add_argument(
+        "--spirv",
+        action = 'store_true',
+        help = "Compile to SPIR-V"
+    )
     args = parser.parse_args()
     
     if not os.path.isdir(args.gltf_dir):
@@ -129,7 +135,10 @@ if __name__ == "__main__":
     shaders = []
     with mp.Pool() as pool:
         for asset_result in pool.imap_unordered(
-            _AssetProcessor(args.out_dir),
+            _AssetProcessor(
+                out_dir = args.out_dir,
+                to_spirv = args.spirv
+            ),
             pathlib.Path(args.gltf_dir).glob('**/*.gltf')
         ):
             print(asset_result.log)
@@ -137,5 +146,7 @@ if __name__ == "__main__":
 
     if args.compile:
         with mp.Pool() as pool:
-            for compilation_log in pool.imap_unordered(_Shader.compile, shaders):
+            for compilation_log in pool.imap_unordered(
+                _Shader.compile, shaders
+            ):
                 print(compilation_log)

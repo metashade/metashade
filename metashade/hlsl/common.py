@@ -19,7 +19,8 @@ def compile(
     path : str,
     entry_point_name : str,
     profile : str,
-    include_paths = None
+    include_paths = None,
+    spirv = False
 ) -> int:
     args = [
         'dxc',
@@ -27,6 +28,9 @@ def compile(
         '-E', entry_point_name,
         path
     ]
+
+    if spirv:
+        args.append('-spirv')
 
     if include_paths:
         for path in include_paths:
