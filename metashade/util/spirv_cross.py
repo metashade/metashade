@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import shutil, subprocess
+import pathlib, shutil, subprocess
+from metashade.util import perf
 
 _exe_name = 'spirv-cross'
 
@@ -20,4 +21,12 @@ def identify():
     print(f'Found SPIRV-Cross executable: {shutil.which(_exe_name)}')
 
 def spirv_to_glsl(spirv_path : str):
-    pass
+    glsl_path = pathlib.Path(spirv_path).with_suffix('.glsl')
+    args = [
+        _exe_name,
+        '--output', glsl_path,
+        spirv_path
+    ]
+
+    with perf.TimedScope(f'SPIRV-Cross generating {glsl_path}'):
+        result = subprocess.run( args, capture_output = True )

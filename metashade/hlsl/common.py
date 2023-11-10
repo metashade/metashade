@@ -52,7 +52,7 @@ def compile(
         for path in include_paths:
             args += ['-I', path]
 
-    message = 'Compiling'
+    message = 'DXC compiling'
     if output_to_file:
         out_path = pathlib.Path(src_path).with_suffix(
             '.spv' if to_spirv else '.cso'
