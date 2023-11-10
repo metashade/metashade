@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import pathlib, shutil, subprocess
+from typing import NamedTuple
 from metashade.util import perf
 
 def identify_dxc():
@@ -25,6 +26,10 @@ def identify_dxc():
     dxc_result = subprocess.run( args, capture_output = True )
     print( dxc_result.stdout.decode() )
 
+class CompilationResult(NamedTuple):
+    returncode : int
+    out_path : pathlib.Path
+
 def compile(
     src_path : str,
     entry_point_name : str,
@@ -32,7 +37,7 @@ def compile(
     include_paths = None,
     to_spirv : bool = False,
     output_to_file : bool = False
-) -> int:
+) -> CompilationResult:
     args = [
         'dxc',
         '-T', profile,
@@ -62,4 +67,8 @@ def compile(
         print( f'DXC compilation failed with code {dxc_result.returncode}, '
             f'stderr:\n{dxc_result.stderr.decode()}'
         )
-    return dxc_result.returncode
+    
+    return CompilationResult(
+        returncode = dxc_result.returncode,
+        out_path = out_path if output_to_file else None
+    )

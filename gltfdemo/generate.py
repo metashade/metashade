@@ -34,16 +34,22 @@ class _Shader:
     def _get_profile():
         return None
 
-    def compile(self, to_spirv : bool) -> str:
+    def compile(self, to_glsl : bool) -> str:
         log = io.StringIO()
         sys.stdout = log
-        hlsl_common.compile(
+        
+        compilation_result = hlsl_common.compile(
             src_path = self._file_path,
             entry_point_name = self._get_entry_point_name(),
             profile = self._get_profile(),
-            to_spirv = to_spirv,
+            to_spirv = to_glsl,
             output_to_file = True
         )
+
+        if to_glsl:
+            spirv_cross.spirv_to_glsl(
+                spirv_path = compilation_result.out_path
+            )
         return log.getvalue()
 
 class _VertexShader(_Shader):
@@ -154,7 +160,7 @@ if __name__ == "__main__":
             for compilation_log in pool.imap_unordered(
                 functools.partial(
                     _Shader.compile,
-                    to_spirv = args.to_glsl
+                    to_glsl = args.to_glsl
                 ),
                 shaders
             ):

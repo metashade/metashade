@@ -47,4 +47,4 @@ class Base:
             include_paths = [
                 pathlib.Path(sys.modules[self.__module__].__file__).parent
             ]
-        )
+        ).returncode
