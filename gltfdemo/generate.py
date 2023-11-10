@@ -18,7 +18,7 @@ from typing import List, NamedTuple
 from pygltflib import GLTF2
 
 import metashade.hlsl.common as hlsl_common
-import metashade.util.perf as perf
+from metashade.util import perf, spirv_cross
 
 import _impl
 
@@ -121,7 +121,7 @@ if __name__ == "__main__":
         help = "Compile the generated shaders with DXC (has to be in PATH)"
     )
     parser.add_argument(
-        "--to_glsl",
+        "--to-glsl",
         action = 'store_true',
         help = "Cross-compile to GLSL with SPIRV-Cross"
     )
@@ -147,6 +147,9 @@ if __name__ == "__main__":
     if args.compile:
         print()
         hlsl_common.identify_dxc()
+        if args.to_glsl:
+            spirv_cross.identify()
+
         with mp.Pool() as pool:
             for compilation_log in pool.imap_unordered(
                 functools.partial(

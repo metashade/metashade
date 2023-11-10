@@ -28,7 +28,7 @@
             ]
         },
         {
-            "name": "glTF generate and compile to SPIR-V",
+            "name": "glTF generate and cross-compile to GLSL",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/gltfdemo/generate.py",
@@ -37,7 +37,7 @@
                 "--gltf-dir", "${workspaceFolder}/../glTFSample/media/Cauldron-Media",
                 "--out-dir", "${workspaceFolder}/../metashade-out",
                 "--compile",
-                "--spirv"
+                "--to-glsl"
             ]
         },
         {

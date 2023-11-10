@@ -12,15 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-def identity():
-    print(f'Found SPIRV-Cross executable: {shutil.which("spirv-cross")}')
-    
-    args = [
-        'dxc',
-        '--version'
-    ]
-    dxc_result = subprocess.run( args, capture_output = True )
-    print( dxc_result.stdout.decode() )
+import shutil, subprocess
+
+_exe_name = 'spirv-cross'
+
+def identify():
+    print(f'Found SPIRV-Cross executable: {shutil.which(_exe_name)}')
 
 def spirv_to_glsl(spirv_path : str):
     pass
