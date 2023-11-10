@@ -15,14 +15,8 @@
 import pathlib, subprocess
 import metashade.util as util
 
-def compile(
-    src_path : str,
-    entry_point_name : str,
-    profile : str,
-    include_paths = None,
-    to_spirv : bool = False,
-    output_to_file : bool = False
-) -> int:
+def identify_dxc():
+    print('Found DXC executables (using the top one):')
     args = [
         'where',
         'dxc'
@@ -39,6 +33,14 @@ def compile(
     dxc_result = subprocess.run( args, capture_output = True )
     print( dxc_result.stdout.decode() )
 
+def compile(
+    src_path : str,
+    entry_point_name : str,
+    profile : str,
+    include_paths = None,
+    to_spirv : bool = False,
+    output_to_file : bool = False
+) -> int:
     args = [
         'dxc',
         '-T', profile,
