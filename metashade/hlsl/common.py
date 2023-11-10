@@ -12,24 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pathlib, subprocess
+import pathlib, shutil, subprocess
 import metashade.util as util
 
 def identify_dxc():
-    print('Found DXC executables (using the top one):')
-    args = [
-        'where',
-        'dxc'
-    ]
-
-    dxc_result = subprocess.run( args, capture_output = True )
-    print( dxc_result.stdout.decode() )
+    print(f'Found DXC executable: {shutil.which("dxc")}')
     
     args = [
         'dxc',
         '--version'
     ]
-
     dxc_result = subprocess.run( args, capture_output = True )
     print( dxc_result.stdout.decode() )
 
