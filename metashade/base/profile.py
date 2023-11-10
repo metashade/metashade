@@ -15,7 +15,7 @@
 from . import data_types
 from . import context
 
-import copy
+import copy, inspect, sys
 
 class Generator:
     """
@@ -30,10 +30,36 @@ class Generator:
         
         self._globals = dict()
         self._context_stack = list()
-        
+
+    class _DtypeFactory:
+        def __init__(self, sh, dtype):
+            self._sh = sh
+            self._dtype = dtype
+
+        def _get_dtype(self):
+            return self._dtype
+
+        def __call__(self, *args, **kwargs):
+            value = self._dtype(*args, **kwargs)
+            value._set_generator(self._sh)
+            return value
+
+    def _register_dtypes(self, dtype_module_name : str):
+        for dtype_name, dtype in inspect.getmembers(
+            sys.modules[dtype_module_name],
+            lambda member: (inspect.isclass(member)
+                and member.__module__ == dtype_module_name
+                and not member.__name__.startswith('_')
+        )):
+            setattr(self, dtype_name, self._DtypeFactory(self, dtype))
+
+    def _instantiate_dtype(self, dtype, *args, **kwargs):
+        dtype_factory = getattr(self, dtype.__name__)
+        return dtype_factory(*args, **kwargs)
+
     def _push_indent(self):
         self._indent += self._indent_delta
-        
+
     def _pop_indent(self):
         self._indent -= self._indent_delta
         
@@ -91,7 +117,9 @@ class Generator:
             raise AttributeError
 
     def __setattr__(self, name, value):
-        if name.startswith('_'):
+        if ( name.startswith('_')
+            or isinstance(value, self._DtypeFactory)
+        ):
             object.__setattr__(self, name, value)
             return
 
@@ -114,3 +142,6 @@ class Generator:
         self._emit_indent()
         value._define(self, name)
         self._emit(';\n')
+
+    def __floordiv__(self, comment):
+        self._single_line_comment(comment)

@@ -28,6 +28,19 @@
             ]
         },
         {
+            "name": "glTF generate and compile to SPIR-V",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/gltfdemo/generate.py",
+            "console": "integratedTerminal",
+            "args": [
+                "--gltf-dir", "${workspaceFolder}/../glTFSample/media/Cauldron-Media",
+                "--out-dir", "${workspaceFolder}/../metashade-out",
+                "--compile",
+                "--spirv"
+            ]
+        },
+        {
             "name": "glTF usage",
             "type": "python",
             "request": "launch",

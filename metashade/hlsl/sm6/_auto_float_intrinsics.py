@@ -19,131 +19,131 @@ from . import _intrinsics_base
 
 class AnyLayoutMixin(_intrinsics_base.Mixin):
 	def acos(self):
-		return self.__class__( f'acos({self})' )
+		return self._sh._instantiate_dtype( self.__class__, f'acos({self})' )
 
 	def asin(self):
-		return self.__class__( f'asin({self})' )
+		return self._sh._instantiate_dtype( self.__class__, f'asin({self})' )
 
 	def atan(self):
-		return self.__class__( f'atan({self})' )
+		return self._sh._instantiate_dtype( self.__class__, f'atan({self})' )
 
 	def atan2(self, y):
-		return self.__class__( f'atan2({self}, {y})' )
+		return self._sh._instantiate_dtype( self.__class__, f'atan2({self}, {y})' )
 
 	def ceil(self):
-		return self.__class__( f'ceil({self})' )
+		return self._sh._instantiate_dtype( self.__class__, f'ceil({self})' )
 
 	def clip(self):
 		self._emit_void_intrinsic( f'clip({self})' )
 
 	def cos(self):
-		return self.__class__( f'cos({self})' )
+		return self._sh._instantiate_dtype( self.__class__, f'cos({self})' )
 
 	def cosh(self):
-		return self.__class__( f'cosh({self})' )
+		return self._sh._instantiate_dtype( self.__class__, f'cosh({self})' )
 
 	def ddx(self):
-		return self.__class__( f'ddx({self})' )
+		return self._sh._instantiate_dtype( self.__class__, f'ddx({self})' )
 
 	def ddx_coarse(self):
-		return self.__class__( f'ddx_coarse({self})' )
+		return self._sh._instantiate_dtype( self.__class__, f'ddx_coarse({self})' )
 
 	def ddx_fine(self):
-		return self.__class__( f'ddx_fine({self})' )
+		return self._sh._instantiate_dtype( self.__class__, f'ddx_fine({self})' )
 
 	def ddy(self):
-		return self.__class__( f'ddy({self})' )
+		return self._sh._instantiate_dtype( self.__class__, f'ddy({self})' )
 
 	def ddy_coarse(self):
-		return self.__class__( f'ddy_coarse({self})' )
+		return self._sh._instantiate_dtype( self.__class__, f'ddy_coarse({self})' )
 
 	def ddy_fine(self):
-		return self.__class__( f'ddy_fine({self})' )
+		return self._sh._instantiate_dtype( self.__class__, f'ddy_fine({self})' )
 
 	def degrees(self):
-		return self.__class__( f'degrees({self})' )
+		return self._sh._instantiate_dtype( self.__class__, f'degrees({self})' )
 
 	def exp(self):
-		return self.__class__( f'exp({self})' )
+		return self._sh._instantiate_dtype( self.__class__, f'exp({self})' )
 
 	def exp2(self):
-		return self.__class__( f'exp2({self})' )
+		return self._sh._instantiate_dtype( self.__class__, f'exp2({self})' )
 
 	def floor(self):
-		return self.__class__( f'floor({self})' )
+		return self._sh._instantiate_dtype( self.__class__, f'floor({self})' )
 
 	def fmod(self, b):
-		return self.__class__( f'fmod({self}, {b})' )
+		return self._sh._instantiate_dtype( self.__class__, f'fmod({self}, {b})' )
 
 	def frac(self):
-		return self.__class__( f'frac({self})' )
+		return self._sh._instantiate_dtype( self.__class__, f'frac({self})' )
 
 	def frexp(self, exp):
-		return self.__class__( f'frexp({self}, {exp})' )
+		return self._sh._instantiate_dtype( self.__class__, f'frexp({self}, {exp})' )
 
 	def fwidth(self):
-		return self.__class__( f'fwidth({self})' )
+		return self._sh._instantiate_dtype( self.__class__, f'fwidth({self})' )
 
 	def ldexp(self, exp):
-		return self.__class__( f'ldexp({self}, {exp})' )
+		return self._sh._instantiate_dtype( self.__class__, f'ldexp({self}, {exp})' )
 
 	def lerp(self, a, b):
-		return self.__class__( f'lerp({a}, {b}, {self})' )
+		return self._sh._instantiate_dtype( self.__class__, f'lerp({a}, {b}, {self})' )
 
 	def log(self):
-		return self.__class__( f'log({self})' )
+		return self._sh._instantiate_dtype( self.__class__, f'log({self})' )
 
 	def log10(self):
-		return self.__class__( f'log10({self})' )
+		return self._sh._instantiate_dtype( self.__class__, f'log10({self})' )
 
 	def log2(self):
-		return self.__class__( f'log2({self})' )
+		return self._sh._instantiate_dtype( self.__class__, f'log2({self})' )
 
 	def modf(self, ip):
-		return self.__class__( f'modf({self}, {ip})' )
+		return self._sh._instantiate_dtype( self.__class__, f'modf({self}, {ip})' )
 
 	def pow(self, y):
-		return self.__class__( f'pow({self}, {y})' )
+		return self._sh._instantiate_dtype( self.__class__, f'pow({self}, {y})' )
 
 	def radians(self):
-		return self.__class__( f'radians({self})' )
+		return self._sh._instantiate_dtype( self.__class__, f'radians({self})' )
 
 	def rcp(self):
-		return self.__class__( f'rcp({self})' )
+		return self._sh._instantiate_dtype( self.__class__, f'rcp({self})' )
 
 	def round(self):
-		return self.__class__( f'round({self})' )
+		return self._sh._instantiate_dtype( self.__class__, f'round({self})' )
 
 	def rsqrt(self):
-		return self.__class__( f'rsqrt({self})' )
+		return self._sh._instantiate_dtype( self.__class__, f'rsqrt({self})' )
 
 	def saturate(self):
-		return self.__class__( f'saturate({self})' )
+		return self._sh._instantiate_dtype( self.__class__, f'saturate({self})' )
 
 	def sin(self):
-		return self.__class__( f'sin({self})' )
+		return self._sh._instantiate_dtype( self.__class__, f'sin({self})' )
 
 	def sincos(self, s, c):
 		self._emit_void_intrinsic( f'sincos({self}, {s}, {c})' )
 
 	def sinh(self):
-		return self.__class__( f'sinh({self})' )
+		return self._sh._instantiate_dtype( self.__class__, f'sinh({self})' )
 
 	def smoothstep(self, a, b):
-		return self.__class__( f'smoothstep({a}, {b}, {self})' )
+		return self._sh._instantiate_dtype( self.__class__, f'smoothstep({a}, {b}, {self})' )
 
 	def sqrt(self):
-		return self.__class__( f'sqrt({self})' )
+		return self._sh._instantiate_dtype( self.__class__, f'sqrt({self})' )
 
 	def step(self, x):
-		return self.__class__( f'step({self}, {x})' )
+		return self._sh._instantiate_dtype( self.__class__, f'step({self}, {x})' )
 
 	def tan(self):
-		return self.__class__( f'tan({self})' )
+		return self._sh._instantiate_dtype( self.__class__, f'tan({self})' )
 
 	def tanh(self):
-		return self.__class__( f'tanh({self})' )
+		return self._sh._instantiate_dtype( self.__class__, f'tanh({self})' )
 
 	def trunc(self):
-		return self.__class__( f'trunc({self})' )
+		return self._sh._instantiate_dtype( self.__class__, f'trunc({self})' )
 

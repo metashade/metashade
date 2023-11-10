@@ -17,18 +17,32 @@ import numbers
 
 class BaseType(base.BaseType):
     @classmethod
+    def _format_uniform_register(cls, register_idx : int) -> str:
+        raise RuntimeError('Uniform registers not supported for {cls}')
+
+    @classmethod
     def _define_static(
         cls, sh, identifier,
-        semantic = None, initializer = None, annotations = None
+        semantic = None,
+        register : int = None,
+        annotations = None,
+        initializer = None
     ):
+        '''
+        https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-variable-syntax
+        '''
         sh._emit(
-            '{type_name} {identifier}{semantic}'.format(
+            '{type_name} {identifier}'.format(
                 type_name = cls._get_target_type_name(),
-                identifier = identifier,
-                semantic = '' if semantic is None \
-                    else f' : {semantic}'
+                identifier = identifier
             )
         )
+
+        if semantic is not None:
+            sh._emit(f' : {semantic}')
+
+        if register is not None:
+            sh._emit(f' : register({cls._format_uniform_register(register)})')
 
         if annotations is not None and annotations:
             sh._emit(' <\n')
@@ -45,12 +59,18 @@ class BaseType(base.BaseType):
 
     def _define(
         self, sh, identifier,
-        semantic = None, allow_init = True, annotations = None
+        allow_init = True,
+        semantic = None,
+        register = None,
+        annotations = None
     ):
         self._bind(sh, identifier, allow_init)
         self.__class__._define_static(
-            sh, self._name, initializer = self._expression,
-            semantic = semantic, annotations = annotations
+            sh, self._name,
+            initializer = self._expression,
+            semantic = semantic,
+            register = register,
+            annotations = annotations
         )
 
     def _assign(self, value):
@@ -58,9 +78,8 @@ class BaseType(base.BaseType):
         if value_ref is None:
             raise ArithmeticError('Type mismatch')
 
-        self._expression = value
         self._sh._emit_indent()
-        self._sh._emit( f'{self._name} = {value_ref};\n' )
+        self._sh._emit( f'{self} = {value_ref};\n' )
 
     def __setattr__(self, name, value):
         if name == '_':
@@ -85,7 +104,8 @@ class ArithmeticType(BaseType):
         if rhs_ref is None:
             return NotImplemented
 
-        return self.__class__(
+        return self._sh._instantiate_dtype(
+            self.__class__,
             self.__class__._format_binary_operator(
                 lhs = self,
                 rhs = rhs_ref,
@@ -105,14 +125,21 @@ class ArithmeticType(BaseType):
     def __div__(self, rhs):
         return self._rhs_binary_operator(rhs, '/')
     
-    def __truediv__ (self, rhs):
+    def __truediv__(self, rhs):
         return self._rhs_binary_operator(rhs, '/')
+    
+    def __neg__(self):
+        return self._sh._instantiate_dtype(self.__class__, f'-{self}')
 
-class Float(ArithmeticType):
-    _target_name = 'float'
-
+class Scalar(ArithmeticType):
     @staticmethod
     def _get_value_ref_static(concrete_cls, value):
         return (str(value) if isinstance(value, numbers.Number)
             else super()._get_value_ref_static(concrete_cls, value)
         )
+
+class Float(Scalar):
+    _target_name = 'float'
+
+class Int(Scalar):
+    _target_name = 'int'

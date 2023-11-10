@@ -12,14 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import subprocess
+import pathlib, subprocess
 import metashade.util as util
 
 def compile(
-    path : str,
+    src_path : str,
     entry_point_name : str,
     profile : str,
-    include_paths = None
+    include_paths = None,
+    to_spirv : bool = False,
+    output_to_file : bool = False
 ) -> int:
     args = [
         'where',
@@ -41,15 +43,25 @@ def compile(
         'dxc',
         '-T', profile,
         '-E', entry_point_name,
-        path
+        src_path
     ]
+
+    if to_spirv:
+        args.append('-spirv')
 
     if include_paths:
         for path in include_paths:
-            args.append('-I')
-            args.append(path)
+            args += ['-I', path]
 
-    with util.TimedScope('Compiling'):
+    message = 'Compiling'
+    if output_to_file:
+        out_path = pathlib.Path(src_path).with_suffix(
+            '.spv' if to_spirv else '.cso'
+        )
+        args += ['-Fo', out_path]
+        message += f' {out_path}'
+
+    with util.TimedScope(message):
         dxc_result = subprocess.run( args, capture_output = True )
 
     if dxc_result.returncode != 0:

@@ -14,21 +14,14 @@
 
 import collections, numbers, sys
 import metashade.clike.data_types as clike
-from metashade.clike.data_types import Float
-
-def _check_float_type(dtype):
-    if not issubclass(dtype, Float):
-        raise RuntimeError(
-            'Vectors of types other than 32-bit float are not implemented yet'
-        )
+from metashade.clike.data_types import Float, Int
 
 class _RawVector(clike.ArithmeticType):
     _swizzle_str = 'xyzw'
 
     @classmethod
     def _get_related_type_name(cls, dim : int):
-        _check_float_type(cls._element_type)
-        return f'Float{dim}'
+        return f'{cls._element_type.__name__}{dim}'
 
     @classmethod
     def _get_related_type(cls, dim : int):
@@ -42,6 +35,7 @@ class _RawVector(clike.ArithmeticType):
         return getattr(sys.modules[cls.__module__], type_name)
 
     def __getattr__(self, name):
+        '''Implements swizzling.'''
         is_valid_swizzle = False
         try:
             is_valid_swizzle = len(name) <= 4 and all(
@@ -51,11 +45,40 @@ class _RawVector(clike.ArithmeticType):
         except ValueError:
             pass
 
-        if is_valid_swizzle:
-            dtype = self._get_related_type(len(name))
-            return dtype('.'.join((str(self), name)))
-        else:
+        if not is_valid_swizzle:
             raise AttributeError
+        result_dtype = self._get_related_type(dim = len(name))
+        return self._sh._instantiate_dtype(
+            result_dtype,
+            '.'.join((str(self), name))
+        )
+
+    def _assign_write_mask(self, name, value) -> bool:
+        '''Implements assignment with a swizzling mask.'''
+        if len(name) > 4:
+            return False
+        
+        num_mask_chars = [0] * self.__class__._dim
+        try:
+            for ch in name:
+                ich = self.__class__._swizzle_str.index(ch)
+                if ich >= self.__class__._dim or num_mask_chars[ich] > 0:
+                    return False
+                num_mask_chars[ich] += 1
+        except ValueError:
+            return False
+        
+        dtype = self._get_related_type(len(name))
+        lvalue = self._sh._instantiate_dtype(
+            dtype,
+            '.'.join((str(self), name))
+        )
+        lvalue._assign(value)
+        return True
+        
+    def __setattr__(self, name, value):
+        if not self._assign_write_mask(name, value):
+            super().__setattr__(name, value)
 
     def _check_dims(self, rhs):
         if rhs.__class__._dim != self.__class__._dim:
@@ -84,7 +107,9 @@ class _RawVector(clike.ArithmeticType):
                     for element in value
             )
         ):
-            return concrete_cls(', '.join(map(str, value)))
+            dtype = concrete_cls._target_name
+            elements = ', '.join(map(str, value))
+            return concrete_cls(f'{dtype}({elements})')
         else:
             return None
         
@@ -106,37 +131,49 @@ class _RawVector(clike.ArithmeticType):
         )
 
     @classmethod
-    def _scalar_mul(cls, lhs : str, rhs : str):
-        return cls(cls._format_binary_operator(lhs, rhs, '*'))
-
-    def __mul__(self, rhs):
-        per_element_result = self._rhs_binary_operator(rhs, '*')
+    def _scalar_op(cls, lhs : str, rhs : str, op : str):
+        return cls(cls._format_binary_operator(lhs, rhs, op))
+    
+    def _per_element_or_scalar(self, rhs, op : str):
+        per_element_result = self._rhs_binary_operator(rhs, op)
         if per_element_result != NotImplemented:
             return per_element_result
 
         if rhs.__class__ == self._element_type:
-            return self.__class__._scalar_mul(self, rhs)
+            return self.__class__._scalar_op(self, rhs, op)
         else:
             return NotImplemented
+
+    def __mul__(self, rhs):
+        return self._per_element_or_scalar(rhs, '*')
 
     def __rmul__(self, lhs):
         lhs_ref = self._element_type._get_value_ref(lhs)
         if lhs_ref is not None:
-            return self.__class__._scalar_mul(lhs_ref, self)
+            return self.__class__._scalar_op(lhs_ref, self, '*')
         else:
             return NotImplemented
+        
+    def __truediv__ (self, rhs):
+        return self._per_element_or_scalar(rhs, '/')
 
     def dot(self, rhs):
         self._check_dims(rhs)
-        return self.__class__._element_type( f'dot({self}, {rhs})' )
+        return self._sh._instantiate_dtype(
+            self.__class__._element_type,
+            f'dot({self}, {rhs})'
+        )
 
-class Float1(_RawVector):
+    def __matmul__(self, rhs):
+        return self.dot(rhs)
+
+class RawVector1(_RawVector):
     _dim = 1
 
-class Float2(_RawVector):
+class RawVector2(_RawVector):
     _dim = 2
 
-class Float3(_RawVector):
+class RawVector3(_RawVector):
     _dim = 3
 
     def cross(self, rhs):
@@ -144,15 +181,16 @@ class Float3(_RawVector):
             raise ArithmeticError(
                 'Cross product operands must have the same type (3D vector)'
             )
-        return self.__class__( f'cross({self}, {rhs})' )
+        return self._sh._instantiate_dtype(
+            self.__class__, f'cross({self}, {rhs})'
+        )
 
-class Float4(_RawVector):
+class RawVector4(_RawVector):
     _dim = 4
 
-class _RawMatrix(clike.ArithmeticType):
+class _RawMatrixF(clike.ArithmeticType):
     @classmethod
     def _get_related_type_name(cls, dims):
-        _check_float_type(cls._element_type)
         return 'Float{rows}x{cols}'.format(rows = dims[0], cols = dims[1])
 
     @classmethod
@@ -178,7 +216,7 @@ class _RawMatrix(clike.ArithmeticType):
         result_type = self._get_related_type(
             (self.__class__._dims[1], self.__class__._dims[0])
         )
-        return result_type( f'transpose({self})' )
+        return self._sh._instantiate_dtype( result_type, f'transpose({self})' )
 
 # Generate all concrete matrix types to avoid copy-and-paste
 for rows in range(1, 5):
@@ -186,18 +224,16 @@ for rows in range(1, 5):
         name = f'Float{rows}x{cols}'
         globals()[name] = type(
             name,
-            (_RawMatrix,),
+            (_RawMatrixF,),
             {'_dims' : (rows, cols)}
         )
 
-class _Matrix(_RawMatrix):
+class _MatrixF(_RawMatrixF):
     @classmethod
     def _get_related_type_name(cls, dims):
-        _check_float_type(cls._element_type)
         return 'Matrix{rows}x{cols}f'.format(rows = dims[0], cols = dims[1])
 
 def _get_vector_type_name(element_type, dim : int):
-    _check_float_type(element_type)
     return f'Vector{dim}f'
 
 class _Vector(_RawVector):
@@ -213,7 +249,7 @@ class Vector3(_Vector):
 
     def as_vector4(self):
         vector4_type = self.__class__._get_related_type(4)
-        return vector4_type(xyz = self, w = 0.0)
+        return self._sh._instantiate_dtype(vector4_type, xyz = self, w = 0.0)
 
 class Vector4(_Vector):
     _dim = 4
@@ -223,7 +259,6 @@ class Vector4(_Vector):
 class _Point(_RawVector):
     @classmethod
     def _get_related_type_name(cls, dim : int):
-        _check_float_type(cls._element_type)
         return f'Point{dim}f'
     
     @classmethod
@@ -245,7 +280,7 @@ class Point3(_Point):
             sys.modules[self.__class__.__module__],
             _get_vector_type_name(self.__class__._element_type, 4)
         )
-        return vector4_type(xyz = self, w = 1.0)
+        return self._sh._instantiate_dtype(vector4_type, xyz = self, w = 1.0)
 
 class RgbF:
     pass

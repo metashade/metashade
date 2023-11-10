@@ -54,6 +54,11 @@ class Struct(BaseType, StructBase):
         BaseType.__init__(self, expression)
         StructBase.__init__(self, expression)
 
+        self._sh = self.__class__._sh
+        for member_name, member in vars(self).items():
+            if not member_name.startswith('_'):
+                member._set_generator(self._sh)
+
     def _bind(self, sh, identifier, allow_init):
         super()._bind(sh, identifier, allow_init)
         self._bind_members(sh, identifier)
@@ -66,7 +71,10 @@ def define_struct(sh, name, member_defs):
     struct_type = type(
         name,
         (Struct,),
-        {'_member_defs' : member_defs}
+        {
+            '_sh' : sh,
+            '_member_defs' : member_defs
+        }
     )
     sh._set_global(name, struct_type)
 
@@ -90,6 +98,9 @@ class StructDef:
         define_struct(
             self._sh,
             self._name,
-            { name : StructMemberDef(dtype) for name, dtype in kwargs.items() }
+            {
+                name : StructMemberDef(dtype_factory._get_dtype())
+                for name, dtype_factory in kwargs.items()
+            }
         )
 

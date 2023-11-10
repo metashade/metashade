@@ -27,9 +27,12 @@ class StageInterfaceDefMeta(type):
         super().__init__(name, bases, member_dict)
 
         def create_semantic_func(semantic_name, semantic_def):
-            def semantic_func(self, attribute_name, dtype):
+            def semantic_func(self, attribute_name, dtype_factory):
                 self._add_attribute(
-                    attribute_name, semantic_name, semantic_def, dtype
+                    attribute_name,
+                    semantic_name,
+                    semantic_def,
+                    dtype_factory._get_dtype()
                 )
 
             return semantic_func
