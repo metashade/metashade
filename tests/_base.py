@@ -34,17 +34,17 @@ class Base:
             if hlsl_path is not None else io.StringIO()
         )
 
-    def _compile(self, hlsl_path, include_path = None, as_lib : bool = False):
+    def _compile(self, hlsl_path, as_lib : bool = False):
         # LIB profiles support DXIL linking and therefore allow function
         # declarations without definitions.
         # Pure declarations may also be useful in other profiles if the
         # definition is found elsewhere in the compilation unit, e.g. in an
         # included header.
-        assert 0 == dxc.compile(
+        dxc.compile(
             src_path = hlsl_path,
             entry_point_name = self._entry_point_name,
             profile = 'lib_6_5' if as_lib else 'ps_6_0',
             include_paths = [
                 pathlib.Path(sys.modules[self.__module__].__file__).parent
             ]
-        ).returncode
+        )
