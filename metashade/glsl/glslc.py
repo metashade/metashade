@@ -26,19 +26,14 @@ def identify():
     result = subprocess.run( args, capture_output = True )
     print( result.stdout.decode() )
 
-class CompilationResult(NamedTuple):
-    returncode : int
-    out_path : pathlib.Path
-
 def compile(
     src_path : str,
     entry_point_name : str,
     target_env : str,
     shader_stage : str,
-    include_paths = None,
-    to_spirv : bool = False,
-    output_to_file : bool = False
-) -> CompilationResult:
+    output_path : str = None,
+    include_paths = None
+):
     args = [
         'glslc',
         '--target-env', target_env,
@@ -52,20 +47,11 @@ def compile(
             args += ['-I', path]
 
     message = 'glslc compiling'
-    if output_to_file:
-        out_path = pathlib.Path(src_path).with_suffix('.spv')
-        args += ['-o', out_path]
-        message += f' {out_path}'
+    if output_path is not None:
+        args += ['-o', output_path]
+        message += f' {output_path}'
 
     with perf.TimedScope(message):
         result = subprocess.run( args, capture_output = True )
 
-    if result.returncode != 0:
-        print( f'DXC compilation failed with code {result.returncode}, '
-            f'stderr:\n{result.stderr.decode()}'
-        )
-    
-    return CompilationResult(
-        returncode = result.returncode,
-        out_path = out_path if output_to_file else None
-    )
+    result.check_returncode()

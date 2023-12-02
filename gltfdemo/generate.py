@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import argparse, functools, io, os, pathlib, sys
+import argparse, functools, io, os, pathlib, subprocess, sys
 import multiprocessing as mp
 from typing import List, NamedTuple
 from pygltflib import GLTF2
@@ -42,26 +42,36 @@ class _Shader:
     def compile(self, to_glsl : bool) -> str:
         log = io.StringIO()
         sys.stdout = log
-        
-        compilation_result = dxc.compile(
-            src_path = self._file_path,
-            entry_point_name = self._get_entry_point_name(),
-            profile = self._get_hlsl_profile(),
-            to_spirv = to_glsl,
-            output_to_file = True
-        )
 
-        if to_glsl:
-            result = spirv_cross.spirv_to_glsl(
-                spirv_path = compilation_result.out_path
+        try:
+            dxc_output_path = pathlib.Path(self._file_path).with_suffix(
+                '.hlsl.spv' if to_glsl else '.cso'
             )
-            glslc.compile(
-                src_path = result.out_path,
-                target_env = 'vulkan1.1',
-                shader_stage = self._get_glsl_stage(),
+            
+            dxc.compile(
+                src_path = self._file_path,
                 entry_point_name = self._get_entry_point_name(),
-                output_to_file = True
+                profile = self._get_hlsl_profile(),
+                to_spirv = to_glsl,
+                output_path = dxc_output_path
             )
+
+            if to_glsl:
+                glsl_path = pathlib.Path(self._file_path).with_suffix('.glsl')
+                spirv_cross.spirv_to_glsl(
+                    spirv_path = dxc_output_path,
+                    glsl_path = glsl_path
+                )
+                spv_path = pathlib.Path(self._file_path).with_suffix('.spv')
+                glslc.compile(
+                    src_path = glsl_path,
+                    target_env = 'vulkan1.1',
+                    shader_stage = self._get_glsl_stage(),
+                    entry_point_name = self._get_entry_point_name(),
+                    output_path = spv_path
+                )
+        except subprocess.CalledProcessError as err:
+            pass
             
         return log.getvalue()
 

@@ -26,18 +26,14 @@ def identify():
     dxc_result = subprocess.run( args, capture_output = True )
     print( dxc_result.stdout.decode() )
 
-class CompilationResult(NamedTuple):
-    returncode : int
-    out_path : pathlib.Path
-
 def compile(
     src_path : str,
     entry_point_name : str,
     profile : str,
+    output_path : str = None,
     include_paths = None,
-    to_spirv : bool = False,
-    output_to_file : bool = False
-) -> CompilationResult:
+    to_spirv : bool = False
+):
     args = [
         'dxc',
         '-T', profile,
@@ -56,22 +52,11 @@ def compile(
             args += ['-I', path]
 
     message = 'DXC compiling'
-    if output_to_file:
-        out_path = pathlib.Path(src_path).with_suffix(
-            '.spv' if to_spirv else '.cso'
-        )
-        args += ['-Fo', out_path]
-        message += f' {out_path}'
+    if output_path is not None:
+        args += ['-Fo', output_path]
+        message += f' {output_path}'
 
     with perf.TimedScope(message):
-        dxc_result = subprocess.run( args, capture_output = True )
+        result = subprocess.run( args, capture_output = True )
 
-    if dxc_result.returncode != 0:
-        print( f'DXC compilation failed with code {dxc_result.returncode}, '
-            f'stderr:\n{dxc_result.stderr.decode()}'
-        )
-    
-    return CompilationResult(
-        returncode = dxc_result.returncode,
-        out_path = out_path if output_to_file else None
-    )
+    result.check_returncode()

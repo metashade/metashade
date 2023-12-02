@@ -20,8 +20,10 @@ _exe_name = 'spirv-cross'
 def identify():
     print(f'Found SPIRV-Cross executable: {shutil.which(_exe_name)}')
 
-def spirv_to_glsl(spirv_path : str):
-    glsl_path = pathlib.Path(spirv_path).with_suffix('.glsl')
+def spirv_to_glsl(
+    spirv_path : str,
+    glsl_path : str
+):
     args = [
         _exe_name,
         '--output', glsl_path,
