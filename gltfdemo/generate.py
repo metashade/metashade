@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import argparse, functools, io, os, pathlib, subprocess, sys
+import abc, argparse, functools, io, os, pathlib, subprocess, sys
 import multiprocessing as mp
 from typing import List, NamedTuple
 from pygltflib import GLTF2
@@ -23,21 +23,21 @@ from metashade.glsl import glslc
 
 import _impl
 
-class _Shader:
+class _Shader(abc.ABC):
     def __init__(self, file_path):
         self._file_path = file_path
 
-    @staticmethod
+    @abc.abstractclassmethod
     def _get_entry_point_name():
-        return None
+        pass
     
-    @staticmethod
+    @abc.abstractclassmethod
     def _get_hlsl_profile():
-        return None
+        pass
     
-    @staticmethod
+    @abc.abstractclassmethod
     def _get_glsl_stage():
-        return None
+        pass
 
     def compile(self, to_glsl : bool) -> str:
         log = io.StringIO()
@@ -96,7 +96,7 @@ class _PixelShader(_Shader):
         return _impl.ps_main
     
     @staticmethod
-    def _get_profile():
+    def _get_hlsl_profile():
         return 'ps_6_0'
     
     @staticmethod
