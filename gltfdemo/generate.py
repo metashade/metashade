@@ -19,6 +19,7 @@ from pygltflib import GLTF2
 
 from metashade.hlsl import dxc
 from metashade.util import perf, spirv_cross
+from metashade.glsl import glslc
 
 import _impl
 
@@ -31,7 +32,11 @@ class _Shader:
         return None
     
     @staticmethod
-    def _get_profile():
+    def _get_hlsl_profile():
+        return None
+    
+    @staticmethod
+    def _get_glsl_stage():
         return None
 
     def compile(self, to_glsl : bool) -> str:
@@ -41,15 +46,23 @@ class _Shader:
         compilation_result = dxc.compile(
             src_path = self._file_path,
             entry_point_name = self._get_entry_point_name(),
-            profile = self._get_profile(),
+            profile = self._get_hlsl_profile(),
             to_spirv = to_glsl,
             output_to_file = True
         )
 
         if to_glsl:
-            spirv_cross.spirv_to_glsl(
+            result = spirv_cross.spirv_to_glsl(
                 spirv_path = compilation_result.out_path
             )
+            glslc.compile(
+                src_path = result.out_path,
+                target_env = 'vulkan1.1',
+                shader_stage = self._get_glsl_stage(),
+                entry_point_name = self._get_entry_point_name(),
+                output_to_file = True
+            )
+            
         return log.getvalue()
 
 class _VertexShader(_Shader):
@@ -58,9 +71,13 @@ class _VertexShader(_Shader):
         return _impl.vs_main
     
     @staticmethod
-    def _get_profile():
+    def _get_hlsl_profile():
         return 'vs_6_0'
     
+    @staticmethod
+    def _get_glsl_stage():
+        return 'vertex'
+
 class _PixelShader(_Shader):
     @staticmethod
     def _get_entry_point_name():
@@ -69,6 +86,10 @@ class _PixelShader(_Shader):
     @staticmethod
     def _get_profile():
         return 'ps_6_0'
+    
+    @staticmethod
+    def _get_glsl_stage():
+        return 'fragment'
 
 class _AssetResult(NamedTuple):
     log : io.StringIO
@@ -155,6 +176,7 @@ if __name__ == "__main__":
         dxc.identify()
         if args.to_glsl:
             spirv_cross.identify()
+            glslc.identify()
 
         with mp.Pool() as pool:
             for compilation_log in pool.imap_unordered(
