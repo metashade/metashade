@@ -41,7 +41,7 @@ class _Shader:
 
     def compile(self, to_glsl : bool) -> str:
         log = io.StringIO()
-        sys.stdout = log
+        log, sys.stdout = sys.stdout, log
 
         try:
             dxc_output_path = pathlib.Path(self._file_path).with_suffix(
@@ -73,6 +73,8 @@ class _Shader:
         except subprocess.CalledProcessError as err:
             pass
             
+
+        log, sys.stdout = sys.stdout, log
         return log.getvalue()
 
 class _VertexShader(_Shader):
@@ -107,11 +109,14 @@ class _AssetResult(NamedTuple):
 
 def _process_asset(
         gltf_file_path : str,
-        out_dir : str
+        out_dir : str,
+        skip_codegen : bool = False
 ) -> _AssetResult:
+    log = io.StringIO()
+    log, sys.stdout = sys.stdout, log
+
     shaders = []
-    sys.stdout = io.StringIO()
-    
+
     with perf.TimedScope(f'Loading glTF asset {gltf_file_path} '):
         gltf_asset = GLTF2().load(gltf_file_path)
 
@@ -128,23 +133,27 @@ def _process_asset(
                 )
             
             file_path = _get_file_path('VS')
-            with perf.TimedScope(f'Generating {file_path} ', 'Done'), \
-                open(file_path, 'w') as vs_file:
-                #
-                _impl.generate_vs(vs_file, primitive)
+            if not skip_codegen:
+                with perf.TimedScope(f'Generating {file_path} ', 'Done'), \
+                    open(file_path, 'w') as vs_file:
+                    #
+                    _impl.generate_vs(vs_file, primitive)
             shaders.append(_VertexShader(file_path))
 
             file_path = _get_file_path('PS')
-            with perf.TimedScope(f'Generating {file_path} ', 'Done'), \
-                open(file_path, 'w') as ps_file:
-                #
-                _impl.generate_ps(
-                    ps_file,
-                    gltf_asset.materials[primitive.material],
-                    primitive
-                )
+            if not skip_codegen:
+                with perf.TimedScope(f'Generating {file_path} ', 'Done'), \
+                    open(file_path, 'w') as ps_file:
+                    #
+                    _impl.generate_ps(
+                        ps_file,
+                        gltf_asset.materials[primitive.material],
+                        primitive
+                    )
             shaders.append(_PixelShader(file_path))
-    return _AssetResult(sys.stdout.getvalue(), shaders)
+
+    log, sys.stdout = sys.stdout, log
+    return _AssetResult(log.getvalue(), shaders)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -162,6 +171,17 @@ if __name__ == "__main__":
         action = 'store_true',
         help = "Cross-compile to GLSL with SPIRV-Cross"
     )
+    parser.add_argument(
+        "--skip-codegen",
+        action = 'store_true',
+        help = "Assume that sources have been generated and proceed to "
+               "compilation."
+    )
+    parser.add_argument(
+        "--serial",
+        action = 'store_true',
+        help = "Disable parallelization to facilitate debugging."
+    )
     args = parser.parse_args()
     
     if not os.path.isdir(args.gltf_dir):
@@ -170,16 +190,27 @@ if __name__ == "__main__":
     os.makedirs(args.out_dir, exist_ok = True)
 
     shaders = []
-    with mp.Pool() as pool:
-        for asset_result in pool.imap_unordered(
-            functools.partial(
-                _process_asset,
-                out_dir = args.out_dir
-            ),
-            pathlib.Path(args.gltf_dir).glob('**/*.gltf')
-        ):
+    if args.serial:
+        for gltf_path in pathlib.Path(args.gltf_dir).glob('**/*.gltf'):
+            asset_result = _process_asset(
+                gltf_file_path = gltf_path,
+                out_dir = args.out_dir,
+                skip_codegen = args.skip_codegen
+            )
             print(asset_result.log)
             shaders += asset_result.shaders
+    else:
+        with mp.Pool() as pool:
+            for asset_result in pool.imap_unordered(
+                functools.partial(
+                    _process_asset,
+                    out_dir = args.out_dir,
+                    skip_codegen = args.skip_codegen
+                ),
+                pathlib.Path(args.gltf_dir).glob('**/*.gltf')
+            ):
+                print(asset_result.log)
+                shaders += asset_result.shaders
 
     if args.compile:
         print()
@@ -188,12 +219,17 @@ if __name__ == "__main__":
             spirv_cross.identify()
             glslc.identify()
 
-        with mp.Pool() as pool:
-            for compilation_log in pool.imap_unordered(
-                functools.partial(
-                    _Shader.compile,
-                    to_glsl = args.to_glsl
-                ),
-                shaders
-            ):
-                print(compilation_log, end = '')
+        if args.serial:
+            for shader in shaders:
+                log = shader.compile(to_glsl = args.to_glsl)
+                print(log, end = '')
+        else:
+            with mp.Pool() as pool:
+                for log in pool.imap_unordered(
+                    functools.partial(
+                        _Shader.compile,
+                        to_glsl = args.to_glsl
+                    ),
+                    shaders
+                ):
+                    print(log, end = '')

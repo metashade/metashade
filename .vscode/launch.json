@@ -36,8 +36,10 @@
             "args": [
                 "--gltf-dir", "${workspaceFolder}/../glTFSample/media/Cauldron-Media",
                 "--out-dir", "${workspaceFolder}/../metashade-out",
+                "--skip-codegen",
                 "--compile",
-                "--to-glsl"
+                "--to-glsl",
+                "--serial"
             ]
         },
         {
