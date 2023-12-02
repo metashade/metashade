@@ -25,8 +25,8 @@ def identify():
 
 def compile(
     src_path : str,
-    entry_point_name : str,
     profile : str,
+    entry_point_name : str = None,  # can be None for libraries
     output_path : str = None,
     include_paths = None,
     to_spirv : bool = False
@@ -34,9 +34,11 @@ def compile(
     args = [
         'dxc',
         '-T', profile,
-        '-E', entry_point_name,
         src_path
     ]
+
+    if entry_point_name is not None:
+        args += [ '-E', entry_point_name ]
 
     if to_spirv:
         args += [
@@ -54,6 +56,6 @@ def compile(
         message += f' {output_path}'
 
     with perf.TimedScope(message):
-        result = subprocess.run( args, capture_output = True )
+        result = subprocess.run( args )
 
     result.check_returncode()
