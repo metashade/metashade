@@ -19,10 +19,7 @@ from metashade.util import perf
 def identify():
     print(f'Found DXC executable: {shutil.which("dxc")}')
     
-    args = [
-        'dxc',
-        '--version'
-    ]
+    args = [ 'dxc', '--version' ]
     dxc_result = subprocess.run( args, capture_output = True )
     print( dxc_result.stdout.decode() )
 
