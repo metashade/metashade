@@ -1,18 +1,40 @@
+# This is just a helper file to test example code snippets for Markdown
+# and presentations.
 
-# Swizzling
+import math
+from metashade.hlsl.sm6 import ps_6_0 as hlsl_ps
 
-sh.rgba = sh.RgbaF(rgb = (0, 1, 0), a = 0)
-sh.rgb = sh.rgba.rgb    # OK, creates an `RgbF`
-sh.xyz = sh.rgba.xyz    # Exception!
+with open('misc.hlsl', 'w') as hlsl_file:
+    sh = hlsl_ps.Generator(hlsl_file)
 
-# Write masking
+    with sh.function('foo')():
+        # Just some stubs
+        sh.N = sh.Vector3f(0)
+        sh.L = sh.Vector3f(0)
 
-sh.rgb.r = 1
+        sh // 'Create a float variable with the value of pi'
+        sh.x = sh.Float(math.pi)
 
-# Dot product
+        sh.rgba = sh.RgbaF(rgb = (0, 1, 0), a = 0)
 
-sh.NdotL = sh.N @ sh.L
+        sh // 'Swizzling'
+        sh.rgb = sh.rgba.rgb    # The result's type is deduced, a-la `auto` in modern C++, to `RgbF`
 
-# Intrinsics
+        sh // '...and write masking'
+        sh.rgb.r = 1
 
-sh.N = sh.N.normalize()
+        sh // 'Dot product'
+        sh.NdotL = sh.N @ sh.L
+
+        sh // 'Some intrinsics'
+        sh.N = sh.N.normalize()
+
+        # TODO:
+        # texture-sampler combination and sampling
+        # Comments
+        # build abstractions on top, e.g. glTF textures in my demo
+
+with open('fail.hlsl', 'w') as hlsl_file:
+    sh = hlsl_ps.Generator(hlsl_file)
+    with sh.function('foo')():
+        sh.xyz = sh.rgba.xyz    # Exception: `RgbaF` has no attribute `xyz`
