@@ -99,7 +99,7 @@ class _RawVector(clike.ArithmeticType):
         if parent_result is not None:
             return parent_result
 
-        if (isinstance(value, collections.Sequence)
+        if (isinstance(value, collections.abc.Sequence)
             and not isinstance(value, str)
             and len(value) == concrete_cls._dim
             and all( isinstance(element, numbers.Number)
