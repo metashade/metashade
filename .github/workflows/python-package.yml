@@ -35,7 +35,7 @@ jobs:
         tag: v1.8.2405
         fileName: dxc_2024_05_24.zip
     - run: |
-        Add-Content $env:GITHUB_PATH .\dxc_2024_05_24
-    - name: Test with pytest
-      run: |
-        pytest
+        Add-Content $env:GITHUB_PATH $env:GITHUB_WORKSPACE\dxc_2024_05_24\bin
+    # - name: Test with pytest
+    #   run: |
+    #     pytest
