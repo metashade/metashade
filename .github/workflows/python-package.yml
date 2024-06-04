@@ -32,7 +32,7 @@ jobs:
       with:
         repository: microsoft/DirectXShaderCompiler
         extract: true
-        releaseId: v1.8.2405
+        tag: v1.8.2405
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
