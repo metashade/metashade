@@ -24,10 +24,15 @@ jobs:
       uses: actions/setup-python@v3
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Install dependencies
+    - name: Install Python dependencies
       run: |
         python -m pip install --upgrade pip
         python -m pip install flake8 pytest
+    - uses: robinraju/release-downloader@v1.10
+        with:
+          repository: https://github.com/microsoft/DirectXShaderCompiler/
+          extract: true
+          releaseId: 1.6.0.3558
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
