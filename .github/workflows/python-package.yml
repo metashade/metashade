@@ -34,7 +34,7 @@ jobs:
         extract: true
         tag: v1.8.2405
         fileName: dxc_2024_05_24.zip
-      run: |
+    - run: |
         Add-Content $env:GITHUB_PATH .\dxc_2024_05_24
     - name: Test with pytest
       run: |
