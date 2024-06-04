@@ -30,7 +30,7 @@ jobs:
         python -m pip install flake8 pytest
     - uses: robinraju/release-downloader@v1.10
       with:
-        repository: https://github.com/microsoft/DirectXShaderCompiler
+        repository: microsoft/DirectXShaderCompiler
         extract: true
         releaseId: 1.6.0.3558
     - name: Lint with flake8
