@@ -39,7 +39,8 @@ jobs:
       run: |
         pwd
         tree /F
-    - run: |
+    - name: Add DXC to PATH
+      run: |
         Add-Content $env:GITHUB_PATH $env:GITHUB_WORKSPACE\.dxc\bin\x64
     - name: Test with pytest
       run: |
