@@ -37,14 +37,10 @@ jobs:
         out-file-path: '.dxc'
     - name: Print the directory tree
       run: |
-        cd\
         pwd
         tree /F
-        echo GITHUB_WORKSPACE == $env:GITHUB_WORKSPACE
     - run: |
         Add-Content $env:GITHUB_PATH $env:GITHUB_WORKSPACE\.dxc\bin\x64
-    - run:
-        dxc --help
-    # - name: Test with pytest
-    #   run: |
-    #     pytest
+    - name: Test with pytest
+      run: |
+        pytest
