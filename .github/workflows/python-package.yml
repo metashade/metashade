@@ -40,6 +40,7 @@ jobs:
         cd\
         pwd
         tree /F
+        echo GITHUB_WORKSPACE == $env:GITHUB_WORKSPACE
     - run: |
         Add-Content $env:GITHUB_PATH $env:GITHUB_WORKSPACE\dxc_2024_05_24\bin
     # - name: Test with pytest
