@@ -37,6 +37,7 @@ jobs:
         out-file-path: '.dxc'
     - name: Print the directory tree
       run: |
+        pwd
         tree /F
     - run: |
         Add-Content $env:GITHUB_PATH $env:GITHUB_WORKSPACE\dxc_2024_05_24\bin
