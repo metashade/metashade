@@ -37,6 +37,7 @@ jobs:
         out-file-path: '.dxc'
     - name: Print the directory tree
       run: |
+        cd\
         pwd
         tree /F
     - run: |
