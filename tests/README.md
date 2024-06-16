@@ -1,8 +1,7 @@
 Our test cases follow the [pytest](https://pytest.org/) conventions.
 Visual Studio Code sets up a pytest integration automagically.
-The tests also run as part of [GitHub Actions CI](https://github.com/ppenenko/metashade/actions).
-
-![GitHub Actions Status](https://github.com/ppenenko/metashade/workflows/python-package.yml/badge.svg)
+The tests also run as part of
+[![GitHub Actions CI](https://github.com/ppenenko/metashade/actions/workflows/python-package.yml/badge.svg)](https://github.com/ppenenko/metashade/actions/workflows/python-package.yml)
 
 Only the HLSL Shader Model 6.0 generator is tested currently. The automated tests don't involve any actual rendering yet, but rendering can be tested manually in the [glTF demo](../gltfdemo).
 
