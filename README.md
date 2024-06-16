@@ -4,9 +4,10 @@ Metashade is an experimental GPU shading domain-specific language (DSL) embedded
 When a Metashade script executes, it generates code in a target shading language.
 Only HLSL is supported so far but the intent is definitely to support multiple targets.
 
-To see Metashade in action, check out the [glTF demo](gltfdemo).
+To see Metashade in action, check out the [glTF demo](gltfdemo) or the [tests](tests) which are run by CI:
+[![GitHub Actions CI](https://github.com/ppenenko/metashade/actions/workflows/python-package.yml/badge.svg)](https://github.com/ppenenko/metashade/actions/workflows/python-package.yml)
 
-Please see the [presentation on Google Slides](https://docs.google.com/presentation/d/e/2PACX-1vQtYIwXIkMnVC6TzWTKPAtZIA6_xeUCQc8Mvyziu0qy7HDUduz_onsJ5TabxTuuVQ/pub?start=false&loop=false&delayms=3000) for a detailed discussion of the motivation for Metashade and its design.
+For a detailed discussion of the motivation for Metashade and its design, please see the [presentation on Google Slides](https://docs.google.com/presentation/d/e/2PACX-1vQtYIwXIkMnVC6TzWTKPAtZIA6_xeUCQc8Mvyziu0qy7HDUduz_onsJ5TabxTuuVQ/pub?start=false&loop=false&delayms=3000).
 
 ## Rationale
 
