@@ -66,7 +66,7 @@ This approach can only support a subset of Python syntax that maps onto the targ
 In contrast, Metashade generates target code dynamically, during the execution of Python code,
 modeling the state of the shader being generated in objects called generators.
 This requires some idiosyncratic Python syntax but in return we get the full power of Python at generation time.
-Python's run time becomes the shader's design time, and it becomes a metaprogramming language, replacing mechanisms like the C Preprocessor, generics and templates.
+Python's run time becomes the shader's design time, and it becomes a metaprogramming language, independent of the target language and replacing mechanisms like the C Preprocessor, generics and templates.
 
 This offers the following benefits:
 * Easy-to-use metaprogramming. Imperative metaprogramming is possible (by comparison, C++ templates are a pure-functional language).
@@ -104,10 +104,10 @@ E.g. code with the same logic can be generated for an HLSL pixel shader and a GL
 ### Generating C-like scopes and local variables
 
 Metashade uses Python variables to represent variables in target C-like shading languages,
-but there obviously major differences in their behavior, namely:
+but there are obviously major differences in their behavior, namely:
 * C-like languages have different scoping rules than Python.
-* In Python, variables are always assigned by reference and the same variable can point to different objects of different types in its lifetime. Variables in C-like shading languages, in contrast,
-are typed statically and are assigned by value.
+* In Python, variables are always assigned by reference and the same variable can point to different objects, possibly of different types in its lifetime.
+Variables in C-like shading languages, in contrast, are typed statically and are assigned by value.
 
 The following Python mechanisms are used in Metashade to emulate the C-like semantics at Python code's run time.
 
@@ -124,7 +124,7 @@ With these, we have complete control over the variable's lifetimes and typing.
 For example, we can capture the variable's name with `__setattr__()` without the need for Python introspection.
 We can also easily check in `__setattr__()` if the user is trying to reinitialize the variable with a different type, and we can raise an exception in `__getattr__()` if the user tries to access a variable that's gone out of scope.
 
-The `__getattr__()`/`__setattr__()` is also used for other features, such as accessing struct members and vector elements.
+The `__getattr__()`/`__setattr__()` mechanism is also used for other features, such as accessing struct members and vector elements.
 
 ### Operator overloading
 
@@ -139,7 +139,7 @@ def __add__(self, other):
 This also opens up possibilities for injecting custom logic, such as stronger type checks, independent from the target language.
 E.g. `sh.RgbF` can’t be added to `sh.Point3f` even though they're both backed by the `float3` built-in type in HLSL.
 
-For added syntactic sugar, the `__floordiv__` operator is overloaded to generate comments in the target language.
+For added syntactic sugar, the `__floordiv__` operator is overloaded to generate comments in the target language (see below).
 
 ## More examples
 
