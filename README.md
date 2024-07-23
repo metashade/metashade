@@ -113,3 +113,54 @@ The `__getattr__()`/`__setattr__()` is also used for other features, such as acc
 
 Further, Python expressions model expressions in the target language with help of operator overloading. Basically, `a + b` generates the respective operation in the target language instead of performing the addition in Python.
 
+## More examples
+
+The following Python code
+
+```Python
+sh.rgba = sh.RgbaF(rgb = (0, 1, 0), a = 0)
+
+sh // 'Swizzling - the destination type is deduced'
+sh // "a-la `auto` in C++"
+sh.color = sh.rgba.rgb
+
+sh // 'Write masking'
+sh.color.r = 1
+
+sh // 'Intrinsics example'
+sh.N = sh.N.normalize()
+
+sh // 'Dot product == Python 3 matmul'
+sh // '(a.k.a. "walrus") operator'
+sh.NdotL = sh.N @ sh.L
+
+# The walrus operator is also used to
+# combine textures and samplers
+combined_sampler = sh.g_tColor @ sh.g_sColor
+
+sh // 'Sample the texture'
+sh.rgbaSample = combined_sampler(sh.uv)
+```
+
+generates the following HLSL:
+
+```HLSL
+float4 rgba = float4(float3(0, 1, 0), 0);
+
+// Swizzling - the destination type is deduced
+// a-la `auto` in C++
+float3 color = rgba.rgb;
+
+// Write masking
+color.r = 1;
+
+// Intrinsics example
+N = normalize(N);
+
+// Dot product == Python 3 matmul
+// (a.k.a. "walrus") operator
+float NdotL = dot(N, L);
+
+// Sample the texture
+float4 rgbaSample = g_tColor.Sample(g_sColor, uv);
+```
