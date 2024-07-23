@@ -1,6 +1,6 @@
 # Metashade
 ## What is Metashade?
-Metashade is an experimental GPU shading domain-specific language (DSL) embedded in Python.
+Metashade is an experimental Python-based GPU shading embedded domain-specific language (EDSL).
 When a Metashade script executes, it generates code in a target shading language.
 Only HLSL is supported so far but the intent is definitely to support multiple targets.
 
@@ -29,6 +29,7 @@ For a detailed discussion of the motivation for Metashade and its design, please
 
 The following Metashade Python code
 
+<a name="func_def">
 ```Python
 with sh.function('D_Ggx', sh.Float)(                # <-- The function name and return type
     NdotH = sh.Float, fAlphaRoughness = sh.Float    # <-- The function parameters
@@ -56,7 +57,7 @@ float D_Ggx(float NdotH, float fAlphaRoughness)
 
 ## How does it work?
 
-Popular Pythonic GPU DSLs like [Nvidia Warp](https://github.com/NVIDIA/warp),
+Popular Pythonic GPU EDSLs like [Nvidia Warp](https://github.com/NVIDIA/warp),
 [Taichi](https://github.com/taichi-dev/taichi),
 [Numba](https://github.com/numba/numba)
 and [OpenAI’s Triton](https://github.com/openai/triton)
@@ -69,7 +70,7 @@ This requires some idiosyncratic Python syntax but in return we get the full pow
 Python's run time becomes the shader's design time, and it becomes a metaprogramming language, replacing mechanisms like the C Preprocessor, generics and templates.
 
 This offers the following benefits:
-* Easy-to-use metaprogramming. Imperative metaprogramming is possible (C++ templates are a pure-functional language).
+* Easy-to-use metaprogramming. Imperative metaprogramming is possible (by comparison, C++ templates are a pure-functional language).
 * The whole stack is debuggable by the application programmer.
 * Codegen can interact with the outside world (file system or user input). E.g. the [glTF demo](https://github.com/ppenenko/metashade-glTFSample) loads glTF assets and generates shaders based on their contents.
 * Codegen can integrate with arbitrary Python code. E.g. the [glTF demo](https://github.com/ppenenko/metashade-glTFSample) the third-party [pygltflib](https://pypi.org/project/pygltflib/) to parse glTF assets.
@@ -105,23 +106,41 @@ E.g. code with the same logic can be generated for an HLSL pixel shader and a GL
 
 Metashade uses Python variables to represent variables in target C-like shading languages,
 but there obviously major differences in their behavior, namely:
-* Unlike in Python, lifetimes of variables in C-like languages are tied to the scope they're defined in.
+* C-like languages have different scoping rules than Python.
 * In Python, variables are always assigned by reference and the same variable can point to different objects of different types in its lifetime. Variables in C-like shading languages, in contrast,
 are typed statically and are assigned by value.
 
-Addressing these differences requires explicit emulation in Python code.
-`with` scopes are the closest analogy for C-like scopes in Python,
-however they only apply to the variables referenced in the `with` statement and call the special
-`__enter__` and `__exit__` methods instead of construction and destruction like in C++.
-That's why Metashade uses `with` statements with special objects such as function definitions created with `sh.function`,
-which modify the state of the generator.
-The generator emulates C-like scopes internally, and and the generated variables are modeled with member variables on the generator, which are implemented with the `__getattr__()`/`__setattr__()` Python mechanism.
-With `__setattr__()` for example, we can capture the variable's name without Python introspection.
-We can also easily check in `__setattr__()` if the user is trying to reinitialize the variable with a different type and we can similarly raise an exception in `__getattr__()` if the user tries to access a variable that's gone out of scope.
+The following Python mechanisms are used in Metashade to emulate the C-like semantics at Python code's run time.
+
+### `with` statements
+
+Metashade uses Python's `with` statements to emulate C-like scopes.
+For example, in a [function definition](#func_def), the `sh.function` object starts a new scope by modifying the internal state of generator `sh` when its special `__enter__` and `__exit__` methods are called.
+
+### `__getattr__` and `__setattr__`
+
+To model the semantics of target variables, Metashade exposes them syntactically as member variables on the generator object (hence the idiosyncratic `sh.x` syntax).
+This is implemented with the special `__getattr__` and `__setattr__` functions, which overload member accesses.
+With these, we have complete control over the variable's lifetimes and typing.
+For example, we can capture the variable's name with `__setattr__()` without the need for Python introspection.
+We can also easily check in `__setattr__()` if the user is trying to reinitialize the variable with a different type, and we can raise an exception in `__getattr__()` if the user tries to access a variable that's gone out of scope.
 
 The `__getattr__()`/`__setattr__()` is also used for other features, such as accessing struct members and vector elements.
 
-Further, Python expressions model expressions in the target language with help of operator overloading. Basically, `a + b` generates the respective operation in the target language instead of performing the addition in Python.
+### Operator overloading
+
+Just like in C++, Python's operators can be overloaded with arbitrary logic.
+Metashade uses this feature to model expressions in the target language - something along the lines of
+
+```Python
+def __add__(self, other):
+    return Expression(f"{self} + {other}")
+```
+
+This also opens up possibilities for injecting custom logic, such as stronger type checks, independent from the target language.
+E.g. `sh.RgbF` can’t be added to `sh.Point3f` even though they're both backed by the `float3` built-in type in HLSL.
+
+For added syntactic sugar, the `__floordiv__` operator is overloaded to generate comments in the target language.
 
 ## More examples
 
