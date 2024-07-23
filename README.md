@@ -29,7 +29,6 @@ For a detailed discussion of the motivation for Metashade and its design, please
 
 The following Metashade Python code
 
-<a name="func_def">
 ```Python
 with sh.function('D_Ggx', sh.Float)(                # <-- The function name and return type
     NdotH = sh.Float, fAlphaRoughness = sh.Float    # <-- The function parameters
@@ -115,7 +114,7 @@ The following Python mechanisms are used in Metashade to emulate the C-like sema
 ### `with` statements
 
 Metashade uses Python's `with` statements to emulate C-like scopes.
-For example, in a [function definition](#func_def), the `sh.function` object starts a new scope by modifying the internal state of generator `sh` when its special `__enter__` and `__exit__` methods are called.
+For example, in a [function definition](#what-does-it-look-like), the `sh.function` object starts a new scope by modifying the internal state of generator `sh` when its special `__enter__` and `__exit__` methods are called.
 
 ### `__getattr__` and `__setattr__`
 
