@@ -20,7 +20,5 @@ PsOut psMain()
 		return result;
 	}
 
-	result.color = g_f4C;
-	return result;
 }
 

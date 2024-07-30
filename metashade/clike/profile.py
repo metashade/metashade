@@ -29,6 +29,9 @@ class Generator(base.Generator):
     def if_(self, condition):
         return context.If(self, condition)
     
+    def else_(self):
+        return context.Else(self)
+    
     def _single_line_comment(self, comment):
         self._emit_indent()
         self._emit(f'// {comment}\n')
