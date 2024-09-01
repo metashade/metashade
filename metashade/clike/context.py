@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import abc
 import metashade.base.context as base
 
 class FunctionDecl:
@@ -137,19 +138,21 @@ class Function:
         arg_str = ', '.join(arg_list)
         return self._def._return_type(f'{self._def._name}({arg_str})')
     
-class If:
-    def __init__(self, sh, condition):
+class _ConditionalStatement:
+    def __init__(self, sh):
         self._sh = sh
-        self._condition = condition
+
+    @abc.abstractmethod
+    def _emit_statement(self):
+        pass
 
     def __enter__(self):
         self._sh._emit_indent()
-        self._sh._emit(f'if ({self._condition})\n')
+        self._emit_statement()
         self._sh._emit_indent()
         self._sh._emit('{\n')
         self._sh._push_indent()
-        
-        # TODO: seems to be a common pattern - generalize?
+
         body = base.Scope()
         self._sh._push_context(body)
         return body
@@ -158,4 +161,18 @@ class If:
         self._sh._pop_context()
         self._sh._pop_indent()
         self._sh._emit_indent()
-        self._sh._emit('}\n\n')
+        self._sh._emit('}\n')
+
+class If(_ConditionalStatement):
+    def __init__(self, sh, condition):
+        super().__init__(sh)
+        self._condition = condition
+
+    @abc.abstractmethod
+    def _emit_statement(self):
+        self._sh._emit(f'if ({self._condition})\n')
+
+class Else(_ConditionalStatement):
+    @abc.abstractmethod
+    def _emit_statement(self):
+        self._sh._emit('else\n')

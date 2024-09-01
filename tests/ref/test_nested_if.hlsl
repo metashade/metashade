@@ -23,9 +23,7 @@ PsOut psMain()
 			result.color = g_f4D;
 			return result;
 		}
-
 	}
-
 	result.color = g_f4C;
 	return result;
 }

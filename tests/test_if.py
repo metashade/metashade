@@ -72,7 +72,7 @@ class TestIf(_base.Base):
         self._check_source(hlsl_path)
 
     def test_if_else(self):
-        hlsl_path = self._get_hlsl_path('test_if')
+        hlsl_path = self._get_hlsl_path('test_if_else')
 
         with self._open_file(hlsl_path) as ps_file:
             sh = ps_6_0.Generator(ps_file)
