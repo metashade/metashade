@@ -197,6 +197,28 @@ float4 rgbaSample = g_tColor.Sample(g_sColor, uv);
 
 Metashade models `if` and `else` statements in the target C-like languages with Python's `with` statements, for example:
 
+```Python
+    with sh.if_(sh.g_f4A.x):
+        sh.result.color = sh.g_f4B
+    with sh.else_():
+        sh.result.color = sh.g_f4D
+    sh.return_(sh.result)
+```
+
+generates the following HLSL:
+
+```HLSL
+    if (g_f4A.x)
+    {
+        result.color = g_f4B;
+    }
+    else
+    {
+        result.color = g_f4D;
+    }
+    return result;
+```
+
 Please note that the native Python `if` and `else` can be used in Metashade to implement design-time logic, similar to `#ifdef` or `if constexpr()` in C++.
 This is another example of how Metashade explicitly separates design-time and run-time code.
 

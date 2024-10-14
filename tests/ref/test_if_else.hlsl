@@ -17,13 +17,12 @@ PsOut psMain()
 	if (g_f4A.x)
 	{
 		result.color = g_f4B;
-		return result;
 	}
 	else
 	{
 		result.color = g_f4D;
-		return result;
 	}
+	return result;
 	result.color = g_f4C;
 	return result;
 }
