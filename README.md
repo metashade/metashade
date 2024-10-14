@@ -195,7 +195,7 @@ float4 rgbaSample = g_tColor.Sample(g_sColor, uv);
 
 ### Conditional statements
 
-Metashade models `if` and `else` statements in the target C-like languages with Python's `with` statements, for example:
+Metashade models `if` and `else` statements of the target C-like languages with Python's `with` statements, for example:
 
 ```Python
     with sh.if_(sh.g_f4A.x):
