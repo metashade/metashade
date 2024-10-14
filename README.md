@@ -222,7 +222,13 @@ generates the following HLSL:
 Please note that the native Python `if` and `else` can be used in Metashade to implement design-time logic, similar to `#ifdef` or `if constexpr()` in C++.
 This is another example of how Metashade explicitly separates design-time and run-time code.
 
+For example, the following code is generated conditionally if the input geometry has vertex tangents:
 
-for example:
+```Python
+    if hasattr(sh.vsIn, 'Tobj'):
+        sh.vsOut.Tw = sh.g_WorldXf.xform(sh.vsIn.Tobj.xyz).xyz.normalize()
+        sh.vsOut.Bw = sh.vsOut.Nw.cross(sh.vsOut.Tw) * sh.vsIn.Tobj.w
+```
+
 
 
