@@ -141,7 +141,7 @@ E.g. `sh.RgbF` can’t be added to `sh.Point3f` even though they're both backed 
 
 For added syntactic sugar, the `__floordiv__` operator is overloaded to generate comments in the target language (see below).
 
-## More examples
+## Some examples
 
 The following Python code
 
@@ -192,3 +192,15 @@ float NdotL = dot(N, L);
 // Sample the texture
 float4 rgbaSample = g_tColor.Sample(g_sColor, uv);
 ```
+
+### Conditional statements
+
+Metashade models `if` and `else` statements in the target C-like languages with Python's `with` statements, for example:
+
+Please note that the native Python `if` and `else` can be used in Metashade to implement design-time logic, similar to `#ifdef` or `if constexpr()` in C++.
+This is another example of how Metashade explicitly separates design-time and run-time code.
+
+
+for example:
+
+
