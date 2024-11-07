@@ -33,7 +33,7 @@ jobs:
         repository: microsoft/DirectXShaderCompiler
         extract: true
         tag: v1.8.2407
-        fileName: dxc_2024_05_24.zip
+        fileName: dxc_2024_07_31.zip
         out-file-path: '.dxc'
     - name: Print the directory tree
       run: |
