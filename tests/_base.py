@@ -31,10 +31,18 @@ class Base:
     _entry_point_name = 'psMain'
 
     @classmethod
-    def _get_hlsl_path(cls, file_name : str) -> str:
-        return ( cls._out_dir / f'{file_name}.hlsl'
+    def _get_out_path(cls, file_name : str, file_extension : str) -> str:
+        return ( cls._out_dir / f'{file_name}.{file_extension}'
             if file_name is not None else None
         )
+
+    @classmethod
+    def _get_hlsl_path(cls, file_name : str) -> str:
+        return cls._get_out_path(file_name, 'hlsl')
+    
+    @classmethod
+    def _get_glsl_path(cls, file_name : str) -> str:
+        return cls._get_out_path(file_name, 'glsl')
 
     @staticmethod
     def _open_file(hlsl_path : str = None):
