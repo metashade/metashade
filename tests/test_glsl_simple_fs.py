@@ -22,12 +22,9 @@ class TestGlslSimpleFs(_base.Base):
         with self._open_file(glsl_path) as fs_file:
             sh = fs.Generator(fs_file, '450')
 
-            with sh.ps_output('FsOut') as FsOut:
-                FsOut.SV_Target('color', sh.Float4)
+            sh.f4OutColor = sh.out(sh.Float4, 0)
 
-            with sh.main(self._entry_point_name, sh.FsOut)():
-                sh.result = sh.FsOut()
-                sh.result.color = sh.Float4(1.0, 0.0, 0.0, 1.0)
-                sh.return_(sh.result)
-        
+            with sh.main(self._entry_point_name)():
+                sh.f4OutColor = sh.Float4(1.0, 0.0, 0.0, 1.0)
+
         self._check_source(glsl_path)
