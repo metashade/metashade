@@ -59,12 +59,13 @@ class TestIf(_base.Base):
                 sh.result = sh.PsOut()
 
                 with sh.if_(sh.g_f4A.x):
-                    sh.result.color = sh.g_f4B
-                    sh.return_(sh.result)
+                    sh.result.color = sh.g_f4B                    
 
                     with sh.if_(sh.g_f4A.y):
                         sh.result.color = sh.g_f4D
                         sh.return_(sh.result)
+
+                    sh.return_(sh.result)
 
                 sh.result.color = sh.g_f4C
                 sh.return_(sh.result)
