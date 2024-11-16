@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import metashade.base.data_types as base
-import metashade.rtsl.data_types as rtsl
+import metashade.base.dtypes as base
+import metashade.rtsl.dtypes as rtsl
 
 import numbers
 from . import _auto_float_intrinsics, _auto_numeric_intrinsics

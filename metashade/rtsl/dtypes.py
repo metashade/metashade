@@ -13,8 +13,8 @@
 # limitations under the License.
 
 import collections, numbers, sys
-import metashade.clike.data_types as clike
-from metashade.clike.data_types import Float, Int
+import metashade.clike.dtypes as clike
+from metashade.clike.dtypes import Float, Int
 
 class _RawVector(clike.ArithmeticType):
     _swizzle_str = 'xyzw'

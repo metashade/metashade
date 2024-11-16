@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from . import data_types
-import metashade.clike.data_types as clike_dtypes
+from . import dtypes
+import metashade.clike.dtypes as clike_dtypes
 
 # See https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/d3d11-graphics-reference-sm5-objects
 # for HLSL 5+ texture object types
@@ -31,22 +31,22 @@ class _TextureBase(clike_dtypes.BaseType):
         return sampler.combine(self)
 
 class Texture1d(_TextureBase):
-    _tex_coord_type = data_types.Float
-    _tex_coord_offset_type = data_types.Int
+    _tex_coord_type = dtypes.Float
+    _tex_coord_offset_type = dtypes.Int
     _target_name = 'Texture1D'
 
 class Texture2d(_TextureBase):
-    _tex_coord_type = data_types.Float2
-    _tex_coord_offset_type = data_types.Int2
+    _tex_coord_type = dtypes.Float2
+    _tex_coord_offset_type = dtypes.Int2
     _target_name = 'Texture2D'
 
 class Texture3d(_TextureBase):
-    _tex_coord_type = data_types.Float3
-    _tex_coord_offset_type = data_types.Int3
+    _tex_coord_type = dtypes.Float3
+    _tex_coord_offset_type = dtypes.Int3
     _target_name = 'Texture3D'
 
 class TextureCube(_TextureBase):
-    _tex_coord_type = data_types.Float3
+    _tex_coord_type = dtypes.Float3
     _target_name = 'TextureCube'
 
 class Sampler(clike_dtypes.BaseType):
