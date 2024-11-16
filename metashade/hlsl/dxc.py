@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pathlib, shutil, subprocess
-from typing import NamedTuple
+import shutil, subprocess
 from metashade.util import perf
 
 def identify():

@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from metashade.base.data_types import BaseType
+from metashade.base.dtypes import BaseType
 import metashade.rtsl.profile as rtsl
-from . import data_types
+from . import dtypes
 from . import samplers
 
 class UniformBuffer:
@@ -48,7 +48,7 @@ class Generator(rtsl.Generator):
         self._uniforms_by_semantic = dict()
         self._uniforms_by_register = dict()
 
-        self._register_dtypes(data_types.__name__)
+        self._register_dtypes(dtypes.__name__)
         self._register_dtypes(samplers.__name__)
 
     def _check_unique_uniform_register(self, register_name : str, new_name :str):

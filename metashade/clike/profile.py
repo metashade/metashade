@@ -13,8 +13,7 @@
 # limitations under the License.
 
 import metashade.base.profile as base
-from . import context
-from . import struct
+from . import context, struct
 
 class Generator(base.Generator):
     def function(self, name : str, return_type = None):

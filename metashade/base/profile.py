@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from . import data_types
-from . import context
+from . import dtypes
 
 import copy, inspect, sys
 
@@ -124,14 +123,14 @@ class Generator:
             return
 
         lvalue = getattr(self, name, None)
-        if isinstance(lvalue, data_types.BaseType):
+        if isinstance(lvalue, dtypes.BaseType):
             # An lvalue with the given name exists,
             # so assign the new value to it
             lvalue._assign(value)
             return
 
         # If value is an lvalue, we need to clone it
-        if (isinstance(value, data_types.BaseType)
+        if (isinstance(value, dtypes.BaseType)
             and value._name is not None
         ):
             value = copy.copy(value)
