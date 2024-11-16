@@ -14,6 +14,11 @@
 
 import metashade.rtsl.profile as rtsl
 
+class _StageOutput:
+    def __init__(self, dtype, location : int):
+        self._dtype = dtype
+        self._location = location
+
 class Generator(rtsl.Generator):
     _is_pixel_shader = True
 
@@ -21,5 +26,5 @@ class Generator(rtsl.Generator):
         super(Generator, self).__init__(file_)
         self._glsl_version = glsl_version
 
-    def out(self, type_, location):
-        return self._out(type_, location)
+    def out(dtype, location : int):
+        return _StageOutput(dtype, location)
