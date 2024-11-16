@@ -20,3 +20,6 @@ class Generator(rtsl.Generator):
     def __init__(self, file_, glsl_version : str):
         super(Generator, self).__init__(file_)
         self._glsl_version = glsl_version
+
+    def out(self, type_, location):
+        return self._out(type_, location)

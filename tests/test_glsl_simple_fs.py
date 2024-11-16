@@ -22,7 +22,7 @@ class TestGlslSimpleFs(_base.Base):
         with self._open_file(glsl_path) as fs_file:
             sh = fs.Generator(fs_file, '450')
 
-            sh.f4OutColor = sh.out(sh.Float4, 0)
+            sh.f4OutColor = sh.out(sh.Float4, location=0)
 
             with sh.main(self._entry_point_name)():
                 sh.f4OutColor = sh.Float4(1.0, 0.0, 0.0, 1.0)
