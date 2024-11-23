@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import metashade.rtsl.profile as rtsl
+from . import dtypes
 
 class _StageOutput:
     def __init__(self, dtype, location : int):
@@ -26,5 +27,9 @@ class Generator(rtsl.Generator):
         super(Generator, self).__init__(file_)
         self._glsl_version = glsl_version
 
-    def out(dtype, location : int):
+        # Register the data types
+        # TODO: share with other shader stages
+        self._register_dtypes(dtypes.__name__)
+
+    def out(self, dtype, location : int):
         return _StageOutput(dtype, location)
