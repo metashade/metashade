@@ -129,7 +129,7 @@ class Generator:
             lvalue._assign(value)
             return
 
-        # If value is an lvalue, we need to clone it
+        # If `value` is an lvalue, we need to clone it
         if (isinstance(value, dtypes.BaseType)
             and value._name is not None
         ):

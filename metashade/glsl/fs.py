@@ -17,8 +17,15 @@ from . import dtypes
 
 class _StageOutput:
     def __init__(self, dtype, location : int):
-        self._dtype = dtype
+        self._dtype_factory = dtype
         self._location = location
+
+    def _define(self, sh, name):
+        #TODO: make it immutable
+        value = self._dtype_factory()
+        sh._set_global(name, value)
+
+        sh._emit(f'layout(location = {self._location}) out {value.__class__._get_target_type_name()} {value._name};\n')
 
 class Generator(rtsl.Generator):
     _is_pixel_shader = True
@@ -33,3 +40,15 @@ class Generator(rtsl.Generator):
 
     def out(self, dtype, location : int):
         return _StageOutput(dtype, location)
+    
+    def __setattr__(self, name, value):
+        if isinstance(value, _StageOutput):
+            if not self._check_global_scope():
+                raise RuntimeError(
+                    "Stage outputs can only be defined at global scope"
+                )
+            # Define the stage output
+            value._define(self, name)
+        else:
+            super().__setattr__(name, value)
+        

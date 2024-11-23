@@ -21,7 +21,7 @@ class BaseType(base.BaseType):
         raise RuntimeError('Uniform registers not supported for {cls}')
 
     @classmethod
-    def _define_static(
+    def _emit_def(
         cls, sh, identifier,
         semantic = None,
         register : int = None,
@@ -65,7 +65,7 @@ class BaseType(base.BaseType):
         annotations = None
     ):
         self._bind(sh, identifier, allow_init)
-        self.__class__._define_static(
+        self.__class__._emit_def(
             sh, self._name,
             initializer = self._expression,
             semantic = semantic,
