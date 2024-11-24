@@ -28,6 +28,12 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         python -m pip install flake8 pytest
+    - name: Lint with flake8
+      run: |
+        # stop the build if there are Python syntax errors or undefined names
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - uses: robinraju/release-downloader@v1.10
       with:
         repository: microsoft/DirectXShaderCompiler
@@ -35,20 +41,22 @@ jobs:
         tag: v1.8.2407
         fileName: dxc_2024_07_31.zip
         out-file-path: '.dxc'
+    - uses: robinraju/release-downloader@v1.10
+      with:
+        repository: KhronosGroup/glslang
+        extract: true
+        tag: main-tot
+        fileName: glslang-master-windows-Release.zip
+        out-file-path: '.glslang'
     - name: Print the directory tree
       run: |
         pwd
         tree /F
-    - name: Add DXC to PATH
+    - name: Configure the environment for tests
       run: |
         Add-Content $env:GITHUB_PATH $env:GITHUB_WORKSPACE\.dxc\bin\x64
+        Add-Content $env:GITHUB_PATH $env:GITHUB_WORKSPACE\.glslang\bin
         Add-Content $env:GITHUB_ENV METASHADE_PYTEST_OUT_DIR=$env:GITHUB_WORKSPACE/tests/out
-    - name: Lint with flake8
-      run: |
-        # stop the build if there are Python syntax errors or undefined names
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with pytest
       run: |
         pytest

@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import _base
-from metashade.glsl import fs
+from metashade.glsl import fs, glslang
 
 class TestGlslSimpleFs(_base.Base):
     def test_glsl_simple_fs(self):
@@ -24,8 +24,12 @@ class TestGlslSimpleFs(_base.Base):
 
             sh.f4OutColor = sh.out(sh.Float4, location=0)
 
+            sh._emit("blablahblah")
+
             with sh.entry_point('main')():
                 sh.f4OutColor = sh.Float4((1.0, 0.0, 0.0, 1.0))
 
-        # TODO: compile with glslc
-        # self._check_source(glsl_path)
+        glslang.compile(
+            src_path=glsl_path, target_env='vulkan1.1', shader_stage='frag'
+        )
+
