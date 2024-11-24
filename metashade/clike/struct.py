@@ -82,7 +82,7 @@ def define_struct(sh, name, member_defs):
 
     for member_name, member_def in member_defs.items():
         sh._emit_indent()
-        member_def.dtype._define_static(sh, member_name, member_def.semantic)
+        member_def.dtype._emit_def(sh, member_name, member_def.semantic)
         sh._emit(";\n")
 
     sh._pop_indent()
