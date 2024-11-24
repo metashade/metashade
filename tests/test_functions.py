@@ -38,7 +38,7 @@ class TestFunctions(_base.Base):
         with sh.ps_output('PsOut') as PsOut:
             PsOut.SV_Target('color', sh.Float4)
 
-        return sh.main(self._entry_point_name, sh.PsOut)()
+        return sh.entry_point(self._entry_point_name, sh.PsOut)()
 
     def _correct_ps_main(self, sh):
         self._generate_test_uniforms(sh)

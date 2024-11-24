@@ -24,7 +24,7 @@ class TestGlslSimpleFs(_base.Base):
 
             sh.f4OutColor = sh.out(sh.Float4, location=0)
 
-            with sh.main(self._entry_point_name)():
+            with sh.entry_point('main')():
                 sh.f4OutColor = sh.Float4((1.0, 0.0, 0.0, 1.0))
 
         # TODO: compile with glslc

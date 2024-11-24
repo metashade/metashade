@@ -21,7 +21,6 @@
             "args": [
                 "--target-env=vulkan1.1",
                 "-fshader-stage=fragment",
-                "-fentry-point=psMain",
                 "${file}"
             ]
         }

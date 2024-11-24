@@ -40,7 +40,7 @@ class TestSamplers(_base.Base):
             with sh.ps_output('PsOut') as PsOut:
                 PsOut.SV_Target('color', sh.Float4)
 
-            with sh.main(self._entry_point_name, sh.PsOut)(psIn = sh.VsOut):
+            with sh.entry_point(self._entry_point_name, sh.PsOut)(psIn = sh.VsOut):
                 sh.psOut = sh.PsOut()
 
                 sh.rgbaSample0 = (sh.g_sColor1 @ sh.g_tColor1)(sh.psIn.uv0)

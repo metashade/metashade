@@ -33,7 +33,7 @@ class TestIf(_base.Base):
             with sh.ps_output('PsOut') as PsOut:
                 PsOut.SV_Target('color', sh.Float4)
 
-            with sh.main(self._entry_point_name, sh.PsOut)():
+            with sh.entry_point(self._entry_point_name, sh.PsOut)():
                 sh.result = sh.PsOut()
 
                 with sh.if_(sh.g_f4A.x):
@@ -55,7 +55,7 @@ class TestIf(_base.Base):
             with sh.ps_output('PsOut') as PsOut:
                 PsOut.SV_Target('color', sh.Float4)
 
-            with sh.main(self._entry_point_name, sh.PsOut)():
+            with sh.entry_point(self._entry_point_name, sh.PsOut)():
                 sh.result = sh.PsOut()
 
                 with sh.if_(sh.g_f4A.x):
@@ -82,7 +82,7 @@ class TestIf(_base.Base):
             with sh.ps_output('PsOut') as PsOut:
                 PsOut.SV_Target('color', sh.Float4)
 
-            with sh.main(self._entry_point_name, sh.PsOut)():
+            with sh.entry_point(self._entry_point_name, sh.PsOut)():
                 sh.result = sh.PsOut()
 
                 with sh.if_(sh.g_f4A.x):

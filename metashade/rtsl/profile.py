@@ -15,4 +15,4 @@
 import metashade.clike.profile as clike
 
 class Generator(clike.Generator):
-    main = clike.Generator.function
+    entry_point = clike.Generator.function
