@@ -13,6 +13,17 @@
                 "-O3",
                 "${file}"
             ]
+        },
+        {
+            "label": "Compile Current GLSL FS file",
+            "type": "shell",
+            "command": "glslc",
+            "args": [
+                "--target-env=vulkan1.1",
+                "-fshader-stage=fragment",
+                "-fentry-point=psMain",
+                "${file}"
+            ]
         }
     ]
 }
