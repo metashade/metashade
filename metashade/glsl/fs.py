@@ -37,6 +37,7 @@ class Generator(rtsl.Generator):
         # Register the data types
         # TODO: share with other shader stages
         self._register_dtypes(dtypes.__name__)
+        self._emit(f'#version {glsl_version}\n')
 
     def out(self, dtype, location : int):
         return _StageOutput(dtype, location)
