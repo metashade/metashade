@@ -15,12 +15,22 @@
             ]
         },
         {
-            "label": "Compile Current GLSL FS file",
+            "label": "glslc - Compile Current GLSL FS file",
             "type": "shell",
             "command": "glslc",
             "args": [
                 "--target-env=vulkan1.1",
                 "-fshader-stage=fragment",
+                "${file}"
+            ]
+        },
+        {
+            "label": "glslang - Compile Current GLSL FS file",
+            "type": "shell",
+            "command": "glslang",
+            "args": [
+                "--target-env", "vulkan1.1",
+                "-S", "frag",
                 "${file}"
             ]
         }
