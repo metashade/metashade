@@ -24,7 +24,7 @@ class _StageOutput:
         #TODO: make it immutable
         value = self._dtype_factory()
         sh._set_global(name, value)
-
+        value._bind(sh, name, allow_init = False)
         sh._emit(f'layout(location = {self._location}) out {value.__class__._get_target_type_name()} {value._name};\n')
 
 class Generator(rtsl.Generator):
