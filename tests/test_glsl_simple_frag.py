@@ -13,14 +13,14 @@
 # limitations under the License.
 
 import _base
-from metashade.glsl import fs, glslang
+from metashade.glsl import glslang, frag
 
-class TestGlslSimpleFs(_base.Base):
-    def test_glsl_simple_fs(self):
-        glsl_path = self._get_glsl_path('test_glsl_simple_fs')
+class TestGlslSimpleFrag(_base.Base):
+    def test_glsl_simple_frag(self):
+        glsl_path = self._get_glsl_path('test_glsl_simple_frag')
 
         with self._open_file(glsl_path) as fs_file:
-            sh = fs.Generator(fs_file, '450')
+            sh = frag.Generator(fs_file, '450')
 
             sh.f4OutColor = sh.out(sh.Float4, location=0)
 
