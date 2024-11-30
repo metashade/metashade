@@ -14,7 +14,8 @@
 
 import os
 import _base
-from metashade.glsl import glslang, frag
+from metashade.glsl import frag
+from metashade.glsl.util import glslang
 
 class TestGlslSimpleFrag(_base.Base):
     def test_glsl_simple_frag(self):
