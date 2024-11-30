@@ -1,4 +1,4 @@
-# Copyright 2023 Pavlo Penenko
+# Copyright 2018 Pavlo Penenko
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,15 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pathlib, pytest, sys
-from subprocess import CalledProcessError
-from metashade.hlsl.util import dxc
+import metashade._clike.profile as clike
 
-class TestDxc:
-    def test_dxc_failure(self):
-        parent_dir = pathlib.Path(sys.modules[self.__module__].__file__).parent
-        with pytest.raises(CalledProcessError):
-            dxc.compile(
-                src_path = parent_dir / 'fail.hlsl',
-                profile = 'lib_6_5',
-            )
+class Generator(clike.Generator):
+    entry_point = clike.Generator.function

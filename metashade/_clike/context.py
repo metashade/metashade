@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import abc
-import metashade.base.context as base
+import metashade._base.context as base
 
 class FunctionDecl:
     '''

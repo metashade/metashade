@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import metashade.base.dtypes as base
+import metashade._base.dtypes as base
 import numbers
 
 class BaseType(base.BaseType):

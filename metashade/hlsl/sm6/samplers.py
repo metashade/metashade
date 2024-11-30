@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from . import dtypes
-import metashade.clike.dtypes as clike_dtypes
+import metashade._clike.dtypes as clike_dtypes
 
 # See https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/d3d11-graphics-reference-sm5-objects
 # for HLSL 5+ texture object types

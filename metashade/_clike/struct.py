@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from metashade.clike.dtypes import BaseType
+from metashade._clike.dtypes import BaseType
 
 class StructMemberDef:
     def __init__(self, dtype, semantic = None):

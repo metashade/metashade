@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import metashade.rtsl.dtypes as rtsl
+import metashade._rtsl.dtypes as rtsl
 
 class Float(rtsl.Float):
     pass

@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from metashade.base.dtypes import BaseType
-import metashade.rtsl.profile as rtsl
+from metashade._base.dtypes import BaseType
+import metashade._rtsl.profile as rtsl
 from . import dtypes
 from . import samplers
 

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import metashade.rtsl.dtypes as rtsl
+import metashade._rtsl.dtypes as rtsl
 
 import numbers
 from . import _auto_float_intrinsics, _auto_numeric_intrinsics

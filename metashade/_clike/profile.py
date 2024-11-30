@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import metashade.base.profile as base
+import metashade._base.profile as base
 from . import context, struct
 
 class Generator(base.Generator):

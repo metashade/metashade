@@ -14,7 +14,7 @@
 
 import filecmp, io, os, sys
 from pathlib import Path
-from metashade.hlsl import dxc
+from metashade.hlsl.util import dxc
 
 class Base:
     @classmethod
