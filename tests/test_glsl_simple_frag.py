@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 import _base
 from metashade.glsl import glslang, frag
 
@@ -28,6 +29,9 @@ class TestGlslSimpleFrag(_base.Base):
                 sh.f4OutColor = sh.Float4((1.0, 0.0, 0.0, 1.0))
 
         glslang.compile(
-            src_path=glsl_path, target_env='vulkan1.1', shader_stage='frag'
+            src_path=glsl_path,
+            target_env = 'vulkan1.1',
+            shader_stage = 'frag',
+            output_path = os.devnull
         )
 

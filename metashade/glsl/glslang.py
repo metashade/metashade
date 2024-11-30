@@ -45,7 +45,7 @@ def compile(
 
     message = 'glslang compiling'
     if output_path is not None:
-        args += ['-o', output_path]
+        args += ['--output', output_path]
         message += f' {output_path}'
 
     with perf.TimedScope(message):

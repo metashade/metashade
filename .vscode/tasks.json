@@ -31,6 +31,7 @@
             "args": [
                 "--target-env", "vulkan1.1",
                 "-S", "frag",
+                "--output", "NUL",
                 "${file}"
             ]
         }
