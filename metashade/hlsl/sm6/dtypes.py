@@ -56,7 +56,7 @@ class _RawVectorF(_RawVector):
     _element_type = Float
 
     # TODO: auto-generate a mixin for the following methods:
-    # https://github.com/ppenenko/metashade/issues/9
+    # https://github.com/metashade/metashade/issues/9
 
     def normalize(self):
         return self.__class__( f'normalize({self})' )

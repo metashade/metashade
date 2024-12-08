@@ -4,8 +4,8 @@ Metashade is an experimental Python-based GPU shading embedded domain-specific l
 When a Metashade script executes, it generates code in a target shading language.
 Only HLSL is supported so far but the intent is definitely to support multiple targets.
 
-To see Metashade in action, check out the glTF demo at https://github.com/ppenenko/metashade-glTFSample or the [tests](tests) which are run by CI:
-[![GitHub Actions CI](https://github.com/ppenenko/metashade/actions/workflows/python-package.yml/badge.svg)](https://github.com/ppenenko/metashade/actions/workflows/python-package.yml)
+To see Metashade in action, check out the glTF demo at https://github.com/metashade/metashade-glTFSample or the [tests](tests) which are run by CI:
+[![GitHub Actions CI](https://github.com/metashade/metashade/actions/workflows/python-package.yml/badge.svg)](https://github.com/metashade/metashade/actions/workflows/python-package.yml)
 
 For a detailed discussion of the motivation for Metashade and its design, please see the [presentation on Google Slides](https://docs.google.com/presentation/d/e/2PACX-1vQtYIwXIkMnVC6TzWTKPAtZIA6_xeUCQc8Mvyziu0qy7HDUduz_onsJ5TabxTuuVQ/pub?start=false&loop=false&delayms=3000) or [watch this presentation](https://youtu.be/yC8VMLXYs5U?si=d_n3ngHr1IZIQ8ZH) from Academy Software Foundation Open Source Days 2024.
 
@@ -71,8 +71,8 @@ Python's run time becomes the shader's design time, and it becomes a metaprogram
 This offers the following benefits:
 * Easy-to-use metaprogramming. Imperative metaprogramming is possible (by comparison, C++ templates are a pure-functional language).
 * The whole stack is debuggable by the application programmer.
-* Codegen can interact with the outside world (file system or user input). E.g. the [glTF demo](https://github.com/ppenenko/metashade-glTFSample) loads glTF assets and generates shaders based on their contents.
-* Codegen can integrate with arbitrary Python code. E.g. the [glTF demo](https://github.com/ppenenko/metashade-glTFSample) uses the third-party [pygltflib](https://pypi.org/project/pygltflib/) to parse glTF assets.
+* Codegen can interact with the outside world (file system or user input). E.g. the [glTF demo](https://github.com/metashade/metashade-glTFSample) loads glTF assets and generates shaders based on their contents.
+* Codegen can integrate with arbitrary Python code. E.g. the [glTF demo](https://github.com/metashade/metashade-glTFSample) uses the third-party [pygltflib](https://pypi.org/project/pygltflib/) to parse glTF assets.
 * It's easy to build abstractions on top of basic codegen.
 
 ### Creating a generator
