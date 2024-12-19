@@ -170,7 +170,7 @@ class If(_ConditionalStatement):
 
     @abc.abstractmethod
     def _emit_statement(self):
-        self._sh._emit(f'if ({self._condition})\n')
+        self._sh._emit(f'if ( {self._condition} )\n')
 
 class Else(_ConditionalStatement):
     @abc.abstractmethod

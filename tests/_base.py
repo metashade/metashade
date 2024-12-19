@@ -15,24 +15,23 @@
 import filecmp, io, os, sys
 from pathlib import Path
 from metashade.hlsl.util import dxc
+from metashade.util.tests import RefDiffer
 
 class Base:
     @classmethod
     def setup_class(cls):
         cls._parent_dir = Path(sys.modules[cls.__module__].__file__).parent
-        cls._ref_dir = cls._parent_dir / 'ref'
-        out_dir_env_var = os.getenv('METASHADE_PYTEST_OUT_DIR', None)
-        cls._out_dir = (
-            Path(out_dir_env_var).resolve() if out_dir_env_var is not None
-            else cls._ref_dir
+
+        cls._ref_differ = RefDiffer(
+            ref_dir = cls._parent_dir / 'ref',
+            out_dir_env_var = 'METASHADE_PYTEST_OUT_DIR'
         )
-        os.makedirs(cls._out_dir, exist_ok = True)
 
     _entry_point_name = 'psMain'
 
     @classmethod
     def _get_out_path(cls, file_name : str, file_extension : str) -> str:
-        return ( cls._out_dir / f'{file_name}.{file_extension}'
+        return ( cls._ref_differ.out_dir / f'{file_name}.{file_extension}'
             if file_name is not None else None
         )
 
@@ -52,8 +51,7 @@ class Base:
 
     @classmethod
     def _check_source(cls, hlsl_path, as_lib : bool = False):
-        if cls._out_dir != cls._ref_dir:
-            assert filecmp.cmp(hlsl_path, cls._ref_dir / hlsl_path.name)
+        cls._ref_differ(hlsl_path)
 
         # LIB profiles support DXIL linking and therefore allow function
         # declarations without definitions.
