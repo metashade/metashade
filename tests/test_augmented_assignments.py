@@ -15,14 +15,14 @@
 import _base
 from metashade.hlsl.sm6 import ps_6_0
 
-class TestAugmentedAssignments(_base.Base):
+class TestAugmentedAssignments(_base.TestBase):
     def test_augmented_add(self):
-        hlsl_path = self._get_hlsl_path('test_augmented_add')
-        with self._open_file(hlsl_path) as ps_file:
-            sh = ps_6_0.Generator(ps_file)
+        with _base.HlslTestContext('test_augmented_add', as_lib = True) as ctx:
+            with ctx.open_file() as ps_file:
+                sh = ps_6_0.Generator(ps_file)
 
-            with sh.function('assign_add', sh.Float4)(a = sh.Float4, b = sh.Float4):
-                sh.a += sh.b
-                sh.return_(sh.a)
-
-        self._check_source(hlsl_path, as_lib = True)
+                with sh.function('assign_add', sh.Float4)(
+                    a = sh.Float4, b = sh.Float4
+                ):
+                    sh.a += sh.b
+                    sh.return_(sh.a)

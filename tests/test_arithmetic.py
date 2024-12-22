@@ -15,45 +15,43 @@
 import pytest, _base
 from metashade.hlsl.sm6 import ps_6_0
 
-class TestArithmetic(_base.Base):
+class TestArithmetic(_base.TestBase):
     def _test_arithmetic(
             self,
             hlsl_file_name : str,
             scalar_type : str,
             vector2_type : str
     ):
-        hlsl_path = self._get_hlsl_path(hlsl_file_name)
-        with self._open_file(hlsl_path) as ps_file:
-            sh = ps_6_0.Generator(ps_file)
+        with _base.HlslTestContext(hlsl_file_name, as_lib = True) as ctx:
+            with ctx.open_file() as ps_file:
+                sh = ps_6_0.Generator(ps_file)
 
-            with sh.function(
-                'test_arithmetic', getattr(sh, vector2_type)
-            )():
-                sh.fD = getattr(sh, scalar_type)(-1)
+                with sh.function(
+                    'test_arithmetic', getattr(sh, vector2_type)
+                )():
+                    sh.fD = getattr(sh, scalar_type)(-1)
 
-                sh.f2A = getattr(sh, vector2_type)(0)
-                sh.f2B = getattr(sh, vector2_type)((1, 2))
-                
-                sh.f2C = sh.f2A + sh.f2B
-                sh.f2C += sh.f2B
-                
-                sh.f2C = sh.f2A - sh.f2B
-                sh.f2C -= sh.f2B
+                    sh.f2A = getattr(sh, vector2_type)(0)
+                    sh.f2B = getattr(sh, vector2_type)((1, 2))
+                    
+                    sh.f2C = sh.f2A + sh.f2B
+                    sh.f2C += sh.f2B
+                    
+                    sh.f2C = sh.f2A - sh.f2B
+                    sh.f2C -= sh.f2B
 
-                sh.f2C = sh.f2A * sh.f2B
-                sh.f2C *= sh.f2B
+                    sh.f2C = sh.f2A * sh.f2B
+                    sh.f2C *= sh.f2B
 
-                sh.f2C = sh.f2A / sh.f2B
-                sh.f2C /= sh.f2B
+                    sh.f2C = sh.f2A / sh.f2B
+                    sh.f2C /= sh.f2B
 
-                sh.f2C = sh.f2A * sh.fD
-                sh.f2C *= sh.fD
+                    sh.f2C = sh.f2A * sh.fD
+                    sh.f2C *= sh.fD
 
-                sh.f2C = sh.f2A / sh.fD
-                sh.f2C /= sh.fD
-                sh.return_(sh.f2C)
-
-        self._check_source(hlsl_path, as_lib = True)
+                    sh.f2C = sh.f2A / sh.fD
+                    sh.f2C /= sh.fD
+                    sh.return_(sh.f2C)
 
     def test_arithmetic_float(self):
         self._test_arithmetic(

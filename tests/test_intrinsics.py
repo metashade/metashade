@@ -15,30 +15,30 @@
 import _base, _auto_float_intrinsics, _auto_numeric_intrinsics
 from metashade.hlsl.sm6 import ps_6_0
 
-class TestIntrinsics(_base.Base):
+class TestIntrinsics(_base.TestBase):
     def _test(self, hlsl_file_name, auto_package):
-        hlsl_path = self._get_hlsl_path(hlsl_file_name)
-        with self._open_file(hlsl_path) as ps_file:
-            sh = ps_6_0.Generator(ps_file)
+        with _base.HlslTestContext(
+            hlsl_file_name, as_lib = True
+        ) as ctx:
+            with ctx.open_file() as ps_file:
+                sh = ps_6_0.Generator(ps_file)
 
-            with sh.uniform_buffer(register = 0, name = 'cb'):
-                sh.uniform('g_f', sh.Float)
-                for dim in range(1, 5):
-                    sh.uniform(
-                        f'g_f{dim}',
-                        getattr(sh, f'Float{dim}')
-                    )
-
-                for row in range(1, 5):
-                    for col in range(1, 5):
+                with sh.uniform_buffer(register = 0, name = 'cb'):
+                    sh.uniform('g_f', sh.Float)
+                    for dim in range(1, 5):
                         sh.uniform(
-                            f'g_f{row}x{col}',
-                            getattr(sh, f'Float{row}x{col}')
+                            f'g_f{dim}',
+                            getattr(sh, f'Float{dim}')
                         )
 
-            auto_package.test(sh)
+                    for row in range(1, 5):
+                        for col in range(1, 5):
+                            sh.uniform(
+                                f'g_f{row}x{col}',
+                                getattr(sh, f'Float{row}x{col}')
+                            )
 
-        self._check_source(hlsl_path, as_lib = True)
+                auto_package.test(sh)
 
     def test_float_intrinsics(self):
         self._test('test_float_intrinsics', _auto_float_intrinsics)
