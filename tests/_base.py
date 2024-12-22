@@ -14,8 +14,10 @@
 
 import abc, inspect, io, os, sys
 from pathlib import Path
-from metashade.hlsl.util import dxc
+from metashade.glsl import frag
 from metashade.glsl.util import glslang
+from metashade.hlsl.sm6 import ps_6_0
+from metashade.hlsl.util import dxc
 from metashade.util.tests import RefDiffer
 
 class _TestContext(abc.ABC):
@@ -54,6 +56,10 @@ class _TestContext(abc.ABC):
         )
         self._as_lib = as_lib
 
+    @abc.abstractmethod
+    def _create_generator(self):
+        pass
+
     def _check_source(self):
         if self._src_path is None:
             return
@@ -61,33 +67,33 @@ class _TestContext(abc.ABC):
         if self._ref_differ is not None:
             self._ref_differ(self._src_path)
         self._compile()
-
-    # def _create_generator(self, hlsl_path : str, as_lib : bool = False):
-    #     return self._generator_cls(hlsl_path, as_lib)
     
     @abc.abstractmethod
     def _compile(self):
         pass
 
     def __enter__(self):
-        return self
-    
+        self._file = (
+            open(self._src_path, 'w') if self._src_path is not None
+            else io.StringIO()
+        )
+        return self._create_generator()
+
     def __exit__(self, exc_type, exc_value, traceback):
+        self._file.close()
         if exc_type is not None:
             return False
         self._check_source()
         return True
-
-    def open_file(self):
-        return ( open(self._src_path, 'w')
-            if self._src_path is not None else io.StringIO()
-        )
     
 _TestContext.setup_class()
 
 class HlslTestContext(_TestContext):
     _file_extension = 'hlsl'
     _entry_point_name = 'psMain'
+
+    def _create_generator(self):
+        return ps_6_0.Generator(self._file)
 
     def _compile(self):
         # LIB profiles support DXIL linking and therefore allow function
@@ -104,6 +110,9 @@ class HlslTestContext(_TestContext):
 
 class GlslTestContext(_TestContext):
     _file_extension = 'glsl'
+    
+    def _create_generator(self):
+        return frag.Generator(self._file, '450')
 
     def _compile(self):
         glslang.compile(

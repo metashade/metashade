@@ -17,12 +17,9 @@ from metashade.hlsl.sm6 import ps_6_0
 
 class TestAugmentedAssignments(_base.TestBase):
     def test_augmented_add(self):
-        with _base.HlslTestContext(as_lib = True) as ctx:
-            with ctx.open_file() as ps_file:
-                sh = ps_6_0.Generator(ps_file)
-
-                with sh.function('assign_add', sh.Float4)(
-                    a = sh.Float4, b = sh.Float4
-                ):
-                    sh.a += sh.b
-                    sh.return_(sh.a)
+        with _base.HlslTestContext(as_lib = True) as sh:
+            with sh.function('assign_add', sh.Float4)(
+                a = sh.Float4, b = sh.Float4
+            ):
+                sh.a += sh.b
+                sh.return_(sh.a)

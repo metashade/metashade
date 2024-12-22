@@ -24,65 +24,62 @@ class TestIf(_base.TestBase):
             sh.uniform('g_f4D', sh.Float4)
 
     def test_if(self):
-        with _base.HlslTestContext() as ctx:
-            with ctx.open_file() as ps_file:
-                sh = ps_6_0.Generator(ps_file)
-                self._generate_test_uniforms(sh)
+        ctx = _base.HlslTestContext()
+        with ctx as sh:
+            self._generate_test_uniforms(sh)
 
-                with sh.ps_output('PsOut') as PsOut:
-                    PsOut.SV_Target('color', sh.Float4)
+            with sh.ps_output('PsOut') as PsOut:
+                PsOut.SV_Target('color', sh.Float4)
 
-                with sh.entry_point(ctx._entry_point_name, sh.PsOut)():
-                    sh.result = sh.PsOut()
+            with sh.entry_point(ctx._entry_point_name, sh.PsOut)():
+                sh.result = sh.PsOut()
 
-                    with sh.if_(sh.g_f4A.x):
-                        sh.result.color = sh.g_f4B
-                        sh.return_(sh.result)
-
-                    sh.result.color = sh.g_f4C
+                with sh.if_(sh.g_f4A.x):
+                    sh.result.color = sh.g_f4B
                     sh.return_(sh.result)
+
+                sh.result.color = sh.g_f4C
+                sh.return_(sh.result)
 
     def test_nested_if(self):
-        with _base.HlslTestContext() as ctx:
-            with ctx.open_file() as ps_file:
-                sh = ps_6_0.Generator(ps_file)
-                self._generate_test_uniforms(sh)
+        ctx = _base.HlslTestContext()
+        with ctx as sh:
+            self._generate_test_uniforms(sh)
 
-                with sh.ps_output('PsOut') as PsOut:
-                    PsOut.SV_Target('color', sh.Float4)
+            with sh.ps_output('PsOut') as PsOut:
+                PsOut.SV_Target('color', sh.Float4)
 
-                with sh.entry_point(ctx._entry_point_name, sh.PsOut)():
-                    sh.result = sh.PsOut()
+            with sh.entry_point(ctx._entry_point_name, sh.PsOut)():
+                sh.result = sh.PsOut()
 
-                    with sh.if_(sh.g_f4A.x):
-                        sh.result.color = sh.g_f4B
+                with sh.if_(sh.g_f4A.x):
+                    sh.result.color = sh.g_f4B
 
-                        with sh.if_(sh.g_f4A.y):
-                            sh.result.color = sh.g_f4D
-                            sh.return_(sh.result)
-
+                    with sh.if_(sh.g_f4A.y):
+                        sh.result.color = sh.g_f4D
                         sh.return_(sh.result)
 
-                    sh.result.color = sh.g_f4C
                     sh.return_(sh.result)
+
+                sh.result.color = sh.g_f4C
+                sh.return_(sh.result)
 
     def test_if_else(self):
-        with _base.HlslTestContext() as ctx:
-            with ctx.open_file() as ps_file:
-                sh = ps_6_0.Generator(ps_file)
-                self._generate_test_uniforms(sh)
+        ctx = _base.HlslTestContext()
+        with ctx as sh:
+            self._generate_test_uniforms(sh)
 
-                with sh.ps_output('PsOut') as PsOut:
-                    PsOut.SV_Target('color', sh.Float4)
+            with sh.ps_output('PsOut') as PsOut:
+                PsOut.SV_Target('color', sh.Float4)
 
-                with sh.entry_point(ctx._entry_point_name, sh.PsOut)():
-                    sh.result = sh.PsOut()
+            with sh.entry_point(ctx._entry_point_name, sh.PsOut)():
+                sh.result = sh.PsOut()
 
-                    with sh.if_(sh.g_f4A.x):
-                        sh.result.color = sh.g_f4B
-                    with sh.else_():
-                        sh.result.color = sh.g_f4D
-                    sh.return_(sh.result)
+                with sh.if_(sh.g_f4A.x):
+                    sh.result.color = sh.g_f4B
+                with sh.else_():
+                    sh.result.color = sh.g_f4D
+                sh.return_(sh.result)
 
-                    sh.result.color = sh.g_f4C
-                    sh.return_(sh.result)
+                sh.result.color = sh.g_f4C
+                sh.return_(sh.result)

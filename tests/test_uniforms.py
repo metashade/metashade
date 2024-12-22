@@ -18,38 +18,29 @@ from metashade.hlsl.sm6 import ps_6_0
 
 class TestUniforms(_base.TestBase):
     def test_cb_register_clash(self):
-        with _base.HlslTestContext(no_file = True) as ctx:
-            with ctx.open_file() as ps_file:
-                sh = ps_6_0.Generator(ps_file)
+        with _base.HlslTestContext(no_file = True) as sh:
+            with sh.uniform_buffer(register = 0, name = 'cb0'):
+                sh.uniform('g_f0', sh.Float4)
 
-                with sh.uniform_buffer(register = 0, name = 'cb0'):
-                    sh.uniform('g_f0', sh.Float4)
+            with sh.uniform_buffer(register = 1, name = 'cb1'):
+                sh.uniform('g_f1', sh.Float4)
 
-                with sh.uniform_buffer(register = 1, name = 'cb1'):
-                    sh.uniform('g_f1', sh.Float4)
-
-                with pytest.raises(Exception):
-                    with sh.uniform_buffer(register = 0, name = 'cb2'):
-                        sh.uniform('g_f2', sh.Float4)
+            with pytest.raises(Exception):
+                with sh.uniform_buffer(register = 0, name = 'cb2'):
+                    sh.uniform('g_f2', sh.Float4)
 
     def test_texture_register_clash(self):
-        with _base.HlslTestContext(no_file = True) as ctx:
-            with ctx.open_file() as ps_file:
-                sh = ps_6_0.Generator(ps_file)
+        with _base.HlslTestContext(no_file = True) as sh:
+            sh.uniform('g_t0', sh.Texture2d, register = 0)
+            sh.uniform('g_t1', sh.Texture2d, register = 1)
 
-                sh.uniform('g_t0', sh.Texture2d, register = 0)
-                sh.uniform('g_t1', sh.Texture2d, register = 1)
-                
-                with pytest.raises(Exception):
-                    sh.uniform('g_t2', sh.Texture2d, register = 0)
+            with pytest.raises(Exception):
+                sh.uniform('g_t2', sh.Texture2d, register = 0)
 
     def test_sampler_register_clash(self):
-        with _base.HlslTestContext(no_file = True) as ctx:
-            with ctx.open_file() as ps_file:
-                sh = ps_6_0.Generator(ps_file)
-
-                sh.uniform('g_s0', sh.Sampler, register = 0)
-                sh.uniform('g_s1', sh.Sampler, register = 1)
-                
-                with pytest.raises(Exception):
-                    sh.uniform('g_s2', sh.Sampler, register = 0)
+        with _base.HlslTestContext(no_file = True) as sh:
+            sh.uniform('g_s0', sh.Sampler, register = 0)
+            sh.uniform('g_s1', sh.Sampler, register = 1)
+            
+            with pytest.raises(Exception):
+                sh.uniform('g_s2', sh.Sampler, register = 0)

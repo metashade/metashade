@@ -17,17 +17,14 @@ from metashade.hlsl.sm6 import ps_6_0
 
 class TestComment(_base.TestBase):
     def test_comment(self):
-        with _base.HlslTestContext(as_lib = True) as ctx:
-            with ctx.open_file() as ps_file:
-                sh = ps_6_0.Generator(ps_file)
-
-                sh // "This is a comment documenting the function"
-                sh // ""
-                with sh.function(
-                    'test_comment', sh.Float
-                )():
-                    sh.fA = sh.Float(-1)
-                    sh.fB = sh.Float(0)
-                    sh // "fC is the sum of fA and fB"
-                    sh.fC = sh.fA + sh.fB
-                    sh.return_(sh.fC)
+        with _base.HlslTestContext(as_lib = True) as sh:
+            sh // "This is a comment documenting the function"
+            sh // ""
+            with sh.function(
+                'test_comment', sh.Float
+            )():
+                sh.fA = sh.Float(-1)
+                sh.fB = sh.Float(0)
+                sh // "fC is the sum of fA and fB"
+                sh.fC = sh.fA + sh.fB
+                sh.return_(sh.fC)

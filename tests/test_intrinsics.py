@@ -17,26 +17,23 @@ from metashade.hlsl.sm6 import ps_6_0
 
 class TestIntrinsics(_base.TestBase):
     def _test(self, auto_package):
-        with _base.HlslTestContext(as_lib = True) as ctx:
-            with ctx.open_file() as ps_file:
-                sh = ps_6_0.Generator(ps_file)
+        with _base.HlslTestContext(as_lib = True) as sh:
+            with sh.uniform_buffer(register = 0, name = 'cb'):
+                sh.uniform('g_f', sh.Float)
+                for dim in range(1, 5):
+                    sh.uniform(
+                        f'g_f{dim}',
+                        getattr(sh, f'Float{dim}')
+                    )
 
-                with sh.uniform_buffer(register = 0, name = 'cb'):
-                    sh.uniform('g_f', sh.Float)
-                    for dim in range(1, 5):
+                for row in range(1, 5):
+                    for col in range(1, 5):
                         sh.uniform(
-                            f'g_f{dim}',
-                            getattr(sh, f'Float{dim}')
+                            f'g_f{row}x{col}',
+                            getattr(sh, f'Float{row}x{col}')
                         )
 
-                    for row in range(1, 5):
-                        for col in range(1, 5):
-                            sh.uniform(
-                                f'g_f{row}x{col}',
-                                getattr(sh, f'Float{row}x{col}')
-                            )
-
-                auto_package.test(sh)
+            auto_package.test(sh)
 
     def test_float_intrinsics(self):
         self._test(_auto_float_intrinsics)

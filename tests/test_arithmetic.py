@@ -21,36 +21,33 @@ class TestArithmetic(_base.TestBase):
             scalar_type : str,
             vector2_type : str
     ):
-        with _base.HlslTestContext(as_lib = True) as ctx:
-            with ctx.open_file() as ps_file:
-                sh = ps_6_0.Generator(ps_file)
+        with _base.HlslTestContext(as_lib = True) as sh:
+            with sh.function(
+                'test_arithmetic', getattr(sh, vector2_type)
+            )():
+                sh.fD = getattr(sh, scalar_type)(-1)
 
-                with sh.function(
-                    'test_arithmetic', getattr(sh, vector2_type)
-                )():
-                    sh.fD = getattr(sh, scalar_type)(-1)
+                sh.f2A = getattr(sh, vector2_type)(0)
+                sh.f2B = getattr(sh, vector2_type)((1, 2))
+                
+                sh.f2C = sh.f2A + sh.f2B
+                sh.f2C += sh.f2B
+                
+                sh.f2C = sh.f2A - sh.f2B
+                sh.f2C -= sh.f2B
 
-                    sh.f2A = getattr(sh, vector2_type)(0)
-                    sh.f2B = getattr(sh, vector2_type)((1, 2))
-                    
-                    sh.f2C = sh.f2A + sh.f2B
-                    sh.f2C += sh.f2B
-                    
-                    sh.f2C = sh.f2A - sh.f2B
-                    sh.f2C -= sh.f2B
+                sh.f2C = sh.f2A * sh.f2B
+                sh.f2C *= sh.f2B
 
-                    sh.f2C = sh.f2A * sh.f2B
-                    sh.f2C *= sh.f2B
+                sh.f2C = sh.f2A / sh.f2B
+                sh.f2C /= sh.f2B
 
-                    sh.f2C = sh.f2A / sh.f2B
-                    sh.f2C /= sh.f2B
+                sh.f2C = sh.f2A * sh.fD
+                sh.f2C *= sh.fD
 
-                    sh.f2C = sh.f2A * sh.fD
-                    sh.f2C *= sh.fD
-
-                    sh.f2C = sh.f2A / sh.fD
-                    sh.f2C /= sh.fD
-                    sh.return_(sh.f2C)
+                sh.f2C = sh.f2A / sh.fD
+                sh.f2C /= sh.fD
+                sh.return_(sh.f2C)
 
     def test_arithmetic_float(self):
         self._test_arithmetic(
