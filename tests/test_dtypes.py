@@ -17,9 +17,7 @@ from metashade.hlsl.sm6 import ps_6_0
 
 class TestDTypes(_base.TestBase):
     def test_init_from_literal(self):
-        with _base.HlslTestContext(
-            'test_init_from_literal', as_lib = True
-        ) as ctx:
+        with _base.HlslTestContext(as_lib = True) as ctx:
             with ctx.open_file() as ps_file:
                 sh = ps_6_0.Generator(ps_file)
 

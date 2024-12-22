@@ -17,9 +17,7 @@ from metashade.hlsl.sm6 import ps_6_0
 
 class TestSwizzling(_base.TestBase):
     def test_rgba_swizzling(self):
-        with _base.HlslTestContext(
-            'test_rgba_swizzling', as_lib = True
-        ) as ctx:
+        with _base.HlslTestContext(as_lib = True) as ctx:
             with ctx.open_file() as ps_file:
                 sh = ps_6_0.Generator(ps_file)
 
@@ -32,9 +30,7 @@ class TestSwizzling(_base.TestBase):
                     sh.return_(sh.r + sh.g)
 
     def test_xyzw_swizzling(self):
-        with _base.HlslTestContext(
-            'test_xyzw_swizzling', as_lib = True
-        ) as ctx:
+        with _base.HlslTestContext(as_lib = True) as ctx:
             with ctx.open_file() as ps_file:
                 sh = ps_6_0.Generator(ps_file)
 

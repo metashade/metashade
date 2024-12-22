@@ -48,18 +48,14 @@ class TestFunctions(_base.TestBase):
             sh.return_(sh.result)
 
     def test_function_call(self):
-        with _base.HlslTestContext(
-            'test_function_call'
-        ) as ctx:
+        with _base.HlslTestContext() as ctx:
             with ctx.open_file() as ps_file:
                 sh = ps_6_0.Generator(ps_file)
                 self._generate_add_func(sh)
                 self._correct_ps_main(sh, ctx)
 
     def test_kwarg_reorder(self):
-        with _base.HlslTestContext(
-            'test_kwarg_reorder', as_lib = True
-        ) as ctx:
+        with _base.HlslTestContext(as_lib = True) as ctx:
             with ctx.open_file() as ps_file:
                 sh = ps_6_0.Generator(ps_file)
                 self._generate_test_uniforms(sh)
@@ -74,18 +70,14 @@ class TestFunctions(_base.TestBase):
                     sh.return_(sh.result)
 
     def test_function_decl_call(self):
-        with _base.HlslTestContext(
-            'test_function_decl_call', as_lib = True
-        ) as ctx:
+        with _base.HlslTestContext(as_lib = True) as ctx:
             with ctx.open_file() as ps_file:
                 sh = ps_6_0.Generator(ps_file)
                 self._generate_add_func(sh, decl_only = True)
                 self._correct_ps_main(sh, ctx)
 
     def test_included_function_call(self):
-        with _base.HlslTestContext(
-            'test_included_function_call'
-        ) as ctx:
+        with _base.HlslTestContext() as ctx:
             with ctx.open_file() as ps_file:
                 sh = ps_6_0.Generator(ps_file)
                 sh.include('include/add.hlsl')
@@ -93,7 +85,7 @@ class TestFunctions(_base.TestBase):
                 self._correct_ps_main(sh, ctx)
 
     def test_missing_arg(self):
-        with _base.HlslTestContext() as ctx:
+        with _base.HlslTestContext(no_file = True) as ctx:
             with ctx.open_file() as ps_file:
                 sh = ps_6_0.Generator(ps_file)
                 self._generate_add_func(sh)
@@ -102,7 +94,7 @@ class TestFunctions(_base.TestBase):
                 sh.result.color = sh.add(a = sh.g_f4A)
 
     def test_extra_arg(self):
-        with _base.HlslTestContext() as ctx:
+        with _base.HlslTestContext(no_file = True) as ctx:
             with ctx.open_file() as ps_file:
                 sh = ps_6_0.Generator(ps_file)
                 self._generate_add_func(sh)
@@ -113,7 +105,7 @@ class TestFunctions(_base.TestBase):
                     )
 
     def test_arg_type_mismatch(self):
-        with _base.HlslTestContext() as ctx:
+        with _base.HlslTestContext(no_file = True) as ctx:
             with ctx.open_file() as ps_file:
                 sh = ps_6_0.Generator(ps_file)
                 self._generate_add_func(sh)
@@ -122,9 +114,7 @@ class TestFunctions(_base.TestBase):
                     sh.result.color = sh.add(a = sh.g_f4A, b = sh.g_f3C)
 
     def test_void_func_decl(self):
-        with _base.HlslTestContext(
-            'test_void_func_decl', as_lib = True
-        ) as ctx:
+        with _base.HlslTestContext(as_lib = True) as ctx:
             with ctx.open_file() as ps_file:
                 sh = ps_6_0.Generator(ps_file)
 
@@ -133,9 +123,7 @@ class TestFunctions(_base.TestBase):
                 sh.function('voidFuncC', None)(a = sh.Float4, b = sh.Float4).declare()
 
     def test_void_func_def(self):
-        with _base.HlslTestContext(
-            'test_void_func_def', as_lib = True
-        ) as ctx:
+        with _base.HlslTestContext(as_lib = True) as ctx:
             with ctx.open_file() as ps_file:
                 sh = ps_6_0.Generator(ps_file)
 
@@ -144,9 +132,7 @@ class TestFunctions(_base.TestBase):
                     sh.return_()
 
     def test_func_no_args(self):
-        with _base.HlslTestContext(
-            'test_func_no_args'
-        ) as ctx:
+        with _base.HlslTestContext() as ctx:
             with ctx.open_file() as ps_file:
                 sh = ps_6_0.Generator(ps_file)
                 self._generate_test_uniforms(sh)

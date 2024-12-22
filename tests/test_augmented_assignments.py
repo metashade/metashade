@@ -17,7 +17,7 @@ from metashade.hlsl.sm6 import ps_6_0
 
 class TestAugmentedAssignments(_base.TestBase):
     def test_augmented_add(self):
-        with _base.HlslTestContext('test_augmented_add', as_lib = True) as ctx:
+        with _base.HlslTestContext(as_lib = True) as ctx:
             with ctx.open_file() as ps_file:
                 sh = ps_6_0.Generator(ps_file)
 

@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import abc
-import io, os, sys
+import abc, inspect, io, os, sys
 from pathlib import Path
 from metashade.hlsl.util import dxc
 from metashade.glsl.util import glslang
@@ -39,11 +38,19 @@ class _TestContext(abc.ABC):
             cls._ref_differ = RefDiffer(ref_dir)
 
         os.makedirs(cls._out_dir, exist_ok = True)
+    
+    @staticmethod
+    def _get_test_func_name():
+        for frame in inspect.stack():
+            if frame.function.startswith('test_'):
+                return frame.function
+        raise RuntimeError('No test function found in the stack')
 
-    def __init__(self, base_path : str = None, as_lib : bool = False):
+    def __init__(self, no_file : bool = False, as_lib : bool = False):
+        test_name = self._get_test_func_name()
         self._src_path = (
-            self._out_dir / f'{base_path}.{self._file_extension}'
-            if base_path is not None else None
+            None if no_file
+            else self._out_dir / f'{test_name}.{self._file_extension}'
         )
         self._as_lib = as_lib
 

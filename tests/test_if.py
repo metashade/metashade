@@ -24,9 +24,7 @@ class TestIf(_base.TestBase):
             sh.uniform('g_f4D', sh.Float4)
 
     def test_if(self):
-        with _base.HlslTestContext(
-            'test_if'
-        ) as ctx:
+        with _base.HlslTestContext() as ctx:
             with ctx.open_file() as ps_file:
                 sh = ps_6_0.Generator(ps_file)
                 self._generate_test_uniforms(sh)
@@ -45,9 +43,7 @@ class TestIf(_base.TestBase):
                     sh.return_(sh.result)
 
     def test_nested_if(self):
-        with _base.HlslTestContext(
-            'test_nested_if'
-        ) as ctx:
+        with _base.HlslTestContext() as ctx:
             with ctx.open_file() as ps_file:
                 sh = ps_6_0.Generator(ps_file)
                 self._generate_test_uniforms(sh)
@@ -71,9 +67,7 @@ class TestIf(_base.TestBase):
                     sh.return_(sh.result)
 
     def test_if_else(self):
-        with _base.HlslTestContext(
-            'test_if_else'
-        ) as ctx:
+        with _base.HlslTestContext() as ctx:
             with ctx.open_file() as ps_file:
                 sh = ps_6_0.Generator(ps_file)
                 self._generate_test_uniforms(sh)

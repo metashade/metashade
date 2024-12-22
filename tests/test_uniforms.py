@@ -18,7 +18,7 @@ from metashade.hlsl.sm6 import ps_6_0
 
 class TestUniforms(_base.TestBase):
     def test_cb_register_clash(self):
-        with _base.HlslTestContext() as ctx:
+        with _base.HlslTestContext(no_file = True) as ctx:
             with ctx.open_file() as ps_file:
                 sh = ps_6_0.Generator(ps_file)
 
@@ -33,7 +33,7 @@ class TestUniforms(_base.TestBase):
                         sh.uniform('g_f2', sh.Float4)
 
     def test_texture_register_clash(self):
-        with _base.HlslTestContext() as ctx:
+        with _base.HlslTestContext(no_file = True) as ctx:
             with ctx.open_file() as ps_file:
                 sh = ps_6_0.Generator(ps_file)
 
@@ -44,7 +44,7 @@ class TestUniforms(_base.TestBase):
                     sh.uniform('g_t2', sh.Texture2d, register = 0)
 
     def test_sampler_register_clash(self):
-        with _base.HlslTestContext() as ctx:
+        with _base.HlslTestContext(no_file = True) as ctx:
             with ctx.open_file() as ps_file:
                 sh = ps_6_0.Generator(ps_file)
 

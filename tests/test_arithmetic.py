@@ -18,11 +18,10 @@ from metashade.hlsl.sm6 import ps_6_0
 class TestArithmetic(_base.TestBase):
     def _test_arithmetic(
             self,
-            hlsl_file_name : str,
             scalar_type : str,
             vector2_type : str
     ):
-        with _base.HlslTestContext(hlsl_file_name, as_lib = True) as ctx:
+        with _base.HlslTestContext(as_lib = True) as ctx:
             with ctx.open_file() as ps_file:
                 sh = ps_6_0.Generator(ps_file)
 
@@ -55,14 +54,12 @@ class TestArithmetic(_base.TestBase):
 
     def test_arithmetic_float(self):
         self._test_arithmetic(
-            hlsl_file_name = 'test_arithmetic_float',
             scalar_type = 'Float',
             vector2_type = 'Float2'
         )
 
     def test_arithmetic_int(self):
         self._test_arithmetic(
-            hlsl_file_name = 'test_arithmetic_int',
             scalar_type = 'Int',
             vector2_type = 'Int2'
         )

@@ -17,7 +17,7 @@ from metashade.hlsl.sm6 import ps_6_0
 
 class TestComment(_base.TestBase):
     def test_comment(self):
-        with _base.HlslTestContext('test_comment', as_lib = True) as ctx:
+        with _base.HlslTestContext(as_lib = True) as ctx:
             with ctx.open_file() as ps_file:
                 sh = ps_6_0.Generator(ps_file)
 

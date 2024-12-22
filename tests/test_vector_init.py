@@ -17,7 +17,7 @@ from metashade.hlsl.sm6 import ps_6_0
 
 class TestVectorInit(_base.TestBase):
     def test_vector_init(self):
-        with _base.HlslTestContext('test_vector_init', as_lib = True) as ctx:
+        with _base.HlslTestContext(as_lib = True) as ctx:
             with ctx.open_file() as ps_file:
                 sh = ps_6_0.Generator(ps_file)
 
