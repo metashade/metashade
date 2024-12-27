@@ -12,17 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-class StageOutput:
+class _StageIO:
     def __init__(self, dtype, location : int):
         self._dtype_factory = dtype
         self._location = location
 
     def _define(self, sh, name):
-        #TODO: make it immutable
         value = self._dtype_factory()
         sh._set_global(name, value)
         value._bind(sh, name, allow_init = False)
         sh._emit(
-            f'layout(location = {self._location}) out '
+            f'layout(location = {self._location}) {self._inout_keyword} '
             f'{value.__class__._get_target_type_name()} {value._name};\n'
         )
+
+class StageOutput(_StageIO):
+    _inout_keyword = 'out'
+
+class StageInput(_StageIO):
+    #TODO: make it immutable
+    _inout_keyword = 'in'
