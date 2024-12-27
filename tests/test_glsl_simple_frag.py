@@ -19,7 +19,15 @@ from metashade.glsl import frag
 class TestGlslSimpleFrag(_base.TestBase):
     def test_glsl_simple_frag(self):
         with _base.GlslTestContext() as sh:
-            sh.f4OutColor = sh.out(sh.Float4, location=0)
+            sh.out_f4Color = sh.stage_output(sh.Float4, location = 0)
 
             with sh.entry_point('main')():
-                sh.f4OutColor = sh.Float4((1.0, 0.0, 0.0, 1.0))
+                sh.out_f4Color = sh.Float4((1.0, 0.0, 0.0, 1.0))
+
+    def test_glsl_inout(self):
+        with _base.GlslTestContext() as sh:
+            sh.in_f4Color = sh.stage_input(sh.Float4, location = 0)
+            sh.out_f4Color = sh.stage_output(sh.Float4, location = 0)
+
+            with sh.entry_point('main')():
+                sh.out_f4Color = sh.in_f4Color

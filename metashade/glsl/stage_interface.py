@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-class _StageIO:
+class StageIO:
     def __init__(self, dtype, location : int):
         self._dtype_factory = dtype
         self._location = location
@@ -26,9 +26,9 @@ class _StageIO:
             f'{value.__class__._get_target_type_name()} {value._name};\n'
         )
 
-class StageOutput(_StageIO):
+class StageOutput(StageIO):
     _inout_keyword = 'out'
 
-class StageInput(_StageIO):
+class StageInput(StageIO):
     #TODO: make it immutable
     _inout_keyword = 'in'

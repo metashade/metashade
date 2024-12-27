@@ -14,7 +14,7 @@
 
 import metashade._rtsl.profile as rtsl
 from . import dtypes
-from .stage_interface import StageOutput
+from .stage_interface import StageIO, StageInput, StageOutput
 
 class Generator(rtsl.Generator):
     _is_pixel_shader = True
@@ -28,11 +28,14 @@ class Generator(rtsl.Generator):
         self._register_dtypes(dtypes.__name__)
         self._emit(f'#version {glsl_version}\n')
 
-    def out(self, dtype, location : int):
+    def stage_input(self, dtype, location : int):
+        return StageInput(dtype, location)
+
+    def stage_output(self, dtype, location : int):
         return StageOutput(dtype, location)
     
     def __setattr__(self, name, value):
-        if isinstance(value, StageOutput):
+        if isinstance(value, StageIO):
             if not self._check_global_scope():
                 raise RuntimeError(
                     "Stage outputs can only be defined at global scope"
