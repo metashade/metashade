@@ -16,6 +16,25 @@ import metashade._rtsl.generator as rtsl
 from . import dtypes
 from .stage_interface import StageIO, StageInput, StageOutput
 
+class UniformBuffer:
+    def __init__(self, sh, set : int, binding : int, name : str = None):
+        self._sh = sh
+        self._name = name
+        self._set = set
+        self._binding = binding
+
+    def __enter__(self):
+        self._sh._emit(
+            f'layout (set = {self._set}, binding = {self._set}) '
+            f'uniform {self._name}\n{{\n'
+        )
+        self._sh._push_indent()
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self._sh._pop_indent()
+        self._sh._emit('};\n\n')
+
 class Generator(rtsl.Generator):
     def __init__(self, file_, glsl_version : str):
         super(Generator, self).__init__(file_)

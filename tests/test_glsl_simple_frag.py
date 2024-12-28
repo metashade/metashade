@@ -23,6 +23,11 @@ class TestGlslSimpleFrag(_base.TestBase):
             with sh.entry_point('main')():
                 sh.out_f4Color = sh.Float4((1.0, 0.0, 0.0, 1.0))
 
+    def test_simple_cb(self):
+        with _base.HlslTestContext() as sh:
+            with sh.uniform_buffer(name = 'cb0'):
+                sh.uniform('g_f0', sh.Float4)
+
     def test_glsl_inout(self):
         with _base.GlslTestContext() as sh:
             sh.in_f4Color = sh.stage_input(sh.Float4, location = 0)
