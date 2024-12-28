@@ -12,9 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
+import pytest
 import _base
-from metashade.glsl import frag
 
 class TestGlslSimpleFrag(_base.TestBase):
     def test_glsl_simple_frag(self):
@@ -31,3 +30,23 @@ class TestGlslSimpleFrag(_base.TestBase):
 
             with sh.entry_point('main')():
                 sh.out_f4Color = sh.in_f4Color
+
+    def test_glsl_input_clash(self):
+        with _base.GlslTestContext(no_file = True) as sh:
+            sh.in_f4_0 = sh.stage_input(sh.Float4, location = 0)
+            sh.out_f4 = sh.stage_output(sh.Float4, location = 0)
+
+            sh.in_f4_1 = sh.stage_input(sh.Float4, location = 1)
+            
+            with pytest.raises(Exception):
+                sh.in_f4_2 = sh.stage_input(sh.Float4, location = 0)
+
+    def test_glsl_output_clash(self):
+        with _base.GlslTestContext(no_file = True) as sh:
+            sh.in_f4 = sh.stage_input(sh.Float4, location = 0)
+            sh.out_f4_0 = sh.stage_output(sh.Float4, location = 0)
+
+            sh.out_f4_1 = sh.stage_output(sh.Float4, location = 1)
+            
+            with pytest.raises(Exception):
+                sh.out_f4_2 = sh.stage_output(sh.Float4, location = 0)
