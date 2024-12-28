@@ -24,7 +24,7 @@ class TestGlslSimpleFrag(_base.TestBase):
                 sh.out_f4Color = sh.Float4((1.0, 0.0, 0.0, 1.0))
 
     def test_simple_cb(self):
-        with _base.HlslTestContext() as sh:
+        with _base.GlslTestContext() as sh:
             with sh.uniform_buffer(name = 'cb0'):
                 sh.uniform('g_f0', sh.Float4)
 
