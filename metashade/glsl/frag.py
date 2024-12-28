@@ -12,36 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import metashade._rtsl.generator as rtsl
-from . import dtypes
-from .stage_interface import StageIO, StageInput, StageOutput
+from . import generator_base as base
 
-class Generator(rtsl.Generator):
+class Generator(base.Generator):
     _is_pixel_shader = True
-
-    def __init__(self, file_, glsl_version : str):
-        super(Generator, self).__init__(file_)
-        self._glsl_version = glsl_version
-
-        # Register the data types
-        # TODO: share with other shader stages
-        self._register_dtypes(dtypes.__name__)
-        self._emit(f'#version {glsl_version}\n')
-
-    def stage_input(self, dtype, location : int):
-        return StageInput(dtype, location)
-
-    def stage_output(self, dtype, location : int):
-        return StageOutput(dtype, location)
-    
-    def __setattr__(self, name, value):
-        if isinstance(value, StageIO):
-            if not self._check_global_scope():
-                raise RuntimeError(
-                    "Stage outputs can only be defined at global scope"
-                )
-            # Define the stage output
-            value._define(self, name)
-        else:
-            super().__setattr__(name, value)
-        
