@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from . import profile, stage_interface
+from . import generator_base, stage_interface
 
-class Generator(profile.Generator):
+class Generator(generator_base.Generator):
     _is_pixel_shader = True
 
     def vs_output(self, name):

@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from metashade._base.dtypes import BaseType
-import metashade._rtsl.profile as rtsl
+import metashade._rtsl.generator as rtsl
 from . import dtypes
 from . import samplers
 
