@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from metashade._base.dtypes import BaseType
+from metashade._base.dtypes import BaseType, check_valid_index
 import metashade._rtsl.generator as rtsl
 from . import dtypes
 from . import samplers
@@ -60,6 +60,7 @@ class Generator(rtsl.Generator):
         self._uniforms_by_register[register_name] = new_name
 
     def uniform_buffer(self, register : int, name : str = None):
+        check_valid_index(register)
         self._check_unique_uniform_register(
             register_name = f'b{register}', new_name = name
         )
@@ -82,6 +83,7 @@ class Generator(rtsl.Generator):
             )
 
         if register is not None:
+            check_valid_index(register)
             self._check_unique_uniform_register(
                 dtype_factory._get_dtype()._format_uniform_register(register),
                 name

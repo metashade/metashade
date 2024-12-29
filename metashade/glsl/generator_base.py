@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from metashade._base.dtypes import BaseType
+from metashade._base.dtypes import BaseType, check_valid_index
 import metashade._rtsl.generator as rtsl
 from . import dtypes
 from .stage_interface import StageIO, StageInput, StageOutput
@@ -51,6 +51,7 @@ class Generator(rtsl.Generator):
         }
 
     def _create_stage_io(self, io_cls, dtype, location : int):
+        check_valid_index(location)
         locations_in_use = self._io_locations_by_cls[io_cls.__name__]
         if location in locations_in_use:
             raise RuntimeError(
@@ -66,6 +67,8 @@ class Generator(rtsl.Generator):
         return self._create_stage_io(StageOutput, dtype, location)
     
     def uniform_buffer(self, set : int, binding : int, name : str = None):
+        check_valid_index(set)
+        check_valid_index(binding)
         return UniformBuffer(self, set = set, binding = binding, name = name)
     
     def uniform(

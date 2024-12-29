@@ -130,3 +130,4 @@ class Float(Scalar):
 
 class Int(Scalar):
     _target_name = 'int'
+

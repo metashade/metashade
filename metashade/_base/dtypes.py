@@ -62,3 +62,10 @@ class BaseType:
     @staticmethod
     def _get_value_ref_static(concrete_cls, value):
         return value if isinstance(value, concrete_cls) else None
+
+def is_uint(value):
+    return isinstance(value, int) and value >= 0
+
+def check_valid_index(value):
+    if not is_uint(value):
+        raise RuntimeError(f'{value} is not a valid index')
