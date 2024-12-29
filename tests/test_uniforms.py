@@ -29,6 +29,18 @@ class TestUniforms(_base.TestBase):
                 with sh.uniform_buffer(register = 0, name = 'cb2'):
                     sh.uniform('g_f2', sh.Float4)
 
+    def test_cb_string_register(self):
+        with _base.HlslTestContext(no_file = True) as sh:
+            with pytest.raises(Exception):
+                with sh.uniform_buffer(register = 'blahblah', name = 'cb0'):
+                    sh.uniform('g_f0', sh.Float4)
+
+    def test_cb_negative_register(self):
+        with _base.HlslTestContext(no_file = True) as sh:
+            with pytest.raises(Exception):
+                with sh.uniform_buffer(register = -1, name = 'cb0'):
+                    sh.uniform('g_f0', sh.Float4)
+
     def test_texture_register_clash(self):
         with _base.HlslTestContext(no_file = True) as sh:
             sh.uniform('g_t0', sh.Texture2d, register = 0)
