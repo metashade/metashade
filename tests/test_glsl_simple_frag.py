@@ -25,7 +25,7 @@ class TestGlslSimpleFrag(_base.TestBase):
 
     def test_simple_cb(self):
         with _base.GlslTestContext() as sh:
-            with sh.uniform_buffer(name = 'cb0'):
+            with sh.uniform_buffer(name = 'cb0', set = 0, binding = 0):
                 sh.uniform('g_f0', sh.Float4)
 
     def test_glsl_inout(self):
