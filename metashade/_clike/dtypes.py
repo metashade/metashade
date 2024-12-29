@@ -25,7 +25,6 @@ class BaseType(base.BaseType):
         cls, sh, identifier,
         semantic = None,
         register : int = None,
-        annotations = None,
         initializer = None
     ):
         '''
@@ -44,16 +43,6 @@ class BaseType(base.BaseType):
         if register is not None:
             sh._emit(f' : register({cls._format_uniform_register(register)})')
 
-        if annotations is not None and annotations:
-            sh._emit(' <\n')
-            sh._push_indent()
-            for annotation in annotations:
-                sh._emit_indent()
-                sh._emit(f'{annotation};\n')
-            sh._pop_indent()
-            sh._emit_indent()
-            sh._emit('>')
-
         if initializer is not None:
             sh._emit(f' = {initializer}')
 
@@ -61,16 +50,14 @@ class BaseType(base.BaseType):
         self, sh, identifier,
         allow_init = True,
         semantic = None,
-        register = None,
-        annotations = None
+        register = None
     ):
         self._bind(sh, identifier, allow_init)
         self.__class__._emit_def(
             sh, self._name,
             initializer = self._expression,
             semantic = semantic,
-            register = register,
-            annotations = annotations
+            register = register
         )
 
     def _assign(self, value):

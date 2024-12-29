@@ -69,9 +69,7 @@ class Generator(rtsl.Generator):
         self,
         name : str,
         dtype_factory,
-        semantic : str = None,
-        register : int = None,
-        annotations = None
+        register : int = None
     ):
         '''
         https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-variable-syntax
@@ -83,15 +81,6 @@ class Generator(rtsl.Generator):
                 "Uniforms can only be defined at the global scope"
             )
 
-        if semantic is not None:
-            existing = self._uniforms_by_semantic.get(semantic)
-            if existing is not None:
-                raise RuntimeError(
-                    f"Can't define uniform '{name}' with semantic '{semantic}' "
-                    f"because uniform '{existing._name}' already uses that "
-                    "semantic."
-                )
-            
         if register is not None:
             self._check_unique_uniform_register(
                 dtype_factory._get_dtype()._format_uniform_register(register),
@@ -108,9 +97,7 @@ class Generator(rtsl.Generator):
         value._define(
             self,
             name,
-            semantic = semantic,
-            register = register,
-            annotations = annotations
+            register = register
         )
         self._emit(';\n')
 
