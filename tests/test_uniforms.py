@@ -41,6 +41,40 @@ class TestUniforms(_base.TestBase):
                 with sh.uniform_buffer(register = -1, name = 'cb0'):
                     sh.uniform('g_f0', sh.Float4)
 
+    def test_glsl_simple_cb(self):
+        with _base.GlslTestContext() as sh:
+            with sh.uniform_buffer(name = 'cb0', set = 0, binding = 0):
+                sh.uniform('g_f4Color', sh.Float4)
+
+            sh.out_f4Color = sh.stage_output(sh.Float4, location = 0)
+            
+            with sh.entry_point('main')():
+                sh.out_f4Color = sh.g_f4Color
+
+    def test_glsl_cb_string_set(self):
+        with _base.GlslTestContext(no_file = True) as sh:
+            with pytest.raises(Exception):
+                with sh.uniform_buffer(set = 'blahblah', name = 'cb0'):
+                    sh.uniform('g_f0', sh.Float4)
+
+    def test_glsl_cb_string_location(self):
+        with _base.GlslTestContext(no_file = True) as sh:
+            with pytest.raises(Exception):
+                with sh.uniform_buffer(location = 'blahblah', name = 'cb0'):
+                    sh.uniform('g_f0', sh.Float4)
+
+    def test_glsl_cb_negative_set(self):
+        with _base.GlslTestContext(no_file = True) as sh:
+            with pytest.raises(Exception):
+                with sh.uniform_buffer(set = -1, name = 'cb0'):
+                    sh.uniform('g_f0', sh.Float4)
+
+    def test_glsl_cb_negative_location(self):
+        with _base.GlslTestContext(no_file = True) as sh:
+            with pytest.raises(Exception):
+                with sh.uniform_buffer(location = -2, name = 'cb0'):
+                    sh.uniform('g_f0', sh.Float4)
+
     def test_texture_register_clash(self):
         with _base.HlslTestContext(no_file = True) as sh:
             sh.uniform('g_t0', sh.Texture2d, register = 0)
