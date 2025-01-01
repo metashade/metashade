@@ -16,7 +16,7 @@ from abc import ABC, abstractmethod
 import metashade._clike.generator as clike
 
 class UniqueKeyChecker(ABC):
-    def __init__(self, register_type : str):
+    def __init__(self):
         self._map = dict()
 
     @staticmethod

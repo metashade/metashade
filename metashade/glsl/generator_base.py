@@ -15,7 +15,10 @@
 from metashade._base.dtypes import BaseType, check_valid_index
 import metashade._rtsl.generator as rtsl
 from . import dtypes
-from .stage_interface import StageIO, StageInput, StageOutput
+from .stage_interface import (
+    UniqueOutputLocationChecker, UniqueInputLocationChecker,
+    StageIO, StageInput, StageOutput
+)
 
 class UniformBuffer:
     def __init__(self, sh, set : int, binding : int, name : str = None):
@@ -46,25 +49,16 @@ class Generator(rtsl.Generator):
         self._register_dtypes(dtypes.__name__)
         self._emit(f'#version {glsl_version}\n')
 
-        self._io_locations_by_cls = {
-            io_cls.__name__ : set() for io_cls in [StageInput, StageOutput]
+        self._unique_location_checkers = {
+            StageInput.__name__: UniqueInputLocationChecker(),
+            StageOutput.__name__: UniqueOutputLocationChecker()
         }
 
-    def _create_stage_io(self, io_cls, dtype, location : int):
-        check_valid_index(location)
-        locations_in_use = self._io_locations_by_cls[io_cls.__name__]
-        if location in locations_in_use:
-            raise RuntimeError(
-                f'Location {location} is already in use'
-            )
-        locations_in_use.add(location)
-        return io_cls(dtype, location)
-
     def stage_input(self, dtype, location : int):
-        return self._create_stage_io(StageInput, dtype, location)
+        return StageInput(dtype, location)
 
     def stage_output(self, dtype, location : int):
-        return self._create_stage_io(StageOutput, dtype, location)
+        return StageOutput(dtype, location)
     
     def uniform_buffer(self, set : int, binding : int, name : str = None):
         check_valid_index(set)
@@ -102,7 +96,9 @@ class Generator(rtsl.Generator):
                     'Stage inputs and outputs '
                     'can only be defined at global scope'
                 )
-
-            value._define(self, name)
+            location_checker = self._unique_location_checkers[
+                value.__class__.__name__
+            ]
+            value._define(self, name, location_checker)
         else:
             super().__setattr__(name, value)

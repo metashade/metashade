@@ -12,12 +12,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import metashade._rtsl.generator as rtsl
+from metashade._base.dtypes import check_valid_index
+
+class UniqueInputLocationChecker(rtsl.UniqueKeyChecker):
+    @staticmethod
+    def _format_error_message(location, existing_value):
+        return (
+            f'Input location {location} is already in use by {existing_value}'
+        )
+    
+class UniqueOutputLocationChecker(rtsl.UniqueKeyChecker):
+    @staticmethod
+    def _format_error_message(location, existing_value):
+        return (
+            f'Output location {location} is already in use by {existing_value}'
+        )
+
 class StageIO:
     def __init__(self, dtype, location : int):
+        check_valid_index(location)
         self._dtype_factory = dtype
         self._location = location
 
-    def _define(self, sh, name):
+    def _define(self, sh, name, location_checker):
+        location_checker.add(self._location, name)
         value = self._dtype_factory()
         sh._set_global(name, value)
         value._bind(sh, name, allow_init = False)

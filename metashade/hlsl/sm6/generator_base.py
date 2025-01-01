@@ -52,7 +52,7 @@ class Generator(rtsl.Generator):
         super(Generator, self).__init__(file_)
         self._matrix_post_multiplication = matrix_post_multiplication
 
-        self._uniforms_by_register = _UniqueRegisterChecker('Uniform register')
+        self._uniforms_by_register = _UniqueRegisterChecker()
 
         self._register_dtypes(dtypes.__name__)
         self._register_dtypes(samplers.__name__)
