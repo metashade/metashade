@@ -12,20 +12,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from abc import ABC, abstractmethod
 import metashade._clike.generator as clike
 
-class UniqueRegisterMap:
+class UniqueKeyChecker(ABC):
     def __init__(self, register_type : str):
         self._map = dict()
-        self._register_type = register_type
 
-    def add(self, register, value):
-        existing = self._map.get(register)
-        if existing is not None:
+    @staticmethod
+    @abstractmethod
+    def _format_error_message(register, existing_value):
+        pass
+
+    def add(self, key, value):
+        existing_value = self._map.get(key)
+        if existing_value is not None:
              raise RuntimeError(
-                 f'{self._register_type} {register} already used by {existing}'
+                 self._format_error_message(key, existing_value)
             )
-        self._map[register] = value
+        self._map[key] = value
 
 class Generator(clike.Generator):
     entry_point = clike.Generator.function

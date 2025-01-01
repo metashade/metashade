@@ -38,6 +38,13 @@ class UniformBuffer:
         self._sh._pop_indent()
         self._sh._emit('};\n\n')
 
+class _UniqueRegisterChecker(rtsl.UniqueKeyChecker):
+    @staticmethod
+    def _format_error_message(register, existing_value):
+        return (
+            f'Uniform register {register} is already in use by {existing_value}'
+        )
+
 class Generator(rtsl.Generator):
     _is_pixel_shader = False
 
@@ -45,7 +52,7 @@ class Generator(rtsl.Generator):
         super(Generator, self).__init__(file_)
         self._matrix_post_multiplication = matrix_post_multiplication
 
-        self._uniforms_by_register = rtsl.UniqueRegisterMap('Uniform register')
+        self._uniforms_by_register = _UniqueRegisterChecker('Uniform register')
 
         self._register_dtypes(dtypes.__name__)
         self._register_dtypes(samplers.__name__)
