@@ -60,7 +60,6 @@ class TestUniforms(_base.TestBase):
             with sh.entry_point('main')():
                 sh.out_f4Color = sh.g_f4Color
 
-
     def test_glsl_cb_multi_set_binding(self):
         with _base.GlslTestContext() as sh:
             with sh.uniform_buffer(name = 'cb0', set = 0, binding = 0):
@@ -80,13 +79,31 @@ class TestUniforms(_base.TestBase):
             with sh.entry_point('main')():
                 sh.out_f4Color = sh.g_f4Color0
 
+    def test_glsl_cb_set_binding_clash(self):
+        with _base.GlslTestContext(no_file = True) as sh:
+            with sh.uniform_buffer(name = 'cb0', set = 0, binding = 0):
+                sh.uniform('g_f4Color0', sh.Float4)
+
+            with sh.uniform_buffer(name = 'cb1', set = 0, binding = 1):
+                sh.uniform('g_f4Color1', sh.Float4)
+
+            with pytest.raises(
+                RuntimeError,
+                match = 'Uniform binding 0 in descriptor set 0 '
+                        'is already in use by cb0'
+            ):
+                with sh.uniform_buffer(name = 'cb2', set = 0, binding = 0):
+                    sh.uniform('g_f4Color2', sh.Float4)
+
     def test_glsl_cb_string_set(self):
         with _base.GlslTestContext(no_file = True) as sh:
             with pytest.raises(
                 RuntimeError,
                 match = 'blahblah is not a valid index'
             ):
-                with sh.uniform_buffer(set = 'blahblah', binding = 0, name = 'cb0'):
+                with sh.uniform_buffer(
+                    set = 'blahblah', binding = 0, name = 'cb0'
+                ):
                     sh.uniform('g_f0', sh.Float4)
 
     def test_glsl_cb_string_binding(self):
@@ -95,7 +112,9 @@ class TestUniforms(_base.TestBase):
                 RuntimeError,
                 match = 'blahblah is not a valid index'
             ):
-                with sh.uniform_buffer(set = 0, binding = 'blahblah', name = 'cb0'):
+                with sh.uniform_buffer(
+                    set = 0, binding = 'blahblah', name = 'cb0'
+                ):
                     sh.uniform('g_f0', sh.Float4)
 
     def test_glsl_cb_negative_set(self):
