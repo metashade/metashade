@@ -50,7 +50,7 @@ class TestUniforms(_base.TestBase):
                 with sh.uniform_buffer(register = -1, name = 'cb0'):
                     sh.uniform('g_f0', sh.Float4)
 
-    def test_glsl_simple_cb(self):
+    def test_glsl_cb_multi_set_binding(self):
         with _base.GlslTestContext() as sh:
             with sh.uniform_buffer(name = 'cb0', set = 0, binding = 0):
                 sh.uniform('g_f4Color', sh.Float4)
@@ -59,6 +59,26 @@ class TestUniforms(_base.TestBase):
             
             with sh.entry_point('main')():
                 sh.out_f4Color = sh.g_f4Color
+
+
+    def test_glsl_cb_multi_set_binding(self):
+        with _base.GlslTestContext() as sh:
+            with sh.uniform_buffer(name = 'cb0', set = 0, binding = 0):
+                sh.uniform('g_f4Color0', sh.Float4)
+
+            with sh.uniform_buffer(name = 'cb1', set = 0, binding = 1):
+                sh.uniform('g_f4Color1', sh.Float4)
+
+            with sh.uniform_buffer(name = 'cb2', set = 1, binding = 0):
+                sh.uniform('g_f4Color2', sh.Float4)
+
+            with sh.uniform_buffer(name = 'cb3', set = 1, binding = 1):
+                sh.uniform('g_f4Color3', sh.Float4)
+
+            sh.out_f4Color = sh.stage_output(sh.Float4, location = 0)
+            
+            with sh.entry_point('main')():
+                sh.out_f4Color = sh.g_f4Color0
 
     def test_glsl_cb_string_set(self):
         with _base.GlslTestContext(no_file = True) as sh:
