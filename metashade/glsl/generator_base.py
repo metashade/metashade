@@ -41,12 +41,12 @@ class UniformBuffer:
         self._sh._emit('};\n\n')
 
 class _UniqueBindingChecker(rtsl.UniqueKeyChecker):
-    class _SetBindingPair(NamedTuple):
+    class SetBindingPair(NamedTuple):
         set : int
         binding : int
 
     @staticmethod
-    def _format_error_message(set_binding : _SetBindingPair, existing_value):
+    def _format_error_message(set_binding : SetBindingPair, existing_value):
         return (
             f'Uniform binding {set_binding.binding} in descriptor set '
             f'{set_binding.set} is already in use by {existing_value}'
@@ -78,6 +78,10 @@ class Generator(rtsl.Generator):
     def uniform_buffer(self, set : int, binding : int, name : str = None):
         check_valid_index(set)
         check_valid_index(binding)
+        self._unique_binding_checker.add(
+            _UniqueBindingChecker.SetBindingPair(set, binding),
+            name
+        )
         return UniformBuffer(self, set = set, binding = binding, name = name)
     
     def uniform(
