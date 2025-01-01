@@ -14,5 +14,18 @@
 
 import metashade._clike.generator as clike
 
+class UniqueRegisterMap:
+    def __init__(self, register_type : str):
+        self._map = dict()
+        self._register_type = register_type
+
+    def add(self, register, value):
+        existing = self._map.get(register)
+        if existing is not None:
+             raise RuntimeError(
+                 f'{self._register_type} {register} already used by {existing}'
+            )
+        self._map[register] = value
+
 class Generator(clike.Generator):
     entry_point = clike.Generator.function

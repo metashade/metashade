@@ -103,7 +103,6 @@ class Generator(rtsl.Generator):
                     'can only be defined at global scope'
                 )
 
-            # Define the stage output
             value._define(self, name)
         else:
             super().__setattr__(name, value)

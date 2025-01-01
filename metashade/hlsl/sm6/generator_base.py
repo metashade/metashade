@@ -45,25 +45,14 @@ class Generator(rtsl.Generator):
         super(Generator, self).__init__(file_)
         self._matrix_post_multiplication = matrix_post_multiplication
 
-        self._uniforms_by_semantic = dict()
-        self._uniforms_by_register = dict()
+        self._uniforms_by_register = rtsl.UniqueRegisterMap('Uniform register')
 
         self._register_dtypes(dtypes.__name__)
         self._register_dtypes(samplers.__name__)
 
-    def _check_unique_uniform_register(self, register_name : str, new_name :str):
-        existing = self._uniforms_by_register.get(register_name)
-        if existing is not None:
-             raise RuntimeError(
-                 f'Uniform register {register_name} already used by {existing}'
-            )
-        self._uniforms_by_register[register_name] = new_name
-
     def uniform_buffer(self, register : int, name : str = None):
         check_valid_index(register)
-        self._check_unique_uniform_register(
-            register_name = f'b{register}', new_name = name
-        )
+        self._uniforms_by_register.add(f'b{register}', name)
         return UniformBuffer(self, register = register, name = name)
     
     def uniform(
@@ -84,7 +73,7 @@ class Generator(rtsl.Generator):
 
         if register is not None:
             check_valid_index(register)
-            self._check_unique_uniform_register(
+            self._uniforms_by_register.add(
                 dtype_factory._get_dtype()._format_uniform_register(register),
                 name
             )
