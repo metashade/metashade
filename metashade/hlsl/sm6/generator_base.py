@@ -57,16 +57,21 @@ class Generator(rtsl.Generator):
         self._register_dtypes(dtypes.__name__)
         self._register_dtypes(samplers.__name__)
 
-    def uniform_buffer(self, register : int, name : str = None):
-        check_valid_index(register)
-        self._uniforms_by_register.add(f'b{register}', name)
-        return UniformBuffer(self, register = register, name = name)
+    def uniform_buffer(self,
+        name : str,
+        dx_register: int,
+        vk_set : int = None,
+        vk_binding : int = None
+    ):
+        check_valid_index(dx_register)
+        self._uniforms_by_register.add(f'b{dx_register}', name)
+        return UniformBuffer(self, register = dx_register, name = name)
     
     def uniform(
         self,
         name : str,
         dtype_factory,
-        register : int = None
+        dx_register : int = None
     ):
         '''
         https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-variable-syntax
@@ -78,10 +83,12 @@ class Generator(rtsl.Generator):
                 "Uniforms can only be defined at the global scope"
             )
 
-        if register is not None:
-            check_valid_index(register)
+        if dx_register is not None:
+            check_valid_index(dx_register)
             self._uniforms_by_register.add(
-                dtype_factory._get_dtype()._format_uniform_register(register),
+                dtype_factory._get_dtype()._format_uniform_register(
+                    dx_register
+                ),
                 name
             )
 
@@ -95,7 +102,7 @@ class Generator(rtsl.Generator):
         value._define(
             self,
             name,
-            register = register
+            register = dx_register
         )
         self._emit(';\n')
 

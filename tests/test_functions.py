@@ -29,7 +29,7 @@ class TestFunctions(_base.TestBase):
                 sh.return_(sh.a + sh.b)
 
     def _generate_test_uniforms(self, sh):
-        with sh.uniform_buffer(register = 0, name = 'cb'):
+        with sh.uniform_buffer(dx_register = 0, name = 'cb'):
             sh.uniform('g_f4A', sh.Float4)
             sh.uniform('g_f4B', sh.Float4)
             sh.uniform('g_f3C', sh.Float3)

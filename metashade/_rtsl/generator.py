@@ -32,5 +32,15 @@ class UniqueKeyChecker(ABC):
             )
         self._map[key] = value
 
-class Generator(clike.Generator):
+class Generator(clike.Generator, ABC):
     entry_point = clike.Generator.function
+
+    @abstractmethod
+    def uniform_buffer(
+        self,
+        name : str,
+        dx_register: int,
+        vk_set : int,
+        vk_binding : int
+    ):
+        pass
