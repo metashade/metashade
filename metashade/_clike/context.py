@@ -34,8 +34,8 @@ class FunctionDecl:
     def __getattr__(self, name):
         try:
             return self._parameters[name]
-        except KeyError:
-            raise AttributeError
+        except KeyError as e:
+            raise AttributeError(e)
 
     def __call__(self, **kwargs):
         '''

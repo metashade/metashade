@@ -112,8 +112,8 @@ class Generator:
                 pass
         try:
             return self._globals[name]
-        except KeyError:
-            raise AttributeError
+        except KeyError as e:
+            raise AttributeError(e)
 
     def __setattr__(self, name, value):
         if ( name.startswith('_')
