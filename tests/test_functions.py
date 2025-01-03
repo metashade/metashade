@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import pytest, _base
-from metashade.hlsl.sm6 import ps_6_0
 
 class TestFunctions(_base.TestBase):
     def _generate_add_func(self, sh, decl_only = False):
