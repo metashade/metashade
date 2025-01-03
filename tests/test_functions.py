@@ -119,11 +119,12 @@ class TestFunctions(_base.TestBase):
 
     def test_arg_type_mismatch(self):
         with _base.HlslTestContext(no_file = True) as sh:
+            self._generate_test_uniforms(sh)
             self._generate_add_func(sh)
             
             with pytest.raises(
                 RuntimeError,
-                match = 'Uniform register b0 is already in use by cb0'
+                match = "Parameter 'b' type mismatch"
             ):
                 sh.result.color = sh.add(a = sh.g_f4A, b = sh.g_f3C)
 
