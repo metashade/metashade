@@ -34,8 +34,8 @@ class FunctionDecl:
     def __getattr__(self, name):
         try:
             return self._parameters[name]
-        except KeyError as e:
-            raise AttributeError(e)
+        except KeyError as key_error:
+            raise AttributeError(f'Undeclared symbol: {name}') from key_error
 
     def __call__(self, **kwargs):
         '''
@@ -123,18 +123,18 @@ class Function:
 
         for param_name, param in self._def._parameters.items():
             arg = kwargs.get(param_name)
-            if param is None:
-                raise RuntimeError(f'Parameter "{param_name}" missing')
+            if arg is None:
+                raise RuntimeError(f"Argument missing for parameter '{param_name}'")
             ref = param.__class__._get_value_ref(arg)
             if ref is None:
-                raise RuntimeError(f'Parameter "{param_name}" type mismatch')
+                raise RuntimeError(f"Parameter '{param_name}' type mismatch")
             
             arg_list.append(str(ref))
             kwargs.pop(param_name)
 
         if kwargs:
             raise RuntimeError(f'Missing arguments: {kwargs}')
-        
+
         arg_str = ', '.join(arg_list)
         return self._def._return_type(f'{self._def._name}({arg_str})')
     

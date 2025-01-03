@@ -82,11 +82,12 @@ class TestFunctions(_base.TestBase):
 
     def test_missing_arg(self):
         with _base.HlslTestContext(no_file = True) as sh:
+            self._generate_test_uniforms(sh)
             self._generate_add_func(sh)
 
             with pytest.raises(
-                AttributeError,
-                match = 'Uniform register b0 is already in use by cb0'
+                RuntimeError, 
+                match = "Argument missing for parameter 'b'"
             ):
                 sh.result.color = sh.add(a = sh.g_f4A)
 
