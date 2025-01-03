@@ -35,7 +35,7 @@ class FunctionDecl:
         try:
             return self._parameters[name]
         except KeyError as key_error:
-            raise AttributeError(f'Undeclared symbol: {name}') from key_error
+            raise AttributeError(f"No parameter named '{name}'") from key_error
 
     def __call__(self, **kwargs):
         '''
