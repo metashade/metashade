@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import _base, _auto_float_intrinsics, _auto_numeric_intrinsics
-from metashade.hlsl.sm6 import ps_6_0
 
 class TestIntrinsics(_base.TestBase):
     def _test(self, auto_package):

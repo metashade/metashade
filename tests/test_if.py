@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import _base
-from metashade.hlsl.sm6 import ps_6_0
 
 class TestIf(_base.TestBase):
     def _generate_test_uniforms(self, sh):

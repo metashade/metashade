@@ -14,7 +14,6 @@
 
 import pytest
 import _base
-from metashade.hlsl.sm6 import ps_6_0
 
 class TestUniforms(_base.TestBase):
     def test_hlsl_cb_register_clash(self):

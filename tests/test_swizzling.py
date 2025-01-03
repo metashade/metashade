@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import _base
-from metashade.hlsl.sm6 import ps_6_0
 
 class TestSwizzling(_base.TestBase):
     def test_rgba_swizzling(self):
