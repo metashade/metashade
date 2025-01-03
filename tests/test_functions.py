@@ -84,14 +84,20 @@ class TestFunctions(_base.TestBase):
         with _base.HlslTestContext(no_file = True) as sh:
             self._generate_add_func(sh)
 
-            with pytest.raises(Exception):
+            with pytest.raises(
+                AttributeError,
+                match = 'Uniform register b0 is already in use by cb0'
+            ):
                 sh.result.color = sh.add(a = sh.g_f4A)
 
     def test_extra_arg(self):
         with _base.HlslTestContext(no_file = True) as sh:
             self._generate_add_func(sh)
 
-            with pytest.raises(Exception):
+            with pytest.raises(
+                RuntimeError,
+                match = 'Uniform register b0 is already in use by cb0'
+            ):
                 sh.result.color = sh.add(
                     a = sh.g_f4A, b = sh.g_f4B, c = sh.g_f3C
                 )
@@ -100,7 +106,10 @@ class TestFunctions(_base.TestBase):
         with _base.HlslTestContext(no_file = True) as sh:
             self._generate_add_func(sh)
             
-            with pytest.raises(Exception):
+            with pytest.raises(
+                RuntimeError,
+                match = 'Uniform register b0 is already in use by cb0'
+            ):
                 sh.result.color = sh.add(a = sh.g_f4A, b = sh.g_f3C)
 
     def test_void_func_decl(self):
