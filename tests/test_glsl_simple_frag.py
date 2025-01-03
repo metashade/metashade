@@ -40,7 +40,7 @@ class TestGlslSimpleFrag(_base.TestBase):
             
             with pytest.raises(
                 RuntimeError,
-                match = 'Uniform register b0 is already in use by cb0'
+                match = 'Input location 0 is already in use by in_f4_0'
             ):
                 sh.in_f4_2 = sh.stage_input(sh.Float4, location = 0)
 
@@ -53,6 +53,6 @@ class TestGlslSimpleFrag(_base.TestBase):
             
             with pytest.raises(
                 RuntimeError,
-                match = 'Uniform register b0 is already in use by cb0'
+                match = 'Output location 0 is already in use by out_f4_0'
             ):
                 sh.out_f4_2 = sh.stage_output(sh.Float4, location = 0)
