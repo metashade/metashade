@@ -104,6 +104,19 @@ class TestFunctions(_base.TestBase):
                     a = sh.g_f4A, b = sh.g_f4B, c = sh.g_f3C
                 )
 
+    def test_extra_multi_args(self):
+        with _base.HlslTestContext(no_file = True) as sh:
+            self._generate_test_uniforms(sh)
+            self._generate_add_func(sh)
+
+            with pytest.raises(
+                RuntimeError,
+                match = "Arguments without matching parameters: 'c', 'd'"
+            ):
+                sh.result.color = sh.add(
+                    a = sh.g_f4A, b = sh.g_f4B, c = sh.g_f3C, d = sh.g_f3C
+                )
+
     def test_arg_type_mismatch(self):
         with _base.HlslTestContext(no_file = True) as sh:
             self._generate_add_func(sh)
