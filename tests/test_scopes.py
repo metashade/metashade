@@ -1,4 +1,4 @@
-# Copyright 2017 Pavlo Penenko
+# Copyright 2024 Pavlo Penenko
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,18 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-class Scope:
-    """
-    Represents a scope in a C-like language storing a dictionary of its local
-    symbols.
-    """
-    def __init__(self):
-        self._locals = dict()
-        
-    def __getattr__(self, name):
-        try:
-            return self._locals[name]
-        except KeyError as key_error:
-            raise AttributeError(
-                f"No local symbol named '{name}'"
-            ) from key_error
+import pytest, _base
+
+class TestScopes(_base.TestBase):
+    def test_undeclared_symbol(self):
+        with _base.HlslTestContext(no_file = True) as sh:
+            with sh.function('add', sh.Float4)(a = sh.Float4, b = sh.Float4):
+                with pytest.raises(
+                    AttributeError,
+                    match = "Undeclared symbol: 'c'"
+                ):
+                    sh.return_(sh.a + sh.c)
