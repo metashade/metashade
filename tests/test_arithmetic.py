@@ -12,15 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pytest
 import _base
 
 class TestArithmetic(_base.TestBase):
     def _test_arithmetic(
             self,
+            ctx_cls,
             scalar_type : str,
             vector2_type : str
     ):
-        with _base.HlslTestContext(dummy_entry_point = True) as sh:
+        with ctx_cls(dummy_entry_point = True) as sh:
             with sh.function(
                 'test_arithmetic', getattr(sh, vector2_type)
             )():
@@ -48,14 +50,18 @@ class TestArithmetic(_base.TestBase):
                 sh.f2C /= sh.fD
                 sh.return_(sh.f2C)
 
-    def test_arithmetic_float(self):
+    @pytest.mark.parametrize('ctx_cls', [_base.HlslTestContext])
+    def test_arithmetic_float(self, ctx_cls):
         self._test_arithmetic(
+            ctx_cls = ctx_cls,
             scalar_type = 'Float',
             vector2_type = 'Float2'
         )
 
-    def test_arithmetic_int(self):
+    @pytest.mark.parametrize('ctx_cls', [_base.HlslTestContext])
+    def test_arithmetic_int(self, ctx_cls):
         self._test_arithmetic(
+            ctx_cls = ctx_cls,
             scalar_type = 'Int',
             vector2_type = 'Int2'
         )
