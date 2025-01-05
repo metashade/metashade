@@ -48,13 +48,19 @@ class _TestContext(abc.ABC):
                 return frame.function
         raise RuntimeError('No test function found in the stack')
 
-    def __init__(self, no_file : bool = False, as_lib : bool = False):
+    def __init__(
+        self,
+        no_file : bool = False,
+        as_lib : bool = False,
+        dummy_entry_point : bool = False
+    ):
         test_name = self._get_test_func_name()
         self._src_path = (
             None if no_file
             else self._out_dir / f'{test_name}.{self._file_extension}'
         )
         self._as_lib = as_lib
+        self._dummy_entry_point = dummy_entry_point
 
     @abc.abstractmethod
     def _create_generator(self):
@@ -80,9 +86,12 @@ class _TestContext(abc.ABC):
         return self._create_generator()
 
     def __exit__(self, exc_type, exc_value, traceback):
-        self._file.close()
         if exc_type is not None:
+            self._file.close()
             return False
+        if self._dummy_entry_point:
+            with self._sh.entry_point('main')():
+                pass
         self._check_source()
         return True
     

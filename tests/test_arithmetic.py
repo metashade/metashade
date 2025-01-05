@@ -21,7 +21,7 @@ class TestArithmetic(_base.TestBase):
             scalar_type : str,
             vector2_type : str
     ):
-        with _base.HlslTestContext(as_lib = True) as sh:
+        with _base.HlslTestContext(dummy_entry_point = True) as sh:
             with sh.function(
                 'test_arithmetic', getattr(sh, vector2_type)
             )():
