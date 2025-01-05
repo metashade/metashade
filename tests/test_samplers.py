@@ -13,24 +13,23 @@
 # limitations under the License.
 
 import _base
-from metashade.hlsl.sm6 import ps_6_0
 
 class TestSamplers(_base.TestBase):
     def test_combined_samplers(self):
         ctx = _base.HlslTestContext(as_lib = True)
         with ctx as sh:
-            sh.uniform('g_tColor0', sh.Texture2d, register = 0)
-            sh.uniform('g_sColor0', sh.Sampler, register = 1)
+            sh.uniform('g_tColor0', sh.Texture2d, dx_register = 0)
+            sh.uniform('g_sColor0', sh.Sampler, dx_register = 1)
 
-            sh.uniform('g_tColor1', sh.Texture2d(texel_type = sh.Float4), register = 1)
-            sh.uniform('g_sColor1', sh.Sampler, register = 0)
+            sh.uniform('g_tColor1', sh.Texture2d(texel_type = sh.Float4), dx_register = 1)
+            sh.uniform('g_sColor1', sh.Sampler, dx_register = 0)
 
-            sh.uniform('g_tShadow', sh.Texture2d, register = 2)
-            sh.uniform('g_sShadow', sh.SamplerCmp, register = 2)
+            sh.uniform('g_tShadow', sh.Texture2d, dx_register = 2)
+            sh.uniform('g_sShadow', sh.SamplerCmp, dx_register = 2)
 
-            sh.uniform('g_t1d', sh.Texture1d, register = 3)
-            sh.uniform('g_t3d', sh.Texture3d, register = 4)
-            sh.uniform('g_tCube', sh.TextureCube, register = 5)
+            sh.uniform('g_t1d', sh.Texture1d, dx_register = 3)
+            sh.uniform('g_t3d', sh.Texture3d, dx_register = 4)
+            sh.uniform('g_tCube', sh.TextureCube, dx_register = 5)
 
             with sh.vs_output('VsOut') as VsOut:
                 VsOut.texCoord('uv0', sh.Point2f)

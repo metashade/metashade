@@ -16,6 +16,7 @@ from typing import NamedTuple
 from metashade._base.dtypes import BaseType, check_valid_index
 import metashade._rtsl.generator as rtsl
 from . import dtypes
+
 from .stage_interface import (
     UniqueOutputLocationChecker, UniqueInputLocationChecker,
     StageIO, StageInput, StageOutput
@@ -75,15 +76,23 @@ class Generator(rtsl.Generator):
     def stage_output(self, dtype, location : int):
         return StageOutput(dtype, location)
     
-    def uniform_buffer(self, set : int, binding : int, name : str = None):
-        check_valid_index(set)
-        check_valid_index(binding)
+    def uniform_buffer(
+        self,
+        name : str,
+        vk_set : int,
+        vk_binding : int,
+        dx_register: int = None
+    ):
+        check_valid_index(vk_set)
+        check_valid_index(vk_binding)
         self._unique_binding_checker.add(
-            _UniqueBindingChecker.SetBindingPair(set, binding),
+            _UniqueBindingChecker.SetBindingPair(vk_set, vk_binding),
             name
         )
-        return UniformBuffer(self, set = set, binding = binding, name = name)
-    
+        return UniformBuffer(
+            self, set = vk_set, binding = vk_binding, name = name
+        )
+
     def uniform(
         self,
         name : str,

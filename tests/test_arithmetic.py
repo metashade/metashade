@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pytest, _base
-from metashade.hlsl.sm6 import ps_6_0
+import _base
 
 class TestArithmetic(_base.TestBase):
     def _test_arithmetic(

@@ -23,5 +23,7 @@ class Scope:
     def __getattr__(self, name):
         try:
             return self._locals[name]
-        except KeyError:
-            raise AttributeError
+        except KeyError as key_error:
+            raise AttributeError(
+                f"No local symbol named '{name}'"
+            ) from key_error

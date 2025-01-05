@@ -13,12 +13,11 @@
 # limitations under the License.
 
 import _base, _auto_float_intrinsics, _auto_numeric_intrinsics
-from metashade.hlsl.sm6 import ps_6_0
 
 class TestIntrinsics(_base.TestBase):
     def _test(self, auto_package):
         with _base.HlslTestContext(as_lib = True) as sh:
-            with sh.uniform_buffer(register = 0, name = 'cb'):
+            with sh.uniform_buffer(dx_register = 0, name = 'cb'):
                 sh.uniform('g_f', sh.Float)
                 for dim in range(1, 5):
                     sh.uniform(
