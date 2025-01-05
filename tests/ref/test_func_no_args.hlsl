@@ -24,7 +24,7 @@ struct PsOut
 	float4 color : SV_TARGET;
 };
 
-PsOut psMain()
+PsOut main()
 {
 	PsOut result;
 	result.color = (getA2() + getA3());

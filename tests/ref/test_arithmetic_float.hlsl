@@ -18,3 +18,7 @@ float2 test_arithmetic()
 	return f2C;
 }
 
+void main()
+{
+}
+

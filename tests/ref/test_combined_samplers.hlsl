@@ -17,7 +17,7 @@ struct PsOut
 	float4 color : SV_TARGET;
 };
 
-PsOut psMain(VsOut psIn)
+PsOut main(VsOut psIn)
 {
 	PsOut psOut;
 	float4 rgbaSample0 = g_tColor1.Sample(g_sColor1, psIn.uv0);

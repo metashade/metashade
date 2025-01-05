@@ -13,7 +13,7 @@ struct PsOut
 	float4 color : SV_TARGET;
 };
 
-PsOut psMain()
+PsOut main()
 {
 	PsOut result;
 	result.color = add(g_f4A, g_f4B);
