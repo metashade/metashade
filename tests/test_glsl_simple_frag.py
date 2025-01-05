@@ -38,7 +38,10 @@ class TestGlslSimpleFrag(_base.TestBase):
 
             sh.in_f4_1 = sh.stage_input(sh.Float4, location = 1)
             
-            with pytest.raises(Exception):
+            with pytest.raises(
+                RuntimeError,
+                match = 'Input location 0 is already in use by in_f4_0'
+            ):
                 sh.in_f4_2 = sh.stage_input(sh.Float4, location = 0)
 
     def test_glsl_output_clash(self):
@@ -48,5 +51,8 @@ class TestGlslSimpleFrag(_base.TestBase):
 
             sh.out_f4_1 = sh.stage_output(sh.Float4, location = 1)
             
-            with pytest.raises(Exception):
+            with pytest.raises(
+                RuntimeError,
+                match = 'Output location 0 is already in use by out_f4_0'
+            ):
                 sh.out_f4_2 = sh.stage_output(sh.Float4, location = 0)

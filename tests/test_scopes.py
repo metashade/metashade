@@ -1,4 +1,4 @@
-# Copyright 2023 Pavlo Penenko
+# Copyright 2024 Pavlo Penenko
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,18 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import _base
+import pytest, _base
 
-class TestComment(_base.TestBase):
-    def test_comment(self):
-        with _base.HlslTestContext(as_lib = True) as sh:
-            sh // "This is a comment documenting the function"
-            sh // ""
-            with sh.function(
-                'test_comment', sh.Float
-            )():
-                sh.fA = sh.Float(-1)
-                sh.fB = sh.Float(0)
-                sh // "fC is the sum of fA and fB"
-                sh.fC = sh.fA + sh.fB
-                sh.return_(sh.fC)
+class TestScopes(_base.TestBase):
+    def test_undeclared_symbol(self):
+        with _base.HlslTestContext(no_file = True) as sh:
+            with sh.function('add', sh.Float4)(a = sh.Float4, b = sh.Float4):
+                with pytest.raises(
+                    AttributeError,
+                    match = "Undeclared symbol: 'c'"
+                ):
+                    sh.return_(sh.a + sh.c)

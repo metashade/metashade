@@ -7,8 +7,8 @@ from metashade.hlsl.sm6 import ps_6_0 as hlsl_ps
 with open('misc.hlsl', 'w') as hlsl_file:
     sh = hlsl_ps.Generator(hlsl_file)
 
-    sh.uniform('g_tColor', sh.Texture2d, register = 0)
-    sh.uniform('g_sColor', sh.Sampler, register = 0)
+    sh.uniform('g_tColor', sh.Texture2d, dx_register = 0)
+    sh.uniform('g_sColor', sh.Sampler, dx_register = 0)
 
     with sh.function('foo', sh.Float)(
         N = sh.Vector3f, L = sh.Vector3f

@@ -13,11 +13,10 @@
 # limitations under the License.
 
 import _base
-from metashade.hlsl.sm6 import ps_6_0
 
 class TestIf(_base.TestBase):
     def _generate_test_uniforms(self, sh):
-        with sh.uniform_buffer(register = 0, name = 'cb'):
+        with sh.uniform_buffer(dx_register = 0, name = 'cb'):
             sh.uniform('g_f4A', sh.Float4)
             sh.uniform('g_f4B', sh.Float4)
             sh.uniform('g_f4C', sh.Float4)
