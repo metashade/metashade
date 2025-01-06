@@ -12,11 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pytest
 import _base
 
 class TestSwizzling(_base.TestBase):
-    def test_rgba_swizzling(self):
-        with _base.HlslTestContext(as_lib = True) as sh:
+    @pytest.mark.parametrize(
+        'ctx_cls', [_base.HlslTestContext, _base.GlslTestContext]
+    )
+    def test_rgba_swizzling(self, ctx_cls):
+        with ctx_cls(dummy_entry_point = True) as sh:
             with sh.function('rgba_swizzle', sh.Float)(
                 rgb = sh.RgbF, rgba = sh.RgbaF
             ):

@@ -1,4 +1,5 @@
-float rgba_swizzle(float3 rgb, float4 rgba)
+#version 450
+float rgba_swizzle(vec3 rgb, vec4 rgba)
 {
 	float r = rgb.r;
 	float g = rgba.g;
