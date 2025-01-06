@@ -21,6 +21,8 @@ from metashade.hlsl.util import dxc
 from metashade.util.tests import RefDiffer
 
 class _TestContext(abc.ABC):
+    _entry_point_name = 'main'
+
     @classmethod
     def setup_class(cls):
         cls._parent_dir = Path(sys.modules[cls.__module__].__file__).parent
@@ -101,7 +103,6 @@ _TestContext.setup_class()
 
 class HlslTestContext(_TestContext):
     _file_extension = 'hlsl'
-    _entry_point_name = 'main'
 
     def _create_generator(self):
         return ps_6_0.Generator(self._file)
