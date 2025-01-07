@@ -60,7 +60,9 @@ class TestArithmetic(_base.TestBase):
             vector2_type = 'Float2'
         )
 
-    @pytest.mark.parametrize('ctx_cls', [_base.HlslTestContext])
+    @pytest.mark.parametrize(
+        'ctx_cls', [_base.HlslTestContext, _base.GlslTestContext]
+    )
     def test_arithmetic_int(self, ctx_cls):
         self._test_arithmetic(
             ctx_cls = ctx_cls,
