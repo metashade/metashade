@@ -23,9 +23,10 @@ class Int(rtsl.Int):
 class _RawVector(rtsl._RawVector):
     def __init__(self, _ = None):
         element_ref = self.__class__._element_type._get_value_ref(_)
+
         super().__init__(
-            '.'.join((str(element_ref), 'x' * self.__class__._dim))
-                if element_ref is not None else _
+            f'{self.__class__._target_name}({element_ref})'
+            if element_ref is not None else _
         )
 
 class _RawVectorF(_RawVector):
