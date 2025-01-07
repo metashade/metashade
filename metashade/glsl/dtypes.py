@@ -81,17 +81,14 @@ class Float4(_RawVectorF, rtsl.RawVector4):
             )
             super().__init__(expression)
 
-class Int1(_RawVectorI, rtsl.RawVector1):
-    _target_name = 'int1'
-
 class Int2(_RawVectorI, rtsl.RawVector2):
-    _target_name = 'int2'
+    _target_name = 'ivec2'
 
 class Int3(_RawVectorI, rtsl.RawVector3):
-    _target_name = 'int3'
+    _target_name = 'ivec3'
 
 class Int4(_RawVectorI, rtsl.RawVector4):
-    _target_name = 'int4'
+    _target_name = 'ivec4'
 
 # TODO: share the below implementations with HLSL?
 class Vector4f(rtsl.Vector4, Float4):
