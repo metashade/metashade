@@ -15,8 +15,9 @@
 import _base
 
 class TestVectorInit(_base.TestBase):
-    def test_vector_init(self):
-        with _base.HlslTestContext(as_lib = True) as sh:
+    @_base.ctx_cls_hg
+    def test_vector_init(self, ctx_cls):
+        with ctx_cls(dummy_entry_point = True) as sh:
             with sh.function('vector_init', sh.Float)():
                 sh.f = sh.Float(1)
 

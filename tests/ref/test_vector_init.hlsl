@@ -38,3 +38,7 @@ float vector_init()
 	return f;
 }
 
+void main()
+{
+}
+
