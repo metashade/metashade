@@ -16,9 +16,7 @@ import pytest
 import _base
 
 class TestAugmentedAssignments(_base.TestBase):
-    @pytest.mark.parametrize(
-        'ctx_cls', [_base.HlslTestContext, _base.GlslTestContext]
-    )
+    @_base.ctx_cls_hg
     def test_augmented_add(self, ctx_cls):
         with ctx_cls(dummy_entry_point = True) as sh:
             with sh.function('assign_add', sh.Float4)(

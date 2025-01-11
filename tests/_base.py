@@ -13,7 +13,9 @@
 # limitations under the License.
 
 import abc, inspect, io, os, sys
+import pytest
 from pathlib import Path
+
 from metashade.glsl import frag
 from metashade.glsl.util import glslang
 from metashade.hlsl.sm6 import ps_6_0
@@ -136,3 +138,9 @@ class GlslTestContext(_TestContext):
 
 class TestBase:
     pass
+
+def ctx_cls_hg(func):
+    wrapped_deco = pytest.mark.parametrize(
+        'ctx_cls', [HlslTestContext, GlslTestContext]
+    )
+    return wrapped_deco(func)

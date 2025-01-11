@@ -50,9 +50,7 @@ class TestArithmetic(_base.TestBase):
                 sh.f2C /= sh.fD
                 sh.return_(sh.f2C)
 
-    @pytest.mark.parametrize(
-        'ctx_cls', [_base.HlslTestContext, _base.GlslTestContext]
-    )
+    @_base.ctx_cls_hg
     def test_arithmetic_float(self, ctx_cls):
         self._test_arithmetic(
             ctx_cls = ctx_cls,
@@ -60,9 +58,7 @@ class TestArithmetic(_base.TestBase):
             vector2_type = 'Float2'
         )
 
-    @pytest.mark.parametrize(
-        'ctx_cls', [_base.HlslTestContext, _base.GlslTestContext]
-    )
+    @_base.ctx_cls_hg
     def test_arithmetic_int(self, ctx_cls):
         self._test_arithmetic(
             ctx_cls = ctx_cls,
