@@ -11,3 +11,7 @@ float xyzw_swizzle(float3 f3In, float4 f4In)
 	return x;
 }
 
+void main()
+{
+}
+

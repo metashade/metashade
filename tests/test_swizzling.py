@@ -29,8 +29,11 @@ class TestSwizzling(_base.TestBase):
                 sh.rgba.rb = sh.rgba.rg
                 sh.return_(sh.r + sh.g)
 
-    def test_xyzw_swizzling(self):
-        with _base.HlslTestContext(as_lib = True) as sh:
+    @pytest.mark.parametrize(
+        'ctx_cls', [_base.HlslTestContext, _base.GlslTestContext]
+    )
+    def test_xyzw_swizzling(self, ctx_cls):
+        with ctx_cls(dummy_entry_point = True) as sh:
             with sh.function('xyzw_swizzle', sh.Float)(
                 f3In = sh.Float3, f4In = sh.Float4
             ):

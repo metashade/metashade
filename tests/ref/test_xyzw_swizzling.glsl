@@ -12,3 +12,7 @@ float xyzw_swizzle(vec3 f3In, vec4 f4In)
 	return x;
 }
 
+void main()
+{
+}
+
