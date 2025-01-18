@@ -28,7 +28,8 @@ def compile(
     entry_point_name : str = None,  # can be None for libraries
     output_path : str = None,
     include_paths = None,
-    to_spirv : bool = False
+    to_spirv : bool = False,
+    o0 : bool = False
 ):
     args = [
         'dxc',
@@ -40,10 +41,11 @@ def compile(
         args += [ '-E', entry_point_name ]
 
     if to_spirv:
-        args += [
-            '-spirv',
-            '-O0' #preserves functions from HLSL in GLSL
-        ]
+        args.append('-spirv')
+
+    if o0:
+        # preserves functions from HLSL in GLSL
+        args.append('-O0')
 
     if include_paths:
         for path in include_paths:

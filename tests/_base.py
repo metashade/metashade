@@ -110,17 +110,30 @@ class HlslTestContext(_TestContext):
         return ps_6_0.Generator(self._file)
 
     def _compile(self):
+        def dxc_compile(profile, to_spirv):
+            dxc.compile(
+                src_path = self._src_path,
+                entry_point_name = self._entry_point_name,
+                profile = profile,
+                include_paths = [ self._parent_dir ],
+                to_spirv = to_spirv
+            )
+
         # LIB profiles support DXIL linking and therefore allow function
         # declarations without definitions.
         # Pure declarations may also be useful in other profiles if the
         # definition is found elsewhere in the compilation unit, e.g. in an
         # included header.
-        dxc.compile(
-            src_path = self._src_path,
-            entry_point_name = self._entry_point_name,
+        dxc_compile(
             profile = 'lib_6_5' if self._as_lib else 'ps_6_0',
-            include_paths = [ self._parent_dir ]
+            to_spirv = False
         )
+
+        if not self._as_lib:
+            dxc_compile(
+                profile = 'ps_6_0',
+                to_spirv = True
+            )
 
 class GlslTestContext(_TestContext):
     _file_extension = 'glsl'
