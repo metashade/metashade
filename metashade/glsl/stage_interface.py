@@ -15,20 +15,6 @@
 import metashade._rtsl.generator as rtsl
 from metashade._base.dtypes import check_valid_index
 
-class UniqueInputLocationChecker(rtsl.UniqueKeyChecker):
-    @staticmethod
-    def _format_error_message(location, existing_value):
-        return (
-            f'Input location {location} is already in use by {existing_value}'
-        )
-    
-class UniqueOutputLocationChecker(rtsl.UniqueKeyChecker):
-    @staticmethod
-    def _format_error_message(location, existing_value):
-        return (
-            f'Output location {location} is already in use by {existing_value}'
-        )
-
 class StageIO:
     def __init__(self, dtype, location : int):
         check_valid_index(location)

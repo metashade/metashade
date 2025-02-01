@@ -18,8 +18,11 @@ import metashade._rtsl.generator as rtsl
 from . import dtypes
 
 from .stage_interface import (
-    UniqueOutputLocationChecker, UniqueInputLocationChecker,
     StageIO, StageInput, StageOutput
+)
+
+from metashade._rtsl.vk import (
+    UniqueOutputLocationChecker, UniqueInputLocationChecker
 )
 
 class UniformBuffer:
