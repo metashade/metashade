@@ -31,7 +31,7 @@ class UniformBuffer:
 
     def __enter__(self):
         self._sh._emit(
-            f'layout (set = {self._set}, binding = {self._set}) '
+            f'layout (set = {self._set}, binding = {self._binding}) '
             f'uniform {self._name}\n{{\n'
         )
         self._sh._push_indent()
