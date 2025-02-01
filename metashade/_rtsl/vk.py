@@ -17,6 +17,7 @@ Vulkan-related functionality common between HLSL and GLSL backends.
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import NamedTuple
 from .generator import UniqueKeyChecker
 
 class UniqueInputLocationChecker(UniqueKeyChecker):
@@ -33,4 +34,16 @@ class UniqueOutputLocationChecker(UniqueKeyChecker):
         return (
             f'Vulkan output location {location} '
             f'is already in use by {existing_value}'
+        )
+
+class UniqueBindingChecker(UniqueKeyChecker):
+    class SetBindingPair(NamedTuple):
+        set : int
+        binding : int
+
+    @staticmethod
+    def _format_error_message(set_binding : SetBindingPair, existing_value):
+        return (
+            f'Vulkan uniform binding {set_binding.binding} in descriptor set '
+            f'{set_binding.set} is already in use by {existing_value}'
         )

@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import NamedTuple
 from metashade._base.dtypes import BaseType, check_valid_index
 import metashade._rtsl.generator as rtsl
 from . import dtypes
@@ -22,7 +21,9 @@ from .stage_interface import (
 )
 
 from metashade._rtsl.vk import (
-    UniqueOutputLocationChecker, UniqueInputLocationChecker
+    UniqueOutputLocationChecker,
+    UniqueInputLocationChecker,
+    UniqueBindingChecker
 )
 
 class UniformBuffer:
@@ -44,18 +45,6 @@ class UniformBuffer:
         self._sh._pop_indent()
         self._sh._emit('};\n\n')
 
-class _UniqueBindingChecker(rtsl.UniqueKeyChecker):
-    class SetBindingPair(NamedTuple):
-        set : int
-        binding : int
-
-    @staticmethod
-    def _format_error_message(set_binding : SetBindingPair, existing_value):
-        return (
-            f'Uniform binding {set_binding.binding} in descriptor set '
-            f'{set_binding.set} is already in use by {existing_value}'
-        )
-
 class Generator(rtsl.Generator):
     def __init__(self, file_, glsl_version : str):
         super(Generator, self).__init__(file_)
@@ -71,7 +60,7 @@ class Generator(rtsl.Generator):
             StageOutput.__name__: UniqueOutputLocationChecker()
         }
 
-        self._unique_binding_checker = _UniqueBindingChecker()
+        self._unique_binding_checker = UniqueBindingChecker()
 
     def stage_input(self, dtype, location : int):
         return StageInput(dtype, location)
@@ -89,7 +78,7 @@ class Generator(rtsl.Generator):
         check_valid_index(vk_set)
         check_valid_index(vk_binding)
         self._unique_binding_checker.add(
-            _UniqueBindingChecker.SetBindingPair(vk_set, vk_binding),
+            UniqueBindingChecker.SetBindingPair(vk_set, vk_binding),
             name
         )
         return UniformBuffer(
