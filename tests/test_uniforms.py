@@ -88,7 +88,7 @@ class TestUniforms(_base.TestBase):
 
             with pytest.raises(
                 RuntimeError,
-                match = 'Uniform binding 0 in descriptor set 0 '
+                match = 'Vulkan uniform binding 0 in descriptor set 0 '
                         'is already in use by cb0'
             ):
                 with sh.uniform_buffer(
