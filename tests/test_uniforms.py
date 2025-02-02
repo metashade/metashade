@@ -59,6 +59,7 @@ class TestUniforms(_base.TestBase):
             with sh.entry_point('main')():
                 sh.out_f4Color = sh.g_f4Color
 
+    # TODO: unify with the above test
     @_base.ctx_cls_hg
     def test_cb_single_set_binding(self, ctx_cls):
         with ctx_cls(dummy_entry_point = True) as sh:
@@ -88,6 +89,42 @@ class TestUniforms(_base.TestBase):
             
             with sh.entry_point('main')():
                 sh.out_f4Color = sh.g_f4Color0
+
+    # TODO: unify with the above test
+    @_base.ctx_cls_hg
+    def test_cb_multi_set_binding(self, ctx_cls):
+        with ctx_cls(dummy_entry_point = True) as sh:
+            with sh.uniform_buffer(
+                name = 'cb0',
+                dx_register = 0,
+                vk_set = 0,
+                vk_binding = 0
+            ):
+                sh.uniform('g_f4Color0', sh.Float4)
+
+            with sh.uniform_buffer(
+                name = 'cb1',
+                dx_register = 1,
+                vk_set = 0,
+                vk_binding = 1
+            ):
+                sh.uniform('g_f4Color1', sh.Float4)
+
+            with sh.uniform_buffer(
+                name = 'cb2',
+                dx_register = 2,
+                vk_set = 1,
+                vk_binding = 0
+            ):
+                sh.uniform('g_f4Color2', sh.Float4)
+
+            with sh.uniform_buffer(
+                name = 'cb3',
+                dx_register = 3,
+                vk_set = 1,
+                vk_binding = 1
+            ):
+                sh.uniform('g_f4Color3', sh.Float4)
 
     def test_glsl_cb_set_binding_clash(self):
         with _base.GlslTestContext(no_file = True) as sh:
