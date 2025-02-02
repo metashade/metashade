@@ -59,6 +59,17 @@ class TestUniforms(_base.TestBase):
             with sh.entry_point('main')():
                 sh.out_f4Color = sh.g_f4Color
 
+    @_base.ctx_cls_hg
+    def test_cb_single_set_binding(self, ctx_cls):
+        with ctx_cls(dummy_entry_point = True) as sh:
+            with sh.uniform_buffer(
+                name = 'cb0',
+                dx_register = 0,
+                vk_set = 0,
+                vk_binding = 0
+            ):
+                sh.uniform('g_f4Color', sh.Float4)
+
     def test_glsl_cb_multi_set_binding(self):
         with _base.GlslTestContext() as sh:
             with sh.uniform_buffer(name = 'cb0', vk_set = 0, vk_binding = 0):
