@@ -18,19 +18,38 @@ from . import dtypes
 from . import samplers
 
 class UniformBuffer:
-    def __init__(self, sh, register : int, name : str = None):
+    def __init__(
+        self,
+        sh,
+        dx_register : int,
+        vk_binding : int,
+        vk_set : int = None,
+        name : str = None
+    ):
         self._sh = sh
         self._name = name
-        self._register = register
+        self._dx_register = dx_register
+        self._vk_set = vk_set
+        self._vk_binding = vk_binding
 
     def __enter__(self):
+        if self._vk_binding is not None:
+            self._sh._emit(f'[[vk::binding({self._vk_binding}')
+            if self._vk_set is not None:
+                self._sh._emit(f', {self._vk_set}')
+            self._sh._emit(')]]\n')
+        elif self._vk_set is not None:
+            raise RuntimeError(
+                'Vulkan descriptor set specified without a binding'
+            )
+
         self._sh._emit('cbuffer')
 
         if self._name is not None:
             self._sh._emit(' ')
             self._sh._emit(self._name)
 
-        self._sh._emit( f' : register(b{self._register})\n{{\n' )
+        self._sh._emit( f' : register(b{self._dx_register})\n{{\n' )
         self._sh._push_indent()
         return self
 
@@ -65,8 +84,14 @@ class Generator(rtsl.Generator):
     ):
         check_valid_index(dx_register)
         self._uniforms_by_register.add(f'b{dx_register}', name)
-        return UniformBuffer(self, register = dx_register, name = name)
-    
+        return UniformBuffer(
+            self,
+            dx_register = dx_register,
+            vk_binding = vk_binding,
+            vk_set = vk_set,
+            name = name
+        )
+
     def uniform(
         self,
         name : str,
