@@ -49,7 +49,7 @@ class TestUniforms(_base.TestBase):
                 with sh.uniform_buffer(dx_register = -1, name = 'cb0'):
                     sh.uniform('g_f0', sh.Float4)
 
-    def test_glsl_cb_multi_set_binding(self):
+    def test_glsl_cb_single_set_binding(self):
         with _base.GlslTestContext() as sh:
             with sh.uniform_buffer(name = 'cb0', vk_set = 0, vk_binding = 0):
                 sh.uniform('g_f4Color', sh.Float4)
