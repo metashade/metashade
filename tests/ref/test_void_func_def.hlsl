@@ -4,3 +4,7 @@ void voidFunc(float4 a, float4 b)
 	return;
 }
 
+void main()
+{
+}
+

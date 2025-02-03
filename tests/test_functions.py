@@ -28,7 +28,12 @@ class TestFunctions(_base.TestBase):
                 sh.return_(sh.a + sh.b)
 
     def _generate_test_uniforms(self, sh):
-        with sh.uniform_buffer(dx_register = 0, name = 'cb'):
+        with sh.uniform_buffer(
+            name = 'cb',
+            dx_register = 0,
+            vk_set = 0,
+            vk_binding = 0
+        ):
             sh.uniform('g_f4A', sh.Float4)
             sh.uniform('g_f4B', sh.Float4)
             sh.uniform('g_f3C', sh.Float3)
@@ -79,8 +84,9 @@ class TestFunctions(_base.TestBase):
             self._generate_add_func(sh, decl_only = True)
             self._correct_ps_main(sh, ctx)
 
-    def test_missing_arg(self):
-        with _base.HlslTestContext(no_file = True) as sh:
+    @_base.ctx_cls_hg
+    def test_missing_arg(self, ctx_cls):
+        with ctx_cls(no_file = True) as sh:
             self._generate_test_uniforms(sh)
             self._generate_add_func(sh)
 
@@ -90,8 +96,9 @@ class TestFunctions(_base.TestBase):
             ):
                 sh.result.color = sh.add(a = sh.g_f4A)
 
-    def test_extra_arg(self):
-        with _base.HlslTestContext(no_file = True) as sh:
+    @_base.ctx_cls_hg
+    def test_extra_arg(self, ctx_cls):
+        with ctx_cls(no_file = True) as sh:
             self._generate_test_uniforms(sh)
             self._generate_add_func(sh)
 
@@ -103,8 +110,9 @@ class TestFunctions(_base.TestBase):
                     a = sh.g_f4A, b = sh.g_f4B, c = sh.g_f3C
                 )
 
-    def test_extra_multi_args(self):
-        with _base.HlslTestContext(no_file = True) as sh:
+    @_base.ctx_cls_hg
+    def test_extra_multi_args(self, ctx_cls):
+        with ctx_cls(no_file = True) as sh:
             self._generate_test_uniforms(sh)
             self._generate_add_func(sh)
 
@@ -116,8 +124,9 @@ class TestFunctions(_base.TestBase):
                     a = sh.g_f4A, b = sh.g_f4B, c = sh.g_f3C, d = sh.g_f3C
                 )
 
-    def test_arg_type_mismatch(self):
-        with _base.HlslTestContext(no_file = True) as sh:
+    @_base.ctx_cls_hg
+    def test_arg_type_mismatch(self, ctx_cls):
+        with ctx_cls(no_file = True) as sh:
             self._generate_test_uniforms(sh)
             self._generate_add_func(sh)
             
@@ -127,14 +136,16 @@ class TestFunctions(_base.TestBase):
             ):
                 sh.result.color = sh.add(a = sh.g_f4A, b = sh.g_f3C)
 
-    def test_void_func_decl(self):
-        with _base.HlslTestContext(as_lib = True) as sh:
+    @_base.ctx_cls_hg
+    def test_void_func_decl(self, ctx_cls):
+        with ctx_cls(dummy_entry_point = True) as sh:
             sh.function('voidFuncA')(a = sh.Float4, b = sh.Float4).declare()
             sh.function('voidFuncB', type(None))(a = sh.Float4, b = sh.Float4).declare()
             sh.function('voidFuncC', None)(a = sh.Float4, b = sh.Float4).declare()
 
-    def test_void_func_def(self):
-        with _base.HlslTestContext(as_lib = True) as sh:
+    @_base.ctx_cls_hg
+    def test_void_func_def(self, ctx_cls):
+        with ctx_cls(dummy_entry_point = True) as sh:
             with sh.function('voidFunc')(a = sh.Float4, b = sh.Float4):
                 sh.c = sh.a + sh.b
                 sh.return_()
