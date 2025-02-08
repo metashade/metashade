@@ -79,7 +79,8 @@ class Generator(rtsl.Generator, vk.GeneratorMixin):
         self._register_dtypes(dtypes.__name__)
         self._register_dtypes(samplers.__name__)
 
-    def uniform_buffer(self,
+    def uniform_buffer(
+        self,
         name : str,
         dx_register: int,
         vk_set : int = None,
