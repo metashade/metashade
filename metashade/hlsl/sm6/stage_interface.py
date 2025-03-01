@@ -46,7 +46,7 @@ class StageInterfaceDef:
         self._sh = sh
         self._name = name
         self._semantic_counts = \
-            { name : 0 for name in self.__class__._semantic_defs.keys()}
+            { name : 0 for name in self.__class__._semantic_defs.keys() }
         self._attributes = dict()   # name to semantic
 
     def __enter__(self):
@@ -75,8 +75,9 @@ class StageInterfaceDef:
             semantic_index = semantic_indices[attribute_def.semantic]
 
             semantic_name = attribute_def.semantic.upper()
-            if semantic_index > 0 \
-                or self._semantic_counts[attribute_def.semantic] > 1:
+            if ( semantic_index > 0
+                or self._semantic_counts[attribute_def.semantic] > 1
+            ):
                 semantic_name += str(semantic_index)
 
             member_defs[attribute_name] = struct.StructMemberDef(
