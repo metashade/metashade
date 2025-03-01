@@ -96,7 +96,7 @@ class VsInputDef(StageInterfaceDef, metaclass = StageInterfaceDefMeta):
         'position'      : SemanticDef(True),    # Vertex position in object space,	float4
         'positionT'     : SemanticDef(False),   # Transformed vertex position,	float4
         'pSize'         : SemanticDef(True),    # Point size,	float
-        'tangent'       : SemanticDef(True),    #Tangent,	float4
+        'tangent'       : SemanticDef(True),    # Tangent,	float4
         'texCoord'      : SemanticDef(True)     # Texture coordinates,	float4
     }
 
