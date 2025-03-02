@@ -26,6 +26,8 @@ class StageInterfaceDefMeta(type):
     def __init__(cls, name, bases, member_dict):
         super().__init__(name, bases, member_dict)
 
+        # Creating methods for each semantic in the `_semantic_defs` dictionary
+        # to be defined in derived classes
         def create_semantic_func(semantic_name, semantic_def):
             def semantic_func(self, attribute_name, dtype_factory):
                 self._add_attribute(
@@ -45,8 +47,12 @@ class StageInterfaceDef:
     def __init__(self, sh, name):
         self._sh = sh
         self._name = name
+
+        # Zeroize the semantic counts used to prevent duplication of semantics
+        # that don't allow multiple entries.
         self._semantic_counts = \
             { name : 0 for name in self.__class__._semantic_defs.keys() }
+
         self._attributes = dict()   # name to semantic
 
     def __enter__(self):
@@ -67,9 +73,12 @@ class StageInterfaceDef:
 
     def __exit__(self, exc_type, exc_value, traceback):
         member_defs = dict()
+
+        # Tracking indices of semantics that allow multiple entries
         semantic_indices = \
             { name : -1 for name in self.__class__._semantic_defs.keys()}
 
+        # Populating a dictionary of struct member definitions
         for attribute_name, attribute_def in self._attributes.items():
             semantic_indices[attribute_def.semantic] += 1
             semantic_index = semantic_indices[attribute_def.semantic]
@@ -84,6 +93,7 @@ class StageInterfaceDef:
                 attribute_def.dtype, semantic_name
             )
 
+        # Create a class representing the interface struct
         struct.define_struct(self._sh, self._name, member_defs)
 
 class VsInputDef(StageInterfaceDef, metaclass = StageInterfaceDefMeta):
