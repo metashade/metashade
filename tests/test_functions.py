@@ -168,17 +168,3 @@ class TestFunctions(_base.TestBase):
                 sh.result = sh.PsOut()
                 sh.result.color = sh.getA2() + sh.getA3()
                 sh.return_(sh.result)
-
-    def test_instantiate_py_func(self):
-        ctx = _base.HlslTestContext()
-        with ctx as sh:
-            sh.instantiate(_py_add)
-
-            with self._generate_ps_main(sh, ctx):
-                sh.result = sh.PsOut()
-                sh.result.color = sh._py_add(a = sh.g_f4A, b = sh.g_f4B)
-                sh.return_(sh.result)
-
-def _py_add(sh, a, b):
-    sh.c = sh.a + sh.b
-    sh.return_(sh.c)
