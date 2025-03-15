@@ -40,11 +40,15 @@ class Generator(base.Generator):
 
         return_type = func.__annotations__['return']
         return_type = getattr(self, return_type)
-        
+
         args = {
             name : getattr(self, annotation)
             for name, annotation in func.__annotations__.items()
             if name != 'return'
         }
         decl = context.FunctionDecl(self, name, return_type)
-        decl(**args).declare()
+        with decl(**args):
+            # Import the parameters into the current scope
+            locals_ = locals()
+            locals_.update({ name : getattr(self, name) for name in args.keys() })
+            func(self, **args)
