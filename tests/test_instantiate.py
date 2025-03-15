@@ -31,8 +31,8 @@ class TestInstantiate(_base.TestBase):
 
     def test_instantiate_py_func(self):
         ctx = _base.HlslTestContext()
-        # with ctx as sh:
-        #     sh.instantiate(_py_add)
+        with ctx as sh:
+            sh.instantiate(_py_add)
 
         #     with sh.ps_output('PsOut') as PsOut:
         #         PsOut.SV_Target('color', sh.Float4)

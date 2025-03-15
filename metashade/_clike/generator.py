@@ -18,7 +18,7 @@ from . import context, struct
 class Generator(base.Generator):
     def function(self, name : str, return_type = None):
         return context.FunctionDecl(self, name, return_type)
-    
+
     def struct(self, name):
         return struct.StructDef(self, name)
 
@@ -34,3 +34,17 @@ class Generator(base.Generator):
     def _single_line_comment(self, comment):
         self._emit_indent()
         self._emit(f'// {comment}\n')
+
+    def instantiate(self, func):
+        name = func.__name__
+
+        return_type = func.__annotations__['return']
+        return_type = getattr(self, return_type)
+        
+        args = {
+            name : getattr(self, annotation)
+            for name, annotation in func.__annotations__.items()
+            if name != 'return'
+        }
+        decl = context.FunctionDecl(self, name, return_type)
+        decl(**args).declare()
