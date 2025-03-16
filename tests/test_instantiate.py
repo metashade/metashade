@@ -32,12 +32,13 @@ class TestInstantiate(_base.TestBase):
     def test_instantiate_py_func(self):
         ctx = _base.HlslTestContext()
         with ctx as sh:
+            self._generate_test_uniforms(sh)
             sh.instantiate(_py_add)
 
-        #     with sh.ps_output('PsOut') as PsOut:
-        #         PsOut.SV_Target('color', sh.Float4)
+            with sh.ps_output('PsOut') as PsOut:
+                PsOut.SV_Target('color', sh.Float4)
 
-        #     with sh.entry_point(ctx._entry_point_name, sh.PsOut)():
-        #         sh.result = sh.PsOut()
-        #         sh.result.color = sh._py_add(a = sh.g_f4A, b = sh.g_f4B)
-        #         sh.return_(sh.result)
+            with sh.entry_point(ctx._entry_point_name, sh.PsOut)():
+                sh.result = sh.PsOut()
+                sh.result.color = sh._py_add(a = sh.g_f4A, b = sh.g_f4B)
+                sh.return_(sh.result)

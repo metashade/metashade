@@ -48,7 +48,5 @@ class Generator(base.Generator):
         }
         decl = context.FunctionDecl(self, name, return_type)
         with decl(**args):
-            # Import the parameters into the current scope
-            locals_ = locals()
-            locals_.update({ name : getattr(self, name) for name in args.keys() })
-            func(self, **args)
+            args = { name : getattr(self, name) for name in args.keys() }
+            func(sh = self, **args)
