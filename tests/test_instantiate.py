@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pytest, _base
+import _base
 
 def _py_add(sh, a : 'Float4', b : 'Float4') -> 'Float4':
     sh.c = a + b
@@ -42,3 +42,21 @@ class TestInstantiate(_base.TestBase):
                 sh.result = sh.PsOut()
                 sh.result.color = sh._py_add(a = sh.g_f4A, b = sh.g_f4B)
                 sh.return_(sh.result)
+
+    def test_instantiate_py_module(self):
+        import _exports
+
+        print(_exports._metashade_exports)
+
+        # ctx = _base.HlslTestContext()
+        # with ctx as sh:
+        #     self._generate_test_uniforms(sh)
+        #     sh.instantiate(_py_add)
+
+        #     with sh.ps_output('PsOut') as PsOut:
+        #         PsOut.SV_Target('color', sh.Float4)
+
+        #     with sh.entry_point(ctx._entry_point_name, sh.PsOut)():
+        #         sh.result = sh.PsOut()
+        #         sh.result.color = sh.py_add(a = sh.g_f4A, b = sh.g_f4B)
+        #         sh.return_(sh.result)
