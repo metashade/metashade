@@ -3,6 +3,7 @@ cbuffer cb : register(b0)
 {
 	float4 g_f4A;
 	float4 g_f4B;
+	float4 g_f4C;
 };
 
 float4 _py_add(float4 a, float4 b)
