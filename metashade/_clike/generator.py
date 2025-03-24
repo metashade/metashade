@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import types
 import metashade._base.generator as base
 from . import context, struct
 
@@ -35,7 +36,7 @@ class Generator(base.Generator):
         self._emit_indent()
         self._emit(f'// {comment}\n')
 
-    def instantiate(self, func):
+    def _instantiate_func(self, func):
         name = func.__name__
 
         return_type = func.__annotations__['return']
@@ -50,3 +51,10 @@ class Generator(base.Generator):
         with decl(**args):
             args = { name : getattr(self, name) for name in args.keys() }
             func(sh = self, **args)
+
+    def instantiate(self, py_obj):
+        if isinstance(py_obj, types.FunctionType):
+            self._instantiate_func(py_obj)
+        elif isinstance(py_obj, types.ModuleType):
+            for func in py_obj._metashade_exports.values():
+                self._instantiate_func(func)
