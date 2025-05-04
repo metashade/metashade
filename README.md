@@ -2,7 +2,7 @@
 ## What is Metashade?
 Metashade is an experimental Python-based GPU shading embedded domain-specific language (EDSL).
 When a Metashade script executes, it generates code in a target shading language.
-Only HLSL is supported so far but the intent is definitely to support multiple targets.
+Currently, a limited useful subset HLSL is supported, GLSL support is work in progress and more targets are possible in the future.
 
 To see Metashade in action, check out the glTF demo at https://github.com/metashade/metashade-glTFSample or the [tests](tests) which are run by CI:
 [![GitHub Actions CI](https://github.com/metashade/metashade/actions/workflows/python-package.yml/badge.svg)](https://github.com/metashade/metashade/actions/workflows/python-package.yml)
