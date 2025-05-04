@@ -1,15 +1,14 @@
-from metashade.hlsl.sm6 import ps_6_0 as hlsl_ps
-from metashade.glsl.v460 import frag as glsl_fs # hypothetical
+from metashade.hlsl.sm6 import ps_6_0
+from metashade.glsl import frag
 
 def generate(sh):
     # Polymorphic shader code for multiple targets
     pass
 
-with open('ps.hlsl', 'w') as hlsl_file:
-    sh = hlsl_ps.Generator(hlsl_file)
+with open('ps.hlsl', 'w') as ps_file:
+    sh = ps_6_0.Generator(ps_file)
     generate(sh)
 
-with open('fs.glsl', 'w') as glsl_file:
-    sh = glsl_fs.Generator(glsl_file)
+with open('fs.glsl', 'w') as frag_file:
+    sh = frag.Generator(frag_file)
     generate(sh)
-

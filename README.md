@@ -77,19 +77,19 @@ Before Metashade can generate anything, a generator object has to be created for
 language profile, with an output file (or a file-like stream object) passed as a constructor argument, e.g.
 
 ```Python
-from metashade.hlsl.sm6 import ps_6_0 as hlsl_ps
-from metashade.glsl.v460 import frag as glsl_fs # hypothetical
+from metashade.hlsl.sm6 import ps_6_0
+from metashade.glsl import frag
 
 def generate(sh):
     # Polymorphic shader code for multiple targets
     pass
 
-with open('ps.hlsl', 'w') as hlsl_file:
-    sh = hlsl_ps.Generator(hlsl_file)
+with open('ps.hlsl', 'w') as ps_file:
+    sh = ps_6_0.Generator(ps_file)
     generate(sh)
 
-with open('fs.glsl', 'w') as glsl_file:
-    sh = glsl_fs.Generator(glsl_file)
+with open('fs.glsl', 'w') as frag_file:
+    sh = frag.Generator(frag_file)
     generate(sh)
 ```
 
@@ -225,6 +225,3 @@ For example, the following code is generated conditionally if the input geometry
         sh.vsOut.Tw = sh.g_WorldXf.xform(sh.vsIn.Tobj.xyz).xyz.normalize()
         sh.vsOut.Bw = sh.vsOut.Nw.cross(sh.vsOut.Tw) * sh.vsIn.Tobj.w
 ```
-
-
-
