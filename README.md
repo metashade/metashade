@@ -44,9 +44,9 @@ generates the following HLSL output:
 ```C
 float D_Ggx(float NdotH, float fAlphaRoughness)
 {
-	float fASqr = (fAlphaRoughness * fAlphaRoughness);
-	float fF = ((((NdotH * fASqr) - NdotH) * NdotH) + 1.0);
-	return saturate((fASqr / ((3.141592653589793 * fF) * fF)));
+    float fASqr = (fAlphaRoughness * fAlphaRoughness);
+    float fF = ((((NdotH * fASqr) - NdotH) * NdotH) + 1.0);
+    return saturate((fASqr / ((3.141592653589793 * fF) * fF)));
 }
 ```
 
