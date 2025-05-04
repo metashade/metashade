@@ -30,14 +30,10 @@ For a detailed discussion of the motivation for Metashade and its design, please
 The following Metashade Python code
 
 ```Python
-with sh.function('D_Ggx', sh.Float)(                # <-- The function name and return type
-    NdotH = sh.Float, fAlphaRoughness = sh.Float    # <-- The function parameters
-):
-    # Initializing some locals
-    sh.fASqr = sh.fAlphaRoughness * sh.fAlphaRoughness
-    sh.fF = (sh.NdotH * sh.fASqr - sh.NdotH) * sh.NdotH + sh.Float(1.0)
-
-    # Generating the return statement in the target language
+@export
+def D_Ggx(sh, NdotH : 'Float', fAlphaRoughness : 'Float') -> 'Float':
+    sh.fASqr = fAlphaRoughness * fAlphaRoughness
+    sh.fF = (NdotH * sh.fASqr - NdotH) * NdotH + sh.Float(1.0)
     sh.return_(
         (sh.fASqr / (sh.Float(math.pi) * sh.fF * sh.fF )).saturate()
     )
@@ -48,9 +44,9 @@ generates the following HLSL output:
 ```C
 float D_Ggx(float NdotH, float fAlphaRoughness)
 {
-    float fASqr = (fAlphaRoughness * fAlphaRoughness);
-    float fF = ((((NdotH * fASqr) - NdotH) * NdotH) + 1.0);
-    return saturate((fASqr / ((3.141592653589793 * fF) * fF)));
+	float fASqr = (fAlphaRoughness * fAlphaRoughness);
+	float fF = ((((NdotH * fASqr) - NdotH) * NdotH) + 1.0);
+	return saturate((fASqr / ((3.141592653589793 * fF) * fF)));
 }
 ```
 
