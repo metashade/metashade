@@ -2,7 +2,7 @@
 ## What is Metashade?
 Metashade is an experimental Python-based GPU shading embedded domain-specific language (EDSL).
 When a Metashade script executes, it generates code in a target shading language.
-Only HLSL is supported so far but the intent is definitely to support multiple targets.
+Currently, a limited useful subset HLSL is supported, GLSL support is work in progress and more targets are possible in the future.
 
 To see Metashade in action, check out the glTF demo at https://github.com/metashade/metashade-glTFSample or the [tests](tests) which are run by CI:
 [![GitHub Actions CI](https://github.com/metashade/metashade/actions/workflows/python-package.yml/badge.svg)](https://github.com/metashade/metashade/actions/workflows/python-package.yml)
@@ -30,14 +30,10 @@ For a detailed discussion of the motivation for Metashade and its design, please
 The following Metashade Python code
 
 ```Python
-with sh.function('D_Ggx', sh.Float)(                # <-- The function name and return type
-    NdotH = sh.Float, fAlphaRoughness = sh.Float    # <-- The function parameters
-):
-    # Initializing some locals
-    sh.fASqr = sh.fAlphaRoughness * sh.fAlphaRoughness
-    sh.fF = (sh.NdotH * sh.fASqr - sh.NdotH) * sh.NdotH + sh.Float(1.0)
-
-    # Generating the return statement in the target language
+@export
+def D_Ggx(sh, NdotH : 'Float', fAlphaRoughness : 'Float') -> 'Float':
+    sh.fASqr = fAlphaRoughness * fAlphaRoughness
+    sh.fF = (NdotH * sh.fASqr - NdotH) * NdotH + sh.Float(1.0)
     sh.return_(
         (sh.fASqr / (sh.Float(math.pi) * sh.fF * sh.fF )).saturate()
     )
@@ -81,19 +77,19 @@ Before Metashade can generate anything, a generator object has to be created for
 language profile, with an output file (or a file-like stream object) passed as a constructor argument, e.g.
 
 ```Python
-from metashade.hlsl.sm6 import ps_6_0 as hlsl_ps
-from metashade.glsl.v460 import frag as glsl_fs # hypothetical
+from metashade.hlsl.sm6 import ps_6_0
+from metashade.glsl import frag
 
 def generate(sh):
     # Polymorphic shader code for multiple targets
     pass
 
-with open('ps.hlsl', 'w') as hlsl_file:
-    sh = hlsl_ps.Generator(hlsl_file)
+with open('ps.hlsl', 'w') as ps_file:
+    sh = ps_6_0.Generator(ps_file)
     generate(sh)
 
-with open('fs.glsl', 'w') as glsl_file:
-    sh = glsl_fs.Generator(glsl_file)
+with open('fs.glsl', 'w') as frag_file:
+    sh = frag.Generator(frag_file)
     generate(sh)
 ```
 
@@ -229,6 +225,3 @@ For example, the following code is generated conditionally if the input geometry
         sh.vsOut.Tw = sh.g_WorldXf.xform(sh.vsIn.Tobj.xyz).xyz.normalize()
         sh.vsOut.Bw = sh.vsOut.Nw.cross(sh.vsOut.Tw) * sh.vsIn.Tobj.w
 ```
-
-
-
