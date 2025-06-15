@@ -29,9 +29,9 @@ class ArrayBase:
 def create_array(element_type, dims):
     class_name = f"Array_{element_type.__name__}_{dims}"
     array_class = type(
-        name = class_name,
-        bases = (ArrayBase,),
-        dict = {
+        class_name,
+        (ArrayBase,),
+        {
             "_element_type": element_type,
             "_dims": dims
         }

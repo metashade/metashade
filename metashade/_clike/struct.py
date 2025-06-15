@@ -68,9 +68,9 @@ class Struct(BaseType, StructBase):
 
 def define_struct(sh, name, member_defs):
     struct_type = type(
-        name = name,
-        bases = (Struct,),
-        dict = {
+        name,
+        (Struct,),
+        {
             '_sh' : sh,
             '_member_defs' : member_defs
         }

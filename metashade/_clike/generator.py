@@ -28,9 +28,9 @@ class Generator(base.Generator):
         array_class = getattr(self, array_class_name, None)
         if array_class is None:
             array_class = type(
-                name = array_class_name,
-                bases = (arrays.ArrayBase,),
-                dict = {
+                array_class_name,
+                (arrays.ArrayBase,),
+                {
                     "_sh": self,
                     "_element_type": element_type,
                     "_dims": dims
