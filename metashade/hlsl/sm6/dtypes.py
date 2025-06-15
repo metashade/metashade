@@ -162,9 +162,9 @@ for rows in range(1, 5):
         name = f'Float{rows}x{cols}'
         target_name = f'float{rows}x{cols}'
         globals()[name] = type(
-            name,
-            (getattr(rtsl, name), _RawMatrixF),
-            {'_target_name' : target_name}
+            name = name,
+            bases = (getattr(rtsl, name), _RawMatrixF),
+            dict = {'_target_name' : target_name}
         )
 
 class _MatrixF(rtsl._MatrixF, _RawMatrixF):

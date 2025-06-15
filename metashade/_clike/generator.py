@@ -14,7 +14,7 @@
 
 import types
 import metashade._base.generator as base
-from . import context, struct
+from . import arrays, context, struct
 
 class Generator(base.Generator):
     def function(self, name : str, return_type = None):
@@ -22,6 +22,22 @@ class Generator(base.Generator):
 
     def struct(self, name):
         return struct.StructDef(self, name)
+    
+    def array(self, element_type, dims):
+        array_class_name = f"Array_{element_type.__name__}_{dims}"
+        array_class = getattr(self, array_class_name, None)
+        if array_class is None:
+            array_class = type(
+                name = array_class_name,
+                bases = (arrays.ArrayBase,),
+                dict = {
+                    "_sh": self,
+                    "_element_type": element_type,
+                    "_dims": dims
+                }
+            )
+            setattr(self, array_class_name, array_class)
+        return array_class
 
     def include(self, file_path : str):
         self._emit(f'#include "{file_path}"\n')
