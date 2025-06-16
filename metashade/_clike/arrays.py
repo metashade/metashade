@@ -12,7 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-class ArrayBase:
+from metashade._clike.dtypes import BaseType
+
+class ArrayBase(BaseType):
     _sh = None
     _element_type = None
     _dims = None
