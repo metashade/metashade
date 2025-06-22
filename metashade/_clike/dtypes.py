@@ -76,10 +76,7 @@ class BaseType(base.BaseType):
 
     @classmethod
     def _get_target_type_name(cls):
-        try:
-            return cls._target_name
-        except AttributeError:
-            return cls.__name__
+        return cls._target_name
 
 class ArithmeticType(BaseType):
     @staticmethod
