@@ -19,9 +19,6 @@ class ArrayBase(BaseType):
     _element_type = None
     _dims = None
 
-    def __init__():
-        pass
-
     def __getitem__(self, index):
         raise NotImplementedError("Subclasses must implement __getitem__")
 
