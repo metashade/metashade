@@ -58,6 +58,10 @@ class Struct(BaseType, StructBase):
             if not member_name.startswith('_'):
                 member._set_generator(self._sh)
 
+    @classmethod
+    def _get_target_type_name(cls):
+        return cls.__name__
+
     def _bind(self, sh, identifier, allow_init):
         super()._bind(sh, identifier, allow_init)
         self._bind_members(sh, identifier)
