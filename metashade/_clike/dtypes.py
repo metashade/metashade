@@ -19,6 +19,16 @@ class BaseType(base.BaseType):
     @classmethod
     def _format_uniform_register(cls, register_idx : int) -> str:
         raise RuntimeError('Uniform registers not supported for {cls}')
+    
+    @staticmethod
+    def _emit_semantic(sh, semantic):
+        if semantic is not None:
+            sh._emit(f' : {semantic}')
+
+    @classmethod
+    def _emit_register(cls, sh, register):
+        if register is not None:
+            sh._emit(f' : register({cls._format_uniform_register(register)})')
 
     @classmethod
     def _emit_def(
@@ -37,11 +47,8 @@ class BaseType(base.BaseType):
             )
         )
 
-        if semantic is not None:
-            sh._emit(f' : {semantic}')
-
-        if register is not None:
-            sh._emit(f' : register({cls._format_uniform_register(register)})')
+        cls._emit_semantic(sh, semantic)
+        cls._emit_register(sh, register)
 
         if initializer is not None:
             sh._emit(f' = {initializer}')

@@ -24,6 +24,27 @@ class ArrayBase(BaseType):
 
     def __setitem__(self, index, value):
         raise NotImplementedError("Subclasses must implement __setitem__")
+    
+    @classmethod
+    def _emit_def(
+        cls, sh, identifier,
+        semantic = None,
+        register : int = None,
+        initializer = None
+    ):
+        sh._emit(
+            '{element_type} {identifier}{dims}'.format(
+                element_type = cls._element_type._get_target_type_name(),
+                identifier = identifier,
+                dims = ''.join(f'[{dim}]' for dim in cls._dims)
+            )
+        )
+
+        cls._emit_semantic(sh, semantic)
+        cls._emit_register(sh, register)
+
+        if initializer is not None:
+            raise NotImplementedError('Array initialization not supported yet')
 
 def create_array(element_type, dims):
     class_name = f"Array_{element_type.__name__}_{dims}"
