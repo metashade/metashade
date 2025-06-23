@@ -14,11 +14,11 @@
 
 import _base
 
-def _func(sh) -> 'Float':
+def _func(sh) -> 'Float4':
     sh.arr = sh.array(sh.Float4, (2,))()
-    # sh.array[0] = sh.Float4(1.0)
-    # sh.array[1] = sh.Float4(0.0)
-    # sh.f4A = sh.array[0] + sh.array[1]
+    # sh.arr[0] = sh.Float4(1.0)
+    # sh.arr[1] = sh.Float4(0.0)
+    sh.f4A = sh.arr[0] + sh.arr[1]
 
     sh.return_(sh.f4A)
 

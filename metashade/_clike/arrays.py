@@ -20,10 +20,13 @@ class ArrayBase(BaseType):
     _dims = None
 
     def __getitem__(self, index):
-        raise NotImplementedError("Subclasses must implement __getitem__")
+        return self._sh._instantiate_dtype(
+            self._element_type,
+            f'{self}[{index}]'
+        )
 
     def __setitem__(self, index, value):
-        raise NotImplementedError("Subclasses must implement __setitem__")
+        raise NotImplementedError('Setting array elements not implemented yet')
     
     @classmethod
     def _emit_def(
