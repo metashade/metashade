@@ -46,10 +46,12 @@ class TestFunctions(_base.TestBase):
 
     def _correct_ps_main(self, sh, ctx : _base._TestContext):
         self._generate_test_uniforms(sh)
-        with self._generate_ps_main(sh, ctx):
-            sh.result = sh.PsOut()
-            sh.result.color = sh.add(a = sh.g_f4A, b = sh.g_f4B)
-            sh.return_(sh.result)
+
+        if isinstance(ctx, _base.HlslTestContext):
+            with self._generate_ps_main(sh, ctx):
+                sh.result = sh.PsOut()
+                sh.result.color = sh.add(a = sh.g_f4A, b = sh.g_f4B)
+                sh.return_(sh.result)
 
     def test_function_call(self):
         ctx = _base.HlslTestContext()
