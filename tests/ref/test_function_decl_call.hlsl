@@ -15,8 +15,9 @@ struct PsOut
 
 PsOut main()
 {
+	float4 c = add(g_f4A, g_f4B);
 	PsOut result;
-	result.color = add(g_f4A, g_f4B);
+	result.color = c;
 	return result;
 }
 

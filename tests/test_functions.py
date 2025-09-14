@@ -38,7 +38,7 @@ class TestFunctions(_base.TestBase):
             sh.uniform('g_f4B', sh.Float4)
             sh.uniform('g_f3C', sh.Float3)
 
-    def _generate_ps_main(self, sh, ctx : _base._TestContext):
+    def _generate_ps_main_decl(self, sh, ctx : _base._TestContext):
         with sh.ps_output('PsOut') as PsOut:
             PsOut.SV_Target('color', sh.Float4)
 
@@ -47,10 +47,12 @@ class TestFunctions(_base.TestBase):
     def _correct_ps_main(self, sh, ctx : _base._TestContext):
         self._generate_test_uniforms(sh)
 
-        if isinstance(ctx, _base.HlslTestContext):
-            with self._generate_ps_main(sh, ctx):
+        with self._generate_ps_main_decl(sh, ctx):
+            sh.c = sh.add(a = sh.g_f4A, b = sh.g_f4B)
+
+            if isinstance(ctx, _base.HlslTestContext):
                 sh.result = sh.PsOut()
-                sh.result.color = sh.add(a = sh.g_f4A, b = sh.g_f4B)
+                sh.result.color = sh.c
                 sh.return_(sh.result)
 
     def test_function_call(self):
@@ -68,7 +70,7 @@ class TestFunctions(_base.TestBase):
                 a = sh.Float4, c = sh.Float3
             ).declare()
 
-            with self._generate_ps_main(sh, ctx):
+            with self._generate_ps_main_decl(sh, ctx):
                 sh.result = sh.PsOut()
                 sh.result.color = sh.func(c = sh.g_f3C, a = sh.g_f4A)
                 sh.return_(sh.result)
@@ -166,7 +168,7 @@ class TestFunctions(_base.TestBase):
             with sh.function('getA3', sh.Float4):
                 sh.return_(sh.g_f4A)
 
-            with self._generate_ps_main(sh, ctx):
+            with self._generate_ps_main_decl(sh, ctx):
                 sh.result = sh.PsOut()
                 sh.result.color = sh.getA2() + sh.getA3()
                 sh.return_(sh.result)
