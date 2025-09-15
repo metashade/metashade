@@ -32,8 +32,9 @@ struct PsOut
 
 PsOut main()
 {
+	float4 c = py_madd(g_f4A, g_f4B, g_f4C);
 	PsOut result;
-	result.color = py_madd(g_f4A, g_f4B, g_f4C);
+	result.color = c;
 	return result;
 }
 

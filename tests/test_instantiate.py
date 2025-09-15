@@ -30,34 +30,49 @@ class TestInstantiate(_base.TestBase):
             sh.uniform('g_f4B', sh.Float4)
             sh.uniform('g_f4C', sh.Float4)
 
-    def test_instantiate_py_func(self):
-        ctx = _base.HlslTestContext()
+    def _generate_ps_main_decl(self, sh, ctx : _base._TestContext):
+        if isinstance(ctx, _base.HlslTestContext):
+            with sh.ps_output('PsOut') as PsOut:
+                PsOut.SV_Target('color', sh.Float4)
+            return sh.entry_point(ctx._entry_point_name, sh.PsOut)()
+        else:
+            sh.out_f4Color = sh.stage_output(sh.Float4, location = 0)
+            return sh.entry_point(ctx._entry_point_name)()
+
+    @_base.ctx_cls_hg
+    def test_instantiate_py_func(self, ctx_cls):
+        ctx = ctx_cls()
         with ctx as sh:
             self._generate_test_uniforms(sh)
             sh.instantiate(_py_add)
 
-            with sh.ps_output('PsOut') as PsOut:
-                PsOut.SV_Target('color', sh.Float4)
+            with self._generate_ps_main_decl(sh, ctx):
+                sh.c = sh._py_add(a = sh.g_f4A, b = sh.g_f4B)
 
-            with sh.entry_point(ctx._entry_point_name, sh.PsOut)():
-                sh.result = sh.PsOut()
-                sh.result.color = sh._py_add(a = sh.g_f4A, b = sh.g_f4B)
-                sh.return_(sh.result)
+                if isinstance(ctx, _base.HlslTestContext):
+                    sh.result = sh.PsOut()
+                    sh.result.color = sh.c
+                    sh.return_(sh.result)
+                else:
+                    sh.out_f4Color = sh.c
 
-    def test_instantiate_py_module(self):
+    @_base.ctx_cls_hg
+    def test_instantiate_py_module(self, ctx_cls):
         import _exports
 
-        ctx = _base.HlslTestContext()
+        ctx = ctx_cls()
         with ctx as sh:
             self._generate_test_uniforms(sh)
             sh.instantiate(_exports)
 
-            with sh.ps_output('PsOut') as PsOut:
-                PsOut.SV_Target('color', sh.Float4)
-
-            with sh.entry_point(ctx._entry_point_name, sh.PsOut)():
-                sh.result = sh.PsOut()
-                sh.result.color = sh.py_madd(
+            with self._generate_ps_main_decl(sh, ctx):
+                sh.c = sh.py_madd(
                     a = sh.g_f4A, b = sh.g_f4B, c = sh.g_f4C
                 )
-                sh.return_(sh.result)
+
+                if isinstance(ctx, _base.HlslTestContext):
+                    sh.result = sh.PsOut()
+                    sh.result.color = sh.c
+                    sh.return_(sh.result)
+                else:
+                    sh.out_f4Color = sh.c
