@@ -18,6 +18,9 @@ def _py_add(sh, a : 'Float4', b : 'Float4') -> 'Float4':
     sh.c = a + b
     sh.return_(sh.c)
 
+def _py_add_out_param(sh, a : 'Float4', b : 'Float4', c : 'Out[Float4]') -> 'None':
+    sh.c = a + b
+
 class TestInstantiate(_base.TestBase):
     def _generate_test_uniforms(self, sh):
         with sh.uniform_buffer(
@@ -76,3 +79,23 @@ class TestInstantiate(_base.TestBase):
                     sh.return_(sh.result)
                 else:
                     sh.out_f4Color = sh.c
+
+    @_base.ctx_cls_hg
+    def test_instantiate_py_func_out_param(self, ctx_cls):
+        ctx = ctx_cls()
+        with ctx as sh:
+            self._generate_test_uniforms(sh)
+            sh.instantiate(_py_add_out_param)
+
+            with self._generate_ps_main_decl(sh, ctx):
+                sh.result_color = sh.Float4()
+                sh._py_add_out_param(
+                    a = sh.g_f4A, b = sh.g_f4B, c = sh.result_color
+                )
+
+                if isinstance(ctx, _base.HlslTestContext):
+                    sh.result = sh.PsOut()
+                    sh.result.color = sh.result_color
+                    sh.return_(sh.result)
+                else:
+                    sh.out_f4Color = sh.result_color
