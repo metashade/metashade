@@ -18,6 +18,9 @@ def _py_add(sh, a : 'Float4', b : 'Float4') -> 'Float4':
     sh.c = a + b
     sh.return_(sh.c)
 
+def _py_clip(sh, value : 'Float') -> 'None':
+    value.clip()
+
 class TestInstantiate(_base.TestBase):
     def _generate_test_uniforms(self, sh):
         with sh.uniform_buffer(
@@ -76,3 +79,20 @@ class TestInstantiate(_base.TestBase):
                     sh.return_(sh.result)
                 else:
                     sh.out_f4Color = sh.c
+
+    @_base.ctx_cls_hg
+    def test_instantiate_py_func_void_return(self, ctx_cls):
+        ctx = ctx_cls()
+        with ctx as sh:
+            self._generate_test_uniforms(sh)
+            sh.instantiate(_py_clip)
+
+            with self._generate_ps_main_decl(sh, ctx):
+                sh._py_clip(value = sh.g_f4A.x)  # Use .x to get Float from Float4
+
+                if isinstance(ctx, _base.HlslTestContext):
+                    sh.result = sh.PsOut()
+                    sh.result.color = sh.g_f4B  # Just return something since clip() returns void
+                    sh.return_(sh.result)
+                else:
+                    sh.out_f4Color = sh.g_f4B
