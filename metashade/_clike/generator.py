@@ -56,8 +56,12 @@ class Generator(base.Generator):
     def _instantiate_func(self, func):
         name = func.__name__
 
-        return_type = func.__annotations__['return']
-        return_type = getattr(self, return_type)
+        return_annotation = func.__annotations__['return']
+        
+        if return_annotation == 'None':
+            return_type = type(None)
+        else:
+            return_type = getattr(self, return_annotation)
 
         args = {
             name : getattr(self, annotation)
