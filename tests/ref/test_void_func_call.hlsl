@@ -3,12 +3,13 @@ cbuffer cb : register(b0)
 {
 	float4 g_f4A;
 	float4 g_f4B;
-	float4 g_f4C;
+	float3 g_f3C;
 };
 
-void _py_clip(float value)
+void clipValue(float value)
 {
 	clip(value);
+	return;
 }
 
 struct PsOut
@@ -18,7 +19,7 @@ struct PsOut
 
 PsOut main()
 {
-	_py_clip(g_f4A.x);
+	clipValue(g_f4A.x);
 	PsOut result;
 	result.color = g_f4B;
 	return result;
