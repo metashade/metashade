@@ -152,7 +152,9 @@ class Function:
             self._def._sh._emit(f'{self._def._name}({arg_str});\n')
             return None
         else:
-            return self._def._return_type(f'{self._def._name}({arg_str})')
+            return self._def._return_type(
+                f'{self._def._name}({arg_str})'
+            )
     
 class _ConditionalStatement:
     def __init__(self, sh):
