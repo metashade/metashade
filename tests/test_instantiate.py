@@ -80,19 +80,17 @@ class TestInstantiate(_base.TestBase):
                 else:
                     sh.out_f4Color = sh.c
 
-    @_base.ctx_cls_hg
-    def test_instantiate_py_func_void_return(self, ctx_cls):
-        ctx = ctx_cls()
+    def test_instantiate_py_func_void_return(self):
+        # HLSL-only test since clip is not supported in GLSL yet
+        ctx = _base.HlslTestContext()
         with ctx as sh:
             self._generate_test_uniforms(sh)
             sh.instantiate(_py_clip)
 
             with self._generate_ps_main_decl(sh, ctx):
-                sh._py_clip(value = sh.g_f4A.x)  # Use .x to get Float from Float4
+                # Use .x to get Float from Float4
+                sh._py_clip(value = sh.g_f4A.x)
 
-                if isinstance(ctx, _base.HlslTestContext):
-                    sh.result = sh.PsOut()
-                    sh.result.color = sh.g_f4B  # Just return something since clip() returns void
-                    sh.return_(sh.result)
-                else:
-                    sh.out_f4Color = sh.g_f4B
+                sh.result = sh.PsOut()
+                sh.result.color = sh.g_f4B
+                sh.return_(sh.result)
