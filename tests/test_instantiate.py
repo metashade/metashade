@@ -20,6 +20,8 @@ def _py_add(sh, a : 'Float4', b : 'Float4') -> 'Float4':
 
 def _py_add_out_param(sh, a : 'Float4', b : 'Float4', c : 'Out[Float4]') -> 'None':
     sh.c = a + b
+def _py_clip(sh, value : 'Float') -> 'None':
+    value.clip()
 
 class TestInstantiate(_base.TestBase):
     def _generate_test_uniforms(self, sh):
@@ -99,3 +101,17 @@ class TestInstantiate(_base.TestBase):
                     sh.return_(sh.result)
                 else:
                     sh.out_f4Color = sh.result_color
+    def test_instantiate_py_func_void_return(self):
+        # HLSL-only test since clip is not supported in GLSL yet
+        ctx = _base.HlslTestContext()
+        with ctx as sh:
+            self._generate_test_uniforms(sh)
+            sh.instantiate(_py_clip)
+
+            with self._generate_ps_main_decl(sh, ctx):
+                # Use .x to get Float from Float4
+                sh._py_clip(value = sh.g_f4A.x)
+
+                sh.result = sh.PsOut()
+                sh.result.color = sh.g_f4B
+                sh.return_(sh.result)

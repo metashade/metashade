@@ -160,6 +160,26 @@ class TestFunctions(_base.TestBase):
                 sh.c = sh.a + sh.b
                 sh.return_()
 
+    def test_void_func_call(self):
+        # HLSL-only test since clip is not supported in GLSL yet
+        ctx = _base.HlslTestContext()
+        with ctx as sh:
+            self._generate_test_uniforms(sh)
+
+            # Define a void function that calls the clip intrinsic
+            with sh.function('clipValue', None)(value = sh.Float):
+                sh.value.clip()
+                sh.return_()
+
+            with self._generate_ps_main_decl(sh, ctx):
+                # Call the void function - this tests Function.__call__
+                # for void returns
+                sh.clipValue(value = sh.g_f4A.x)
+                
+                sh.result = sh.PsOut()
+                sh.result.color = sh.g_f4B
+                sh.return_(sh.result)
+
     def test_func_no_args(self):
         ctx = _base.HlslTestContext()
         with ctx as sh:
