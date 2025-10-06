@@ -198,3 +198,29 @@ class TestFunctions(_base.TestBase):
                 sh.result = sh.PsOut()
                 sh.result.color = sh.getA2() + sh.getA3()
                 sh.return_(sh.result)
+
+    @_base.ctx_cls_hg  
+    def test_func_out_param(self, ctx_cls):
+        ctx = ctx_cls()
+        with ctx as sh:
+            self._generate_test_uniforms(sh)
+            
+            # Define function with output parameter using 'with' pattern
+            with sh.function('addOutParam', None)(
+                a = sh.Float4, b = sh.Float4, c = sh.Out(sh.Float4)
+            ):
+                sh.c = sh.a + sh.b
+                sh.return_()
+
+            with self._generate_ps_main_decl(sh, ctx):
+                sh.result_color = sh.Float4()
+                sh.addOutParam(
+                    a = sh.g_f4A, b = sh.g_f4B, c = sh.result_color
+                )
+
+                if isinstance(ctx, _base.HlslTestContext):
+                    sh.result = sh.PsOut()
+                    sh.result.color = sh.result_color
+                    sh.return_(sh.result)
+                else:
+                    sh.out_f4Color = sh.result_color
