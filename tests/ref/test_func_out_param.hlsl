@@ -6,7 +6,7 @@ cbuffer cb : register(b0)
 	float3 g_f3C;
 };
 
-void addOutParam(float4 a, float4 b, float4 c)
+void addOutParam(float4 a, float4 b, out float4 c)
 {
 	c = (a + b);
 	return;

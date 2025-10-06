@@ -6,7 +6,7 @@ layout (set = 0, binding = 0) uniform cb
 	vec3 g_f3C;
 };
 
-void addOutParam(vec4 a, vec4 b, vec4 c)
+void addOutParam(vec4 a, vec4 b, out vec4 c)
 {
 	c = (a + b);
 	return;

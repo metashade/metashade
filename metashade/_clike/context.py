@@ -43,9 +43,31 @@ class FunctionDecl:
         Instead, this initializes a part of the function signature -
         the declarations of parameters with their names and types.
         '''
-        self._parameters = {
-            name : arg_type() for name, arg_type in kwargs.items()
-        }
+        import typing
+        from .._rtsl.qualifiers import ParamQualifiers
+        
+        self._parameters = {}
+        self._param_qualifiers = {}
+        
+        for name, arg_type in kwargs.items():
+            # Check if this is an Annotated type with qualifiers
+            qualifiers = None
+            if hasattr(typing, 'get_origin') and typing.get_origin(arg_type) is typing.Annotated:
+                # Extract the base type and qualifiers from Annotated[base_type, qualifiers]
+                args = typing.get_args(arg_type)
+                base_type = args[0]
+                for annotation in args[1:]:
+                    if isinstance(annotation, ParamQualifiers):
+                        qualifiers = annotation
+                        break
+                actual_type = base_type
+            else:
+                actual_type = arg_type
+            
+            self._parameters[name] = actual_type()
+            if qualifiers:
+                self._param_qualifiers[name] = qualifiers
+        
         # Return self, so that it can be entered in a with scope
         return self
 
@@ -70,7 +92,21 @@ class FunctionDecl:
                 first = False
             else:
                 self._sh._emit(', ')
-            arg._define(self._sh, name, allow_init=False)
+            
+            # Check if this parameter has qualifiers (out/inout)
+            qualifiers = self._param_qualifiers.get(name)
+            if qualifiers and hasattr(self._sh, 'format_parameter_qualifiers'):
+                qualifier_str = self._sh.format_parameter_qualifiers(qualifiers)
+                if qualifier_str:
+                    self._sh._emit(f'{qualifier_str} ')
+                    # Emit manually for qualified parameters
+                    self._sh._emit(f'{arg.__class__._get_target_type_name()} {name}')
+                    # Still need to bind the parameter
+                    arg._bind(self._sh, name, False)
+                else:
+                    arg._define(self._sh, name, allow_init=False)
+            else:
+                arg._define(self._sh, name, allow_init=False)
 
         self._sh._emit(')')
 
