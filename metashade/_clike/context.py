@@ -33,7 +33,7 @@ class FunctionDecl:
 
     def __getattr__(self, name):
         try:
-            return self._parameters[name]
+            return self._parameters[name].instance
         except KeyError as key_error:
             raise AttributeError(f"No parameter named '{name}'") from key_error
 
@@ -44,29 +44,34 @@ class FunctionDecl:
         the declarations of parameters with their names and types.
         '''
         import typing
+        from typing import NamedTuple
         from .._rtsl.qualifiers import ParamQualifiers
         
-        self._parameters = {}
-        self._param_qualifiers = {}
+        class ParamDef(NamedTuple):
+            instance: object  # The instantiated Metashade type
+            qualifiers: list  # List of ParamQualifiers
         
-        for name, arg_type in kwargs.items():
+        self._parameters = {}
+        
+        for name, param_type in kwargs.items():
             # Check if this is an Annotated type with qualifiers
-            qualifiers = None
-            if hasattr(typing, 'get_origin') and typing.get_origin(arg_type) is typing.Annotated:
-                # Extract the base type and qualifiers from Annotated[base_type, qualifiers]
-                args = typing.get_args(arg_type)
-                base_type = args[0]
-                for annotation in args[1:]:
+            qualifiers = []
+            if typing.get_origin(param_type) is typing.Annotated:
+                # Extract base type and qualifiers from 
+                # Annotated[base_type, qualifier1, qualifier2, ...]
+                type_params = typing.get_args(param_type)
+                base_type = type_params[0]
+                for annotation in type_params[1:]:
                     if isinstance(annotation, ParamQualifiers):
-                        qualifiers = annotation
-                        break
+                        qualifiers.append(annotation)
                 actual_type = base_type
             else:
-                actual_type = arg_type
+                actual_type = param_type
             
-            self._parameters[name] = actual_type()
-            if qualifiers:
-                self._param_qualifiers[name] = qualifiers
+            self._parameters[name] = ParamDef(
+                instance=actual_type(),
+                qualifiers=qualifiers
+            )
         
         # Return self, so that it can be entered in a with scope
         return self
@@ -87,26 +92,35 @@ class FunctionDecl:
         
         # Emit the argument declarations
         first = True
-        for name, arg in self._parameters.items():
+        for name, param_def in self._parameters.items():
             if first:
                 first = False
             else:
                 self._sh._emit(', ')
             
             # Check if this parameter has qualifiers (out/inout)
-            qualifiers = self._param_qualifiers.get(name)
-            if qualifiers and hasattr(self._sh, 'format_parameter_qualifiers'):
-                qualifier_str = self._sh.format_parameter_qualifiers(qualifiers)
+            if (param_def.qualifiers and 
+                hasattr(self._sh, 'format_parameter_qualifiers')):
+                # Use the first qualifier for now (could be extended)
+                qualifier = param_def.qualifiers[0]
+                qualifier_str = self._sh.format_parameter_qualifiers(
+                    qualifier
+                )
                 if qualifier_str:
                     self._sh._emit(f'{qualifier_str} ')
                     # Emit manually for qualified parameters
-                    self._sh._emit(f'{arg.__class__._get_target_type_name()} {name}')
+                    type_name = param_def.instance.__class__._get_target_type_name()
+                    self._sh._emit(f'{type_name} {name}')
                     # Still need to bind the parameter
-                    arg._bind(self._sh, name, False)
+                    param_def.instance._bind(self._sh, name, False)
                 else:
-                    arg._define(self._sh, name, allow_init=False)
+                    param_def.instance._define(
+                        self._sh, name, allow_init=False
+                    )
             else:
-                arg._define(self._sh, name, allow_init=False)
+                param_def.instance._define(
+                    self._sh, name, allow_init=False
+                )
 
         self._sh._emit(')')
 
@@ -157,15 +171,17 @@ class Function:
     def __call__(self, **kwargs):
         arg_list = []
 
-        for param_name, param in self._def._parameters.items():
+        for param_name, param_def in self._def._parameters.items():
             arg = kwargs.get(param_name)
             if arg is None:
                 raise RuntimeError(
                     f"Argument missing for parameter '{param_name}'"
                 )
-            ref = param.__class__._get_value_ref(arg)
+            ref = param_def.instance.__class__._get_value_ref(arg)
             if ref is None:
-                raise RuntimeError(f"Parameter '{param_name}' type mismatch")
+                raise RuntimeError(
+                    f"Parameter '{param_name}' type mismatch"
+                )
             
             arg_list.append(str(ref))
             kwargs.pop(param_name)
