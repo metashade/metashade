@@ -67,12 +67,13 @@ class Generator(base.Generator):
             for name, annotation in py_func.__annotations__.items()
             if name != 'return'
         }
-        decl = context.FunctionDecl(self, name, return_type)
-        with decl._init_params(**param_annotations):
-            args = { name : getattr(self, name)
-                    for name in param_annotations.keys() }
+        func_decl = context.FunctionDecl(self, name, return_type)
+        with func_decl._init_params(**param_annotations):
+            # Get parameter instances from the function declaration's scope
+            params = { name : getattr(self, name)
+                       for name in param_annotations.keys() }
             # Generate the function body by calling the Python function
-            py_func(sh = self, **args)
+            py_func(sh = self, **params)
 
     def instantiate(self, py_obj):
         if isinstance(py_obj, types.FunctionType):
