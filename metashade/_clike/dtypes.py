@@ -35,11 +35,19 @@ class BaseType(base.BaseType):
         cls, sh, identifier,
         semantic = None,
         register : int = None,
-        initializer = None
+        initializer = None,
+        qualifiers = None
     ):
         '''
         https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-variable-syntax
         '''
+        # Emit all qualifiers if present
+        if qualifiers:
+            for qualifier in qualifiers:
+                qualifier_str = sh.format_parameter_qualifiers(qualifier)
+                if qualifier_str:
+                    sh._emit(f'{qualifier_str} ')
+        
         sh._emit(
             '{type_name} {identifier}'.format(
                 type_name = cls._get_target_type_name(),
@@ -57,14 +65,16 @@ class BaseType(base.BaseType):
         self, sh, identifier,
         allow_init = True,
         semantic = None,
-        register = None
+        register = None,
+        qualifiers = None
     ):
         self._bind(sh, identifier, allow_init)
         self.__class__._emit_def(
             sh, self._name,
             initializer = self._expression,
             semantic = semantic,
-            register = register
+            register = register,
+            qualifiers = qualifiers
         )
 
     def _assign(self, value):

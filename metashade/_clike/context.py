@@ -13,23 +13,23 @@
 # limitations under the License.
 
 import abc
-import metashade._base.context as base
 import typing
 from typing import NamedTuple
+
+import metashade._base.context as base
 from .._rtsl.qualifiers import ParamQualifiers
 
-
 class FunctionDecl:
-    class _ParamDef(NamedTuple):
-        instance: object  # The instantiated Metashade type
-        qualifiers: list  # List of ParamQualifiers
-
     '''
     Represents a function declaration in the target language.
     Meant to be created with a `sh.function` call. After creation,
     either call `declare()` to just declare it, without a definition,
     or use it in a `with` statement to implement the function body.
     '''
+    class _ParamDef(NamedTuple):
+        instance: object  # The instantiated Metashade type
+        qualifiers: list  # List of ParamQualifiers
+
     def __init__(self, sh, name, return_type):
         self._sh = sh
         self._name = name
@@ -46,14 +46,14 @@ class FunctionDecl:
             raise AttributeError(f"No parameter named '{name}'") from key_error
 
     def __call__(self, **kwargs):
-        return self._init_params(**kwargs)
-
-    def _init_params(self, **param_annotations):
         '''
         This doesn't generate a function call from external code.
         Instead, this initializes a part of the function signature -
         the declarations of parameters with their names and types.
         '''
+        return self._init_params(**kwargs)
+
+    def _init_params(self, **param_annotations):
         self._parameters = {}
         
         for name, param_type in param_annotations.items():
@@ -97,29 +97,12 @@ class FunctionDecl:
             else:
                 self._sh._emit(', ')
             
-            # Check if this parameter has qualifiers (out/inout)
-            if (param_def.qualifiers and 
-                hasattr(self._sh, 'format_parameter_qualifiers')):
-                # Use the first qualifier for now (could be extended)
-                qualifier = param_def.qualifiers[0]
-                qualifier_str = self._sh.format_parameter_qualifiers(
-                    qualifier
-                )
-                if qualifier_str:
-                    self._sh._emit(f'{qualifier_str} ')
-                    # Emit manually for qualified parameters
-                    type_name = param_def.instance.__class__._get_target_type_name()
-                    self._sh._emit(f'{type_name} {name}')
-                    # Still need to bind the parameter
-                    param_def.instance._bind(self._sh, name, False)
-                else:
-                    param_def.instance._define(
-                        self._sh, name, allow_init=False
-                    )
-            else:
-                param_def.instance._define(
-                    self._sh, name, allow_init=False
-                )
+            # Use the refactored _define method that handles qualifiers
+            param_def.instance._define(
+                self._sh, name, 
+                allow_init=False, 
+                qualifiers=param_def.qualifiers
+            )
 
         self._sh._emit(')')
 
