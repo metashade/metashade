@@ -14,8 +14,16 @@
 
 import abc
 import metashade._base.context as base
+import typing
+from typing import NamedTuple
+from .._rtsl.qualifiers import ParamQualifiers
+
 
 class FunctionDecl:
+    class _ParamDef(NamedTuple):
+        instance: object  # The instantiated Metashade type
+        qualifiers: list  # List of ParamQualifiers
+
     '''
     Represents a function declaration in the target language.
     Meant to be created with a `sh.function` call. After creation,
@@ -43,14 +51,6 @@ class FunctionDecl:
         Instead, this initializes a part of the function signature -
         the declarations of parameters with their names and types.
         '''
-        import typing
-        from typing import NamedTuple
-        from .._rtsl.qualifiers import ParamQualifiers
-        
-        class ParamDef(NamedTuple):
-            instance: object  # The instantiated Metashade type
-            qualifiers: list  # List of ParamQualifiers
-        
         self._parameters = {}
         
         for name, param_type in kwargs.items():
@@ -68,7 +68,7 @@ class FunctionDecl:
             else:
                 actual_type = param_type
             
-            self._parameters[name] = ParamDef(
+            self._parameters[name] = self._ParamDef(
                 instance=actual_type(),
                 qualifiers=qualifiers
             )
