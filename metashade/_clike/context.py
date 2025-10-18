@@ -46,6 +46,9 @@ class FunctionDecl:
             raise AttributeError(f"No parameter named '{name}'") from key_error
 
     def __call__(self, **kwargs):
+        return self._init_params(**kwargs)
+
+    def _init_params(self, **param_annotations):
         '''
         This doesn't generate a function call from external code.
         Instead, this initializes a part of the function signature -
@@ -53,26 +56,22 @@ class FunctionDecl:
         '''
         self._parameters = {}
         
-        for name, param_type in kwargs.items():
+        for name, param_type in param_annotations.items():
             # Check if this is an Annotated type with qualifiers
             qualifiers = []
             if typing.get_origin(param_type) is typing.Annotated:
                 # Extract base type and qualifiers from 
                 # Annotated[base_type, qualifier1, qualifier2, ...]
-                type_params = typing.get_args(param_type)
-                base_type = type_params[0]
-                for annotation in type_params[1:]:
-                    if isinstance(annotation, ParamQualifiers):
-                        qualifiers.append(annotation)
-                actual_type = base_type
-            else:
-                actual_type = param_type
+                typing_args = typing.get_args(param_type)
+                param_type = typing_args[0]
+                qualifiers = [annotation for annotation in typing_args[1:]
+                             if isinstance(annotation, ParamQualifiers)]
             
             self._parameters[name] = self._ParamDef(
-                instance=actual_type(),
+                instance=param_type(),
                 qualifiers=qualifiers
             )
-        
+
         # Return self, so that it can be entered in a with scope
         return self
 
