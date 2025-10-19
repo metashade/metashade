@@ -17,24 +17,13 @@ from typing import Annotated
 from dataclasses import dataclass
 
 class Direction(Enum):
-    IN = "in"
+    IN = ""
     OUT = "out" 
     INOUT = "inout"
 
 @dataclass
 class ParamQualifiers:
     direction: Direction = Direction.IN
-
-class ParameterQualifierMixin:
-    """Mixin for generating parameter qualifier strings for RTSL-based targets"""
-    
-    def format_parameter_qualifiers(self, qualifiers: ParamQualifiers) -> str:
-        """Generate parameter qualifier string for RTSL targets (HLSL/GLSL)"""
-        if qualifiers.direction == Direction.OUT:
-            return "out"
-        elif qualifiers.direction == Direction.INOUT:
-            return "inout"
-        return ""  # IN is default, no qualifier needed
 
 # Convenience functions
 def Out(base_type: str) -> type:

@@ -35,7 +35,7 @@ class BaseType(base.BaseType):
         """Helper method to emit parameter qualifiers"""
         if qualifiers:
             for qualifier in qualifiers:
-                qualifier_str = sh.format_parameter_qualifiers(qualifier)
+                qualifier_str = qualifier.direction.value
                 if qualifier_str:
                     sh._emit(f'{qualifier_str} ')
 

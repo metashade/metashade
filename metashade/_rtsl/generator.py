@@ -14,7 +14,7 @@
 
 from abc import ABC, abstractmethod
 import metashade._clike.generator as clike
-from .qualifiers import ParameterQualifierMixin, Out, InOut
+from .qualifiers import Out, InOut
 
 class UniqueKeyChecker(ABC):
     def __init__(self):
@@ -33,7 +33,7 @@ class UniqueKeyChecker(ABC):
             )
         self._map[key] = value
 
-class Generator(clike.Generator, ParameterQualifierMixin, ABC):
+class Generator(clike.Generator, ABC):
     entry_point = clike.Generator.function
 
     @abstractmethod
