@@ -36,12 +36,7 @@ class ArrayBase(BaseType):
         initializer = None,
         qualifiers = None
     ):
-        # Emit all qualifiers if present
-        if qualifiers:
-            for qualifier in qualifiers:
-                qualifier_str = sh.format_parameter_qualifiers(qualifier)
-                if qualifier_str:
-                    sh._emit(f'{qualifier_str} ')
+        BaseType._emit_qualifiers(sh, qualifiers)
         
         sh._emit(
             '{element_type} {identifier}{dims}'.format(
