@@ -45,12 +45,12 @@ class Generator(rtsl.Generator, vk.GeneratorMixin):
     def __init__(self, file_, glsl_version : str):
         super().__init__(file_)
         vk.GeneratorMixin.__init__(self)
-        self._glsl_version = glsl_version
 
         # Register the data types
         # TODO: share with other shader stages
         self._register_dtypes(dtypes.__name__)
-        self._emit(f'#version {glsl_version}\n')
+        if glsl_version != '':
+            self._emit(f'#version {glsl_version}\n')
 
         self._unique_location_checkers = {
             StageInput.__name__: vk.UniqueInputLocationChecker(),
