@@ -30,7 +30,8 @@ def compile(
     target_env : str,
     shader_stage : str,
     output_path : str = None,
-    include_paths = None
+    include_paths = None,
+    glsl_version : str = None
 ):
     args = [
         'glslang',
@@ -42,6 +43,9 @@ def compile(
     if include_paths:
         for path in include_paths:
             args += ['-I', path]
+
+    if glsl_version is not None:
+        args += ['--glsl-version', glsl_version]
 
     message = 'glslang compiling to '
     if output_path is not None:
