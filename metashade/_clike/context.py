@@ -96,8 +96,7 @@ class FunctionDecl:
                 first = False
             else:
                 self._sh._emit(', ')
-            
-            # Use the refactored _define method that handles qualifiers
+
             param_def.instance._define(
                 self._sh, name, 
                 allow_init=False, 
@@ -107,7 +106,10 @@ class FunctionDecl:
         self._sh._emit(')')
 
         # Register the callable in the generator
-        self._sh._set_global(self._name, Function(self))
+        self._sh._set_global(
+            self._name,
+            Function(sh = self._sh, definition = self)
+        )
 
     def declare(self):
         self._declare_impl()
@@ -147,8 +149,9 @@ class Function:
     A callable registered in the generator and referencing a function
     declaration.
     '''
-    def __init__(self, definition : FunctionDecl) -> None:
+    def __init__(self, sh, definition : FunctionDecl) -> None:
         self._def = definition
+        self._sh = sh
 
     def __call__(self, **kwargs):
         arg_list = []
@@ -182,8 +185,8 @@ class Function:
         # Handle void functions - they don't return a value
         if self._def._return_type == type(None):
             # Emit the function call statement directly
-            self._def._sh._emit_indent()
-            self._def._sh._emit(f'{self._def._name}({arg_str});\n')
+            self._sh._emit_indent()
+            self._sh._emit(f'{self._def._name}({arg_str});\n')
             return None
         else:
             return self._def._return_type(
