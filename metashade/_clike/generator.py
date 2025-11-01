@@ -68,7 +68,7 @@ class Generator(base.Generator):
             if name != 'return'
         }
         func_decl = context.FunctionDecl(self, name, return_type)
-        with func_decl._init_params(**param_annotations):
+        with func_decl._init_param_defs(**param_annotations):
             # Get parameter instances from the function declaration's scope
             params = { name : getattr(self, name)
                        for name in param_annotations.keys() }
