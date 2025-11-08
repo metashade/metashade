@@ -37,7 +37,7 @@ class FunctionDecl:
     def __init__(self, sh, name, return_type):
         self._sh = sh
         self._name = name
-        self._return_type = (
+        self._return_dtype_factory = (
             None if ( return_type is None or return_type == type(None) )
             else return_type
         )
@@ -76,8 +76,8 @@ class FunctionDecl:
     def _emit_signature(self):
         '''Emit the function signature.'''
         return_type = (
-            self._return_type._get_dtype()._get_target_type_name()
-            if self._return_type is not None
+            self._return_dtype_factory._get_dtype()._get_target_type_name()
+            if self._return_dtype_factory is not None
             else 'void'
         )
 
@@ -115,7 +115,7 @@ class FunctionDecl:
             Function(
                 sh=self._sh,
                 name=self._name,
-                return_type=self._return_type,
+                return_type=self._return_dtype_factory,
                 param_defs=dict(self._param_defs)
             )
         )
@@ -130,7 +130,7 @@ class FunctionDecl:
         func_def = FunctionDef(
             sh=self._sh,
             name=self._name,
-            return_type=self._return_type,
+            return_type=self._return_dtype_factory,
             param_defs=self._param_defs
         )
         
@@ -140,7 +140,7 @@ class FunctionDecl:
             Function(
                 sh=self._sh,
                 name=self._name,
-                return_type=self._return_type,
+                return_type=self._return_dtype_factory,
                 param_defs=dict(self._param_defs)
             )
         )
@@ -162,7 +162,7 @@ class FunctionDef:
     def __init__(self, sh, name, return_type, param_defs):
         self._sh = sh
         self._name = name
-        self._return_type = return_type
+        self._return_dtype_factory = return_type
         self._param_defs = param_defs
         
         # Create parameter instances from dtype factories
@@ -188,11 +188,11 @@ class FunctionDef:
     
     def return_(self, value=None):
         '''Emit a return statement.'''
-        if self._return_type is None:
+        if self._return_dtype_factory is None:
             if value is not None:
                 raise RuntimeError('Return value type mismatch')
         else:
-            dtype_class = self._return_type._get_dtype()
+            dtype_class = self._return_dtype_factory._get_dtype()
             if not isinstance(value, dtype_class):
                 raise RuntimeError('Return value type mismatch')
 
@@ -209,7 +209,7 @@ class Function:
     def __init__(self, sh, name, return_type, param_defs):
         self._sh = sh
         self._name = name
-        self._return_type = return_type
+        self._return_dtype_factory = return_type
         # Make a copy of parameter definitions for reflection
         self._param_defs = dict(param_defs)
 
@@ -246,13 +246,13 @@ class Function:
         arg_str = ', '.join(arg_list)
         
         # Handle void functions - they don't return a value
-        if self._return_type is None:
+        if self._return_dtype_factory is None:
             # Emit the function call statement directly
             self._sh._emit_indent()
             self._sh._emit(f'{self._name}({arg_str});\n')
             return None
         else:
-            dtype_class = self._return_type._get_dtype()
+            dtype_class = self._return_dtype_factory._get_dtype()
             return dtype_class(f'{self._name}({arg_str})')
     
 class _ConditionalStatement:
