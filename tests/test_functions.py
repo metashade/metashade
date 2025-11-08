@@ -268,7 +268,7 @@ class TestFunctions(_base.TestBase):
             assert func._name == 'testFunc'
             
             # Verify return type
-            assert func._return_type == sh.Float4._get_dtype()
+            assert func._return_type == sh.Float4
             
             # Verify parameter definitions
             assert len(func._param_defs) == 3
@@ -306,7 +306,7 @@ class TestFunctions(_base.TestBase):
             # Retrieve and verify
             func = sh.voidFunc
             assert func._name == 'voidFunc'
-            assert func._return_type == type(None)
+            assert func._return_type is None
             assert len(func._param_defs) == 2
             
             # Verify parameters

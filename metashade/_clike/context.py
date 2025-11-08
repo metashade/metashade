@@ -38,8 +38,8 @@ class FunctionDecl:
         self._sh = sh
         self._name = name
         self._return_type = (
-            type(None) if ( return_type is None or return_type == type(None) )
-            else return_type._get_dtype()
+            None if ( return_type is None or return_type == type(None) )
+            else return_type
         )
 
         self._param_defs = dict()
@@ -76,8 +76,8 @@ class FunctionDecl:
     def _emit_signature(self):
         '''Emit the function signature.'''
         return_type = (
-            self._return_type._get_target_type_name()
-            if self._return_type != type(None)
+            self._return_type._get_dtype()._get_target_type_name()
+            if self._return_type is not None
             else 'void'
         )
 
@@ -188,11 +188,13 @@ class FunctionDef:
     
     def return_(self, value=None):
         '''Emit a return statement.'''
-        if (
-            (self._return_type is type(None) and value is not None)
-            or (self._return_type is not type(None) and not isinstance(value, self._return_type))
-        ):
-            raise RuntimeError('Return value type mismatch')
+        if self._return_type is None:
+            if value is not None:
+                raise RuntimeError('Return value type mismatch')
+        else:
+            dtype_class = self._return_type._get_dtype()
+            if not isinstance(value, dtype_class):
+                raise RuntimeError('Return value type mismatch')
 
         self._sh._emit_indent()
         self._sh._emit(
@@ -244,13 +246,14 @@ class Function:
         arg_str = ', '.join(arg_list)
         
         # Handle void functions - they don't return a value
-        if self._return_type == type(None):
+        if self._return_type is None:
             # Emit the function call statement directly
             self._sh._emit_indent()
             self._sh._emit(f'{self._name}({arg_str});\n')
             return None
         else:
-            return self._return_type(f'{self._name}({arg_str})')
+            dtype_class = self._return_type._get_dtype()
+            return dtype_class(f'{self._name}({arg_str})')
     
 class _ConditionalStatement:
     def __init__(self, sh):
