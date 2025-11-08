@@ -276,20 +276,20 @@ class TestFunctions(_base.TestBase):
             # Check 'in_param' parameter
             assert 'in_param' in func._param_defs
             param_def = func._param_defs['in_param']
-            assert param_def.dtype_factory._get_dtype() == sh.Float4._get_dtype()
+            assert param_def.dtype_factory == sh.Float4
             assert len(param_def.qualifiers) == 0
             
             # Check 'out_param' parameter
             assert 'out_param' in func._param_defs
             param_def = func._param_defs['out_param']
-            assert param_def.dtype_factory._get_dtype() == sh.Float3._get_dtype()
+            assert param_def.dtype_factory == sh.Float3
             assert len(param_def.qualifiers) == 1
             assert param_def.qualifiers[0].direction == Direction.OUT
             
             # Check 'inout_param' parameter
             assert 'inout_param' in func._param_defs
             param_def = func._param_defs['inout_param']
-            assert param_def.dtype_factory._get_dtype() == sh.Float2._get_dtype()
+            assert param_def.dtype_factory == sh.Float2
             assert len(param_def.qualifiers) == 1
             assert param_def.qualifiers[0].direction == Direction.INOUT
 
@@ -312,5 +312,5 @@ class TestFunctions(_base.TestBase):
             # Verify parameters
             assert 'a' in func._param_defs
             assert 'b' in func._param_defs
-            assert func._param_defs['a'].dtype_factory._get_dtype() == sh.Float4._get_dtype()
-            assert func._param_defs['b'].dtype_factory._get_dtype() == sh.Float4._get_dtype()
+            assert func._param_defs['a'].dtype_factory == sh.Float4
+            assert func._param_defs['b'].dtype_factory == sh.Float4
