@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import pytest, _base
+from metashade._rtsl.qualifiers import Direction
 
 class TestFunctions(_base.TestBase):
     def _generate_add_func(self, sh, decl_only = False):
@@ -283,7 +284,6 @@ class TestFunctions(_base.TestBase):
             param_def = func._param_defs['out_param']
             assert param_def.dtype_factory._get_dtype() == sh.Float3._get_dtype()
             assert len(param_def.qualifiers) == 1
-            from metashade._rtsl.qualifiers import Direction
             assert param_def.qualifiers[0].direction == Direction.OUT
             
             # Check 'inout_param' parameter
