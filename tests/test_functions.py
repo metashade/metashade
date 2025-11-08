@@ -248,3 +248,69 @@ class TestFunctions(_base.TestBase):
                     sh.return_(sh.result)
                 else:
                     sh.out_f4Color = sh.test_value
+
+    @_base.ctx_cls_hg
+    def test_function_reflection(self, ctx_cls):
+        '''Test that we can reflect on function metadata after registration.'''
+        with ctx_cls(no_file=True) as sh:
+            # Define a function with various parameter types
+            sh.function('testFunc', sh.Float4)(
+                in_param = sh.Float4,
+                out_param = sh.Out(sh.Float3),
+                inout_param = sh.InOut(sh.Float2)
+            ).declare()
+            
+            # Retrieve the function from the generator
+            func = sh.testFunc
+            
+            # Verify function name
+            assert func._name == 'testFunc'
+            
+            # Verify return type
+            assert func._return_type == sh.Float4._get_dtype()
+            
+            # Verify parameter definitions
+            assert len(func._param_defs) == 3
+            
+            # Check 'in_param' parameter
+            assert 'in_param' in func._param_defs
+            param_def = func._param_defs['in_param']
+            assert param_def.dtype_factory._get_dtype() == sh.Float4._get_dtype()
+            assert len(param_def.qualifiers) == 0
+            
+            # Check 'out_param' parameter
+            assert 'out_param' in func._param_defs
+            param_def = func._param_defs['out_param']
+            assert param_def.dtype_factory._get_dtype() == sh.Float3._get_dtype()
+            assert len(param_def.qualifiers) == 1
+            from metashade._rtsl.qualifiers import Direction
+            assert param_def.qualifiers[0].direction == Direction.OUT
+            
+            # Check 'inout_param' parameter
+            assert 'inout_param' in func._param_defs
+            param_def = func._param_defs['inout_param']
+            assert param_def.dtype_factory._get_dtype() == sh.Float2._get_dtype()
+            assert len(param_def.qualifiers) == 1
+            assert param_def.qualifiers[0].direction == Direction.INOUT
+
+    @_base.ctx_cls_hg
+    def test_void_function_reflection(self, ctx_cls):
+        '''Test reflection on void functions.'''
+        with ctx_cls(no_file=True) as sh:
+            # Define a void function
+            sh.function('voidFunc', None)(
+                a = sh.Float4,
+                b = sh.Float4
+            ).declare()
+            
+            # Retrieve and verify
+            func = sh.voidFunc
+            assert func._name == 'voidFunc'
+            assert func._return_type == type(None)
+            assert len(func._param_defs) == 2
+            
+            # Verify parameters
+            assert 'a' in func._param_defs
+            assert 'b' in func._param_defs
+            assert func._param_defs['a'].dtype_factory._get_dtype() == sh.Float4._get_dtype()
+            assert func._param_defs['b'].dtype_factory._get_dtype() == sh.Float4._get_dtype()
