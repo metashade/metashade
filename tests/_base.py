@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import abc, inspect, io, os, sys
+import abc, io, os, sys
 import pytest
 from pathlib import Path
 
@@ -20,7 +20,7 @@ from metashade.glsl import frag
 from metashade.glsl.util import glslang
 from metashade.hlsl.sm6 import ps_6_0
 from metashade.hlsl.util import dxc
-from metashade.util.tests import RefDiffer
+from metashade.util.tests import RefDiffer, get_test_func_name
 
 class _TestContext(abc.ABC):
     _entry_point_name = 'main'
@@ -44,13 +44,6 @@ class _TestContext(abc.ABC):
             cls._ref_differ = RefDiffer(ref_dir)
 
         os.makedirs(cls._out_dir, exist_ok = True)
-    
-    @staticmethod
-    def _get_test_func_name():
-        for frame in inspect.stack():
-            if frame.function.startswith('test_'):
-                return frame.function
-        raise RuntimeError('No test function found in the stack')
 
     def __init__(
         self,
@@ -58,7 +51,7 @@ class _TestContext(abc.ABC):
         as_lib : bool = False,
         dummy_entry_point : bool = False
     ):
-        test_name = self._get_test_func_name()
+        test_name = get_test_func_name()
         self._src_path = (
             None if no_file
             else self._out_dir / f'{test_name}.{self._file_extension}'

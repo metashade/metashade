@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import filecmp, os
+import filecmp, inspect
 from pathlib import Path
 
 class RefDiffer:
@@ -21,3 +21,9 @@ class RefDiffer:
 
     def __call__(self, path : Path):
         assert filecmp.cmp(path, self._ref_dir / path.name)
+
+def get_test_func_name():
+    for frame in inspect.stack():
+        if frame.function.startswith('test_'):
+            return frame.function
+    raise RuntimeError('No test function found in the stack')
