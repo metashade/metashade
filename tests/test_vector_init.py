@@ -14,7 +14,7 @@
 
 import _base
 
-class TestVectorInit(_base.TestBase):
+class TestVectorInit:
     @_base.ctx_cls_hg
     def test_vector_init(self, ctx_cls):
         with ctx_cls(dummy_entry_point = True) as sh:

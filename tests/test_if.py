@@ -14,7 +14,7 @@
 
 import _base
 
-class TestIf(_base.TestBase):
+class TestIf:
     def _generate_test_uniforms(self, sh):
         with sh.uniform_buffer(dx_register = 0, name = 'cb'):
             sh.uniform('g_f4A', sh.Float4)

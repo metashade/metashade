@@ -14,7 +14,7 @@
 
 import _base
 
-class TestDTypes(_base.TestBase):
+class TestDTypes:
     @_base.ctx_cls_hg
     def test_init_from_literal(self, ctx_cls):
         with ctx_cls(dummy_entry_point = True) as sh:

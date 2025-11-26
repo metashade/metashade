@@ -15,7 +15,7 @@
 import pytest
 import _base
 
-class TestSwizzling(_base.TestBase):
+class TestSwizzling:
     @_base.ctx_cls_hg
     def test_rgba_swizzling(self, ctx_cls):
         with ctx_cls(dummy_entry_point = True) as sh:

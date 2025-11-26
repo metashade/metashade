@@ -14,7 +14,7 @@
 
 import _base, _auto_float_intrinsics, _auto_numeric_intrinsics
 
-class TestIntrinsics(_base.TestBase):
+class TestIntrinsics:
     def _test(self, auto_package):
         with _base.HlslTestContext(as_lib = True) as sh:
             with sh.uniform_buffer(dx_register = 0, name = 'cb'):

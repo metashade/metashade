@@ -142,9 +142,6 @@ class GlslTestContext(_TestContext):
             output_path = os.devnull
         )
 
-class TestBase:
-    pass
-
 def ctx_cls_hg(func):
     wrapped_deco = pytest.mark.parametrize(
         'ctx_cls', [HlslTestContext, GlslTestContext]

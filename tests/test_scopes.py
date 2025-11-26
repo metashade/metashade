@@ -14,7 +14,7 @@
 
 import pytest, _base
 
-class TestScopes(_base.TestBase):
+class TestScopes:
     @_base.ctx_cls_hg
     def test_undeclared_symbol(self, ctx_cls):
         with ctx_cls(no_file = True) as sh:

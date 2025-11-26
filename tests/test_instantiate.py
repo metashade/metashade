@@ -21,7 +21,7 @@ def _py_add(sh, a : 'Float4', b : 'Float4') -> 'Float4':
 def _py_clip(sh, value : 'Float') -> 'None':
     value.clip()
 
-class TestInstantiate(_base.TestBase):
+class TestInstantiate:
     def _generate_test_uniforms(self, sh):
         with sh.uniform_buffer(
             name = 'cb',

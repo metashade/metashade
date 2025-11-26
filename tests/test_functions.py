@@ -15,7 +15,7 @@
 import pytest, _base
 from metashade._rtsl.qualifiers import Direction
 
-class TestFunctions(_base.TestBase):
+class TestFunctions:
     def _generate_add_func(self, sh, decl_only = False):
         func = sh.function('add', sh.Float4)(a = sh.Float4, b = sh.Float4)
 

@@ -15,7 +15,7 @@
 import pytest
 import _base
 
-class TestUniforms(_base.TestBase):
+class TestUniforms:
     def test_hlsl_cb_register_clash(self):
         with _base.HlslTestContext(no_file = True) as sh:
             with sh.uniform_buffer(dx_register = 0, name = 'cb0'):

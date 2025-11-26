@@ -14,7 +14,7 @@
 
 import _base
 
-class TestComment(_base.TestBase):
+class TestComment:
     @_base.ctx_cls_hg
     def test_comment(self, ctx_cls):
         with ctx_cls(dummy_entry_point = True) as sh:

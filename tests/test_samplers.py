@@ -14,7 +14,7 @@
 
 import _base
 
-class TestSamplers(_base.TestBase):
+class TestSamplers:
     def test_combined_samplers(self):
         ctx = _base.HlslTestContext(as_lib = True)
         with ctx as sh:

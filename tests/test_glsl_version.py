@@ -35,7 +35,7 @@ class GlslNoVersionTestContext(_base.GlslTestContext):
         )
 
 
-class TestGlslVersion(_base.TestBase):
+class TestGlslVersion:
     def test_glsl_no_version(self):
         """Test that GLSL generator can omit the #version directive."""
         with GlslNoVersionTestContext() as sh:

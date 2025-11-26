@@ -22,7 +22,7 @@ def _func(sh) -> 'Float4':
 
     sh.return_(sh.f4A)
 
-class TestArrays(_base.TestBase):
+class TestArrays:
     @_base.ctx_cls_hg
     def test_arrays(self, ctx_cls):
         with ctx_cls(dummy_entry_point = True) as sh:

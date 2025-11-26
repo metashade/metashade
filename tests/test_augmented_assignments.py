@@ -15,7 +15,7 @@
 import pytest
 import _base
 
-class TestAugmentedAssignments(_base.TestBase):
+class TestAugmentedAssignments:
     @_base.ctx_cls_hg
     def test_augmented_add(self, ctx_cls):
         with ctx_cls(dummy_entry_point = True) as sh:

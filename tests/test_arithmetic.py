@@ -15,7 +15,7 @@
 import pytest
 import _base
 
-class TestArithmetic(_base.TestBase):
+class TestArithmetic:
     def _test_arithmetic(
             self,
             ctx_cls,

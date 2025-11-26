@@ -15,7 +15,7 @@
 import pytest
 import _base
 
-class TestGlslSimpleFrag(_base.TestBase):
+class TestGlslSimpleFrag:
     def test_glsl_simple_frag(self):
         with _base.GlslTestContext() as sh:
             sh.out_f4Color = sh.stage_output(sh.Float4, location = 0)
