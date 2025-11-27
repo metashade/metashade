@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pytest
-import _base
-
+from metashade.util.testing import ctx_cls_hg
 class TestArithmetic:
     def _test_arithmetic(
             self,
@@ -50,7 +48,7 @@ class TestArithmetic:
                 sh.f2C /= sh.fD
                 sh.return_(sh.f2C)
 
-    @_base.ctx_cls_hg
+    @ctx_cls_hg
     def test_arithmetic_float(self, ctx_cls):
         self._test_arithmetic(
             ctx_cls = ctx_cls,
@@ -58,7 +56,7 @@ class TestArithmetic:
             vector2_type = 'Float2'
         )
 
-    @_base.ctx_cls_hg
+    @ctx_cls_hg
     def test_arithmetic_int(self, ctx_cls):
         self._test_arithmetic(
             ctx_cls = ctx_cls,

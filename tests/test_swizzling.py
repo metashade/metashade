@@ -13,10 +13,10 @@
 # limitations under the License.
 
 import pytest
-import _base
+from metashade.util.testing import ctx_cls_hg
 
 class TestSwizzling:
-    @_base.ctx_cls_hg
+    @ctx_cls_hg
     def test_rgba_swizzling(self, ctx_cls):
         with ctx_cls(dummy_entry_point = True) as sh:
             with sh.function('rgba_swizzle', sh.Float)(
@@ -27,7 +27,7 @@ class TestSwizzling:
                 sh.rgba.rb = sh.rgba.rg
                 sh.return_(sh.r + sh.g)
 
-    @_base.ctx_cls_hg
+    @ctx_cls_hg
     def test_xyzw_swizzling(self, ctx_cls):
         with ctx_cls(dummy_entry_point = True) as sh:
             with sh.function('xyzw_swizzle', sh.Float)(

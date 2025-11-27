@@ -13,10 +13,10 @@
 # limitations under the License.
 
 import pytest
-import _base
+from metashade.util.testing import ctx_cls_hg
 
 class TestAugmentedAssignments:
-    @_base.ctx_cls_hg
+    @ctx_cls_hg
     def test_augmented_add(self, ctx_cls):
         with ctx_cls(dummy_entry_point = True) as sh:
             with sh.function('assign_add', sh.Float4)(

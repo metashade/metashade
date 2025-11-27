@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import _base
+from metashade.util.testing import ctx_cls_hg, HlslTestContext
 
 class TestIf:
     def _generate_test_uniforms(self, sh):
@@ -23,7 +23,7 @@ class TestIf:
             sh.uniform('g_f4D', sh.Float4)
 
     def test_if(self):
-        ctx = _base.HlslTestContext()
+        ctx = HlslTestContext()
         with ctx as sh:
             self._generate_test_uniforms(sh)
 
@@ -41,7 +41,7 @@ class TestIf:
                 sh.return_(sh.result)
 
     def test_nested_if(self):
-        ctx = _base.HlslTestContext()
+        ctx = HlslTestContext()
         with ctx as sh:
             self._generate_test_uniforms(sh)
 
@@ -64,7 +64,7 @@ class TestIf:
                 sh.return_(sh.result)
 
     def test_if_else(self):
-        ctx = _base.HlslTestContext()
+        ctx = HlslTestContext()
         with ctx as sh:
             self._generate_test_uniforms(sh)
 

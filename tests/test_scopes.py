@@ -12,10 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pytest, _base
+import pytest
+from metashade.util.testing import ctx_cls_hg
 
 class TestScopes:
-    @_base.ctx_cls_hg
+    @ctx_cls_hg
     def test_undeclared_symbol(self, ctx_cls):
         with ctx_cls(no_file = True) as sh:
             with sh.function('add', sh.Float4)(a = sh.Float4, b = sh.Float4):

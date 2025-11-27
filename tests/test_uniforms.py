@@ -13,11 +13,11 @@
 # limitations under the License.
 
 import pytest
-import _base
+from metashade.util.testing import ctx_cls_hg, HlslTestContext, GlslTestContext
 
 class TestUniforms:
     def test_hlsl_cb_register_clash(self):
-        with _base.HlslTestContext(no_file = True) as sh:
+        with HlslTestContext(no_file = True) as sh:
             with sh.uniform_buffer(dx_register = 0, name = 'cb0'):
                 sh.uniform('g_f0', sh.Float4)
 
@@ -32,7 +32,7 @@ class TestUniforms:
                     sh.uniform('g_f2', sh.Float4)
 
     def test_hlsl_cb_string_register(self):
-        with _base.HlslTestContext(no_file = True) as sh:
+        with HlslTestContext(no_file = True) as sh:
             with pytest.raises(
                 RuntimeError,
                 match = 'blahblah is not a valid index'
@@ -41,7 +41,7 @@ class TestUniforms:
                     sh.uniform('g_f0', sh.Float4)
 
     def test_hlsl_cb_negative_register(self):
-        with _base.HlslTestContext(no_file = True) as sh:
+        with HlslTestContext(no_file = True) as sh:
             with pytest.raises(
                 RuntimeError,
                 match = '-1 is not a valid index'
@@ -50,7 +50,7 @@ class TestUniforms:
                     sh.uniform('g_f0', sh.Float4)
 
     def test_glsl_cb_single_set_binding(self):
-        with _base.GlslTestContext() as sh:
+        with GlslTestContext() as sh:
             with sh.uniform_buffer(name = 'cb0', vk_set = 0, vk_binding = 0):
                 sh.uniform('g_f4Color', sh.Float4)
 
@@ -60,7 +60,7 @@ class TestUniforms:
                 sh.out_f4Color = sh.g_f4Color
 
     # TODO: unify with the above test
-    @_base.ctx_cls_hg
+    @ctx_cls_hg
     def test_cb_single_set_binding(self, ctx_cls):
         with ctx_cls(dummy_entry_point = True) as sh:
             with sh.uniform_buffer(
@@ -72,7 +72,7 @@ class TestUniforms:
                 sh.uniform('g_f4Color', sh.Float4)
 
     def test_glsl_cb_multi_set_binding(self):
-        with _base.GlslTestContext() as sh:
+        with GlslTestContext() as sh:
             with sh.uniform_buffer(name = 'cb0', vk_set = 0, vk_binding = 0):
                 sh.uniform('g_f4Color0', sh.Float4)
 
@@ -91,7 +91,7 @@ class TestUniforms:
                 sh.out_f4Color = sh.g_f4Color0
 
     # TODO: unify with the above test
-    @_base.ctx_cls_hg
+    @ctx_cls_hg
     def test_cb_multi_set_binding(self, ctx_cls):
         with ctx_cls(dummy_entry_point = True) as sh:
             with sh.uniform_buffer(
@@ -126,7 +126,7 @@ class TestUniforms:
             ):
                 sh.uniform('g_f4Color3', sh.Float4)
 
-    @_base.ctx_cls_hg
+    @ctx_cls_hg
     def test_cb_vk_set_binding_clash(self, ctx_cls):
         with ctx_cls(no_file = True) as sh:
             with sh.uniform_buffer(
@@ -158,7 +158,7 @@ class TestUniforms:
                 ):
                     sh.uniform('g_f4Color2', sh.Float4)
 
-    @_base.ctx_cls_hg
+    @ctx_cls_hg
     def test_cb_vk_string_set(self, ctx_cls):
         with ctx_cls(no_file = True) as sh:
             with pytest.raises(
@@ -173,7 +173,7 @@ class TestUniforms:
                 ):
                     sh.uniform('g_f0', sh.Float4)
 
-    @_base.ctx_cls_hg
+    @ctx_cls_hg
     def test_cb_vk_string_binding(self, ctx_cls):
         with ctx_cls(no_file = True) as sh:
             with pytest.raises(
@@ -188,7 +188,7 @@ class TestUniforms:
                 ):
                     sh.uniform('g_f0', sh.Float4)
 
-    @_base.ctx_cls_hg
+    @ctx_cls_hg
     def test_cb_vk_negative_set(self, ctx_cls):
         with ctx_cls(no_file = True) as sh:
             with pytest.raises(
@@ -203,7 +203,7 @@ class TestUniforms:
                 ):
                     sh.uniform('g_f0', sh.Float4)
 
-    @_base.ctx_cls_hg
+    @ctx_cls_hg
     def test_cb_vk_negative_binding(self, ctx_cls):
         with ctx_cls(no_file = True) as sh:
             with pytest.raises(
@@ -219,7 +219,7 @@ class TestUniforms:
                     sh.uniform('g_f0', sh.Float4)
 
     def test_texture_register_clash(self):
-        with _base.HlslTestContext(no_file = True) as sh:
+        with HlslTestContext(no_file = True) as sh:
             sh.uniform('g_t0', sh.Texture2d, dx_register = 0)
             sh.uniform('g_t1', sh.Texture2d, dx_register = 1)
 
@@ -230,7 +230,7 @@ class TestUniforms:
                 sh.uniform('g_t2', sh.Texture2d, dx_register = 0)
 
     def test_sampler_register_clash(self):
-        with _base.HlslTestContext(no_file = True) as sh:
+        with HlslTestContext(no_file = True) as sh:
             sh.uniform('g_s0', sh.Sampler, dx_register = 0)
             sh.uniform('g_s1', sh.Sampler, dx_register = 1)
 

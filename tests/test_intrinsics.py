@@ -12,11 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import _base, _auto_float_intrinsics, _auto_numeric_intrinsics
+from metashade.util.testing import ctx_cls_hg, HlslTestContext
+import _auto_float_intrinsics, _auto_numeric_intrinsics
 
 class TestIntrinsics:
     def _test(self, auto_package):
-        with _base.HlslTestContext(as_lib = True) as sh:
+        with HlslTestContext(as_lib = True) as sh:
             with sh.uniform_buffer(dx_register = 0, name = 'cb'):
                 sh.uniform('g_f', sh.Float)
                 for dim in range(1, 5):

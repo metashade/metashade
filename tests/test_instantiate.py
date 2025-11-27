@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import _base
+from metashade.util.testing import ctx_cls_hg, HlslTestContext
 
 def _py_add(sh, a : 'Float4', b : 'Float4') -> 'Float4':
     sh.c = a + b
@@ -33,8 +33,8 @@ class TestInstantiate:
             sh.uniform('g_f4B', sh.Float4)
             sh.uniform('g_f4C', sh.Float4)
 
-    def _generate_ps_main_decl(self, sh, ctx : _base._TestContext):
-        if isinstance(ctx, _base.HlslTestContext):
+    def _generate_ps_main_decl(self, sh, ctx):
+        if isinstance(ctx, HlslTestContext):
             with sh.ps_output('PsOut') as PsOut:
                 PsOut.SV_Target('color', sh.Float4)
             return sh.entry_point(ctx._entry_point_name, sh.PsOut)()
@@ -42,7 +42,7 @@ class TestInstantiate:
             sh.out_f4Color = sh.stage_output(sh.Float4, location = 0)
             return sh.entry_point(ctx._entry_point_name)()
 
-    @_base.ctx_cls_hg
+    @ctx_cls_hg
     def test_instantiate_py_func(self, ctx_cls):
         ctx = ctx_cls()
         with ctx as sh:
@@ -52,14 +52,14 @@ class TestInstantiate:
             with self._generate_ps_main_decl(sh, ctx):
                 sh.c = sh._py_add(a = sh.g_f4A, b = sh.g_f4B)
 
-                if isinstance(ctx, _base.HlslTestContext):
+                if isinstance(ctx, HlslTestContext):
                     sh.result = sh.PsOut()
                     sh.result.color = sh.c
                     sh.return_(sh.result)
                 else:
                     sh.out_f4Color = sh.c
 
-    @_base.ctx_cls_hg
+    @ctx_cls_hg
     def test_instantiate_py_module(self, ctx_cls):
         import _exports
 
@@ -73,7 +73,7 @@ class TestInstantiate:
                     a = sh.g_f4A, b = sh.g_f4B, c = sh.g_f4C
                 )
 
-                if isinstance(ctx, _base.HlslTestContext):
+                if isinstance(ctx, HlslTestContext):
                     sh.result = sh.PsOut()
                     sh.result.color = sh.c
                     sh.return_(sh.result)
@@ -83,7 +83,7 @@ class TestInstantiate:
 
     def test_instantiate_py_func_void_return(self):
         # HLSL-only test since clip is not supported in GLSL yet
-        ctx = _base.HlslTestContext()
+        ctx = HlslTestContext()
         with ctx as sh:
             self._generate_test_uniforms(sh)
             sh.instantiate(_py_clip)

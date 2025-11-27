@@ -12,22 +12,52 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import filecmp, inspect
+from pathlib import Path
 import abc, io, os, sys
 import pytest
-from pathlib import Path
 
 from metashade.glsl import frag
 from metashade.glsl.util import glslang
 from metashade.hlsl.sm6 import ps_6_0
 from metashade.hlsl.util import dxc
-from metashade.util.tests import RefDiffer, get_test_func_name
+
+class RefDiffer:
+    def __init__(self, ref_dir : Path):
+        self._ref_dir = ref_dir
+
+    def __call__(self, path : Path):
+        assert filecmp.cmp(path, self._ref_dir / path.name)
+
+def get_test_func_name():
+    for frame in inspect.stack():
+        if frame.function.startswith('test_'):
+            return frame.function
+    raise RuntimeError('No test function found in the stack')
 
 class _TestContext(abc.ABC):
     _entry_point_name = 'main'
+    _is_setup = False
+    _tests_dir = None  # Will be set by conftest.py
 
     @classmethod
     def setup_class(cls):
-        cls._parent_dir = Path(sys.modules[cls.__module__].__file__).parent
+        if cls._is_setup:
+            return
+        cls._is_setup = True
+        
+        # Use the directory configured by conftest.py
+        if cls._tests_dir is not None:
+            cls._parent_dir = cls._tests_dir
+        else:
+            # Fallback: Find the test file's directory from the call stack
+            for frame in inspect.stack():
+                if frame.filename.endswith(('test_' +  frame.filename.split('test_')[-1])) and '/tests/' in frame.filename.replace('\\', '/'):
+                    cls._parent_dir = Path(frame.filename).parent
+                    break
+            else:
+                # Final fallback
+                cls._parent_dir = Path(sys.modules[cls.__module__].__file__).parent
 
         out_dir = os.getenv('METASHADE_PYTEST_OUT_DIR', None)
         ref_dir = cls._parent_dir / 'ref'
@@ -51,6 +81,10 @@ class _TestContext(abc.ABC):
         as_lib : bool = False,
         dummy_entry_point : bool = False
     ):
+        # Ensure setup_class has been called
+        if not self.__class__._is_setup:
+            self.__class__.setup_class()
+            
         test_name = get_test_func_name()
         self._src_path = (
             None if no_file
@@ -93,8 +127,6 @@ class _TestContext(abc.ABC):
         self._file.close()
         self._check_source()
         return True
-    
-_TestContext.setup_class()
 
 class HlslTestContext(_TestContext):
     _file_extension = 'hlsl'

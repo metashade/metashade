@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pytest, _base
+import pytest
+from metashade.util.testing import ctx_cls_hg, HlslTestContext
 from metashade._rtsl.qualifiers import Direction
 
 class TestFunctions:
@@ -39,8 +40,8 @@ class TestFunctions:
             sh.uniform('g_f4B', sh.Float4)
             sh.uniform('g_f3C', sh.Float3)
 
-    def _generate_ps_main_decl(self, sh, ctx : _base._TestContext):
-        if isinstance(ctx, _base.HlslTestContext):
+    def _generate_ps_main_decl(self, sh, ctx):
+        if isinstance(ctx, HlslTestContext):
             with sh.ps_output('PsOut') as PsOut:
                 PsOut.SV_Target('color', sh.Float4)
             return sh.entry_point(ctx._entry_point_name, sh.PsOut)()
@@ -48,20 +49,20 @@ class TestFunctions:
             sh.out_f4Color = sh.stage_output(sh.Float4, location = 0)
             return sh.entry_point(ctx._entry_point_name)()
 
-    def _generate_ps_main_def(self, sh, ctx : _base._TestContext):
+    def _generate_ps_main_def(self, sh, ctx):
         self._generate_test_uniforms(sh)
 
         with self._generate_ps_main_decl(sh, ctx):
             sh.c = sh.add(a = sh.g_f4A, b = sh.g_f4B)
 
-            if isinstance(ctx, _base.HlslTestContext):
+            if isinstance(ctx, HlslTestContext):
                 sh.result = sh.PsOut()
                 sh.result.color = sh.c
                 sh.return_(sh.result)
             else:
                 sh.out_f4Color = sh.c
 
-    @_base.ctx_cls_hg
+    @ctx_cls_hg
     def test_function_call(self, ctx_cls):
         ctx = ctx_cls()
         with ctx as sh:
@@ -69,7 +70,7 @@ class TestFunctions:
             self._generate_ps_main_def(sh, ctx)
 
     def test_kwarg_reorder(self):
-        ctx = _base.HlslTestContext(as_lib = True)
+        ctx = HlslTestContext(as_lib = True)
         with ctx as sh:
             self._generate_test_uniforms(sh)
 
@@ -83,19 +84,19 @@ class TestFunctions:
                 sh.return_(sh.result)
 
     def test_function_decl_call(self):
-        ctx = _base.HlslTestContext(as_lib = True)
+        ctx = HlslTestContext(as_lib = True)
         with ctx as sh:
             self._generate_add_func(sh, decl_only = True)
             self._generate_ps_main_def(sh, ctx)
 
     def test_included_function_call(self):
-        ctx = _base.HlslTestContext()
+        ctx = HlslTestContext()
         with ctx as sh:
             sh.include('include/add.hlsl')
             self._generate_add_func(sh, decl_only = True)
             self._generate_ps_main_def(sh, ctx)
 
-    @_base.ctx_cls_hg
+    @ctx_cls_hg
     def test_missing_arg(self, ctx_cls):
         with ctx_cls(no_file = True) as sh:
             self._generate_test_uniforms(sh)
@@ -107,7 +108,7 @@ class TestFunctions:
             ):
                 sh.result.color = sh.add(a = sh.g_f4A)
 
-    @_base.ctx_cls_hg
+    @ctx_cls_hg
     def test_extra_arg(self, ctx_cls):
         with ctx_cls(no_file = True) as sh:
             self._generate_test_uniforms(sh)
@@ -121,7 +122,7 @@ class TestFunctions:
                     a = sh.g_f4A, b = sh.g_f4B, c = sh.g_f3C
                 )
 
-    @_base.ctx_cls_hg
+    @ctx_cls_hg
     def test_extra_multi_args(self, ctx_cls):
         with ctx_cls(no_file = True) as sh:
             self._generate_test_uniforms(sh)
@@ -135,7 +136,7 @@ class TestFunctions:
                     a = sh.g_f4A, b = sh.g_f4B, c = sh.g_f3C, d = sh.g_f3C
                 )
 
-    @_base.ctx_cls_hg
+    @ctx_cls_hg
     def test_arg_type_mismatch(self, ctx_cls):
         with ctx_cls(no_file = True) as sh:
             self._generate_test_uniforms(sh)
@@ -147,14 +148,14 @@ class TestFunctions:
             ):
                 sh.result.color = sh.add(a = sh.g_f4A, b = sh.g_f3C)
 
-    @_base.ctx_cls_hg
+    @ctx_cls_hg
     def test_void_func_decl(self, ctx_cls):
         with ctx_cls(dummy_entry_point = True) as sh:
             sh.function('voidFuncA')(a = sh.Float4, b = sh.Float4).declare()
             sh.function('voidFuncB', type(None))(a = sh.Float4, b = sh.Float4).declare()
             sh.function('voidFuncC', None)(a = sh.Float4, b = sh.Float4).declare()
 
-    @_base.ctx_cls_hg
+    @ctx_cls_hg
     def test_void_func_def(self, ctx_cls):
         with ctx_cls(dummy_entry_point = True) as sh:
             with sh.function('voidFunc')(a = sh.Float4, b = sh.Float4):
@@ -163,7 +164,7 @@ class TestFunctions:
 
     def test_void_func_call(self):
         # HLSL-only test since clip is not supported in GLSL yet
-        ctx = _base.HlslTestContext()
+        ctx = HlslTestContext()
         with ctx as sh:
             self._generate_test_uniforms(sh)
 
@@ -182,7 +183,7 @@ class TestFunctions:
                 sh.return_(sh.result)
 
     def test_func_no_args(self):
-        ctx = _base.HlslTestContext()
+        ctx = HlslTestContext()
         with ctx as sh:
             self._generate_test_uniforms(sh)
 
@@ -200,7 +201,7 @@ class TestFunctions:
                 sh.result.color = sh.getA2() + sh.getA3()
                 sh.return_(sh.result)
 
-    @_base.ctx_cls_hg  
+    @ctx_cls_hg  
     def test_func_out_param(self, ctx_cls):
         ctx = ctx_cls()
         with ctx as sh:
@@ -219,14 +220,14 @@ class TestFunctions:
                     a = sh.g_f4A, b = sh.g_f4B, c = sh.result_color
                 )
 
-                if isinstance(ctx, _base.HlslTestContext):
+                if isinstance(ctx, HlslTestContext):
                     sh.result = sh.PsOut()
                     sh.result.color = sh.result_color
                     sh.return_(sh.result)
                 else:
                     sh.out_f4Color = sh.result_color
 
-    @_base.ctx_cls_hg  
+    @ctx_cls_hg  
     def test_func_inout_param(self, ctx_cls):
         ctx = ctx_cls()
         with ctx as sh:
@@ -243,14 +244,14 @@ class TestFunctions:
                 sh.test_value = sh.g_f4A
                 sh.modifyInOut(value = sh.test_value)
 
-                if isinstance(ctx, _base.HlslTestContext):
+                if isinstance(ctx, HlslTestContext):
                     sh.result = sh.PsOut()
                     sh.result.color = sh.test_value
                     sh.return_(sh.result)
                 else:
                     sh.out_f4Color = sh.test_value
 
-    @_base.ctx_cls_hg
+    @ctx_cls_hg
     def test_function_reflection(self, ctx_cls):
         '''Test that we can reflect on function metadata after registration.'''
         with ctx_cls(no_file=True) as sh:
@@ -293,7 +294,7 @@ class TestFunctions:
             assert len(param_def.qualifiers) == 1
             assert param_def.qualifiers[0].direction == Direction.INOUT
 
-    @_base.ctx_cls_hg
+    @ctx_cls_hg
     def test_void_function_reflection(self, ctx_cls):
         '''Test reflection on void functions.'''
         with ctx_cls(no_file=True) as sh:

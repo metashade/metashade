@@ -13,18 +13,18 @@
 # limitations under the License.
 
 import pytest
-import _base
+from metashade.util.testing import ctx_cls_hg, GlslTestContext
 
 class TestGlslSimpleFrag:
     def test_glsl_simple_frag(self):
-        with _base.GlslTestContext() as sh:
+        with GlslTestContext() as sh:
             sh.out_f4Color = sh.stage_output(sh.Float4, location = 0)
 
             with sh.entry_point('main')():
                 sh.out_f4Color = sh.Float4((1.0, 0.0, 0.0, 1.0))
 
     def test_glsl_inout(self):
-        with _base.GlslTestContext() as sh:
+        with GlslTestContext() as sh:
             sh.in_f4Color = sh.stage_input(sh.Float4, location = 0)
             sh.out_f4Color = sh.stage_output(sh.Float4, location = 0)
 
@@ -32,7 +32,7 @@ class TestGlslSimpleFrag:
                 sh.out_f4Color = sh.in_f4Color
 
     def test_glsl_input_clash(self):
-        with _base.GlslTestContext(no_file = True) as sh:
+        with GlslTestContext(no_file = True) as sh:
             sh.in_f4_0 = sh.stage_input(sh.Float4, location = 0)
             sh.out_f4 = sh.stage_output(sh.Float4, location = 0)
 
@@ -45,7 +45,7 @@ class TestGlslSimpleFrag:
                 sh.in_f4_2 = sh.stage_input(sh.Float4, location = 0)
 
     def test_glsl_output_clash(self):
-        with _base.GlslTestContext(no_file = True) as sh:
+        with GlslTestContext(no_file = True) as sh:
             sh.in_f4 = sh.stage_input(sh.Float4, location = 0)
             sh.out_f4_0 = sh.stage_output(sh.Float4, location = 0)
 

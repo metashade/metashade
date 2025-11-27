@@ -12,25 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pytest
-import _base
+import os
+import metashade.util.testing as util
 
-
-class GlslNoVersionTestContext(_base.GlslTestContext):
+class GlslNoVersionTestContext(util.GlslTestContext):
     """GLSL test context that generates shaders without a version directive.
     
     The version is provided to glslang on the command line instead of in the shader.
     """
     
     def _create_generator(self):
-        return _base.frag.Generator(self._file, glsl_version="")
+        return util.frag.Generator(self._file, glsl_version="")
     
     def _compile(self):
-        _base.glslang.compile(
+        util.glslang.compile(
             src_path=self._src_path,
             target_env='vulkan1.1',
             shader_stage='frag',
-            output_path=_base.os.devnull,
+            output_path=os.devnull,
             glsl_version='450'
         )
 

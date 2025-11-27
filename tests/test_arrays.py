@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import _base
+from metashade.util.testing import ctx_cls_hg
 
 def _func(sh) -> 'Float4':
     sh.arr = sh.array(sh.Float4, (2,))()
@@ -23,7 +23,7 @@ def _func(sh) -> 'Float4':
     sh.return_(sh.f4A)
 
 class TestArrays:
-    @_base.ctx_cls_hg
+    @ctx_cls_hg
     def test_arrays(self, ctx_cls):
         with ctx_cls(dummy_entry_point = True) as sh:
             sh.instantiate(_func)

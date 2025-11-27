@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import _base
+from metashade.util.testing import ctx_cls_hg, HlslTestContext
 
 class TestSamplers:
     def test_combined_samplers(self):
-        ctx = _base.HlslTestContext(as_lib = True)
+        ctx = HlslTestContext(as_lib = True)
         with ctx as sh:
             sh.uniform('g_tColor0', sh.Texture2d, dx_register = 0)
             sh.uniform('g_sColor0', sh.Sampler, dx_register = 1)

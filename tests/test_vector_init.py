@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import _base
+from metashade.util.testing import ctx_cls_hg
 
 class TestVectorInit:
-    @_base.ctx_cls_hg
+    @ctx_cls_hg
     def test_vector_init(self, ctx_cls):
         with ctx_cls(dummy_entry_point = True) as sh:
             with sh.function('vector_init', sh.Float)():
