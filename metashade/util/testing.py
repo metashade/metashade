@@ -37,27 +37,10 @@ def get_test_func_name():
 
 class _TestContext(abc.ABC):
     _entry_point_name = 'main'
-    _is_setup = False
-    _tests_dir = None  # Will be set by conftest.py
 
     @classmethod
-    def setup_class(cls):
-        if cls._is_setup:
-            return
-        cls._is_setup = True
-        
-        # Use the directory configured by conftest.py
-        if cls._tests_dir is not None:
-            cls._parent_dir = cls._tests_dir
-        else:
-            # Fallback: Find the test file's directory from the call stack
-            for frame in inspect.stack():
-                if frame.filename.endswith(('test_' +  frame.filename.split('test_')[-1])) and '/tests/' in frame.filename.replace('\\', '/'):
-                    cls._parent_dir = Path(frame.filename).parent
-                    break
-            else:
-                # Final fallback
-                cls._parent_dir = Path(sys.modules[cls.__module__].__file__).parent
+    def setup_class(cls, test_dir: Path):
+        cls._parent_dir = test_dir
 
         out_dir = os.getenv('METASHADE_PYTEST_OUT_DIR', None)
         ref_dir = cls._parent_dir / 'ref'
@@ -81,10 +64,6 @@ class _TestContext(abc.ABC):
         as_lib : bool = False,
         dummy_entry_point : bool = False
     ):
-        # Ensure setup_class has been called
-        if not self.__class__._is_setup:
-            self.__class__.setup_class()
-            
         test_name = get_test_func_name()
         self._src_path = (
             None if no_file

@@ -15,5 +15,6 @@
 from pathlib import Path
 from metashade.util import testing
 
-# Configure the test context classes to use this directory
-testing._TestContext._tests_dir = Path(__file__).parent
+# Set up test context base class with this directory
+test_dir = Path(__file__).parent
+testing._TestContext.setup_class(test_dir)
