@@ -29,7 +29,7 @@ Metashade is an experimental Python library for generating GPU shader code. Unli
 
 ### Level 2: Output Mechanism — "Immediate Mode over Retained Mode"
 
-**The Concept:** As the trace executes, Metashade emits target code (GLSL/HLSL strings) *eagerly*, line-by-line. There is no intermediate graph data structure stored in memory.
+**The Concept:** As the trace executes, Metashade emits target code (GLSL/HLSL strings) *eagerly*, line-by-line. There is no intermediate representation (IR) or computation graph built for later compilation.
 
 | Approach | How it works | Examples |
 |----------|--------------|----------|
@@ -37,6 +37,14 @@ Metashade is an experimental Python library for generating GPU shader code. Unli
 | **Retained Mode** (Standard Tracers) | Trace builds an intermediate graph (jaxpr, FX Graph), then optimized and compiled in a separate pass | JAX, PyTorch FX |
 
 **Analogy:** Metashade is to code generation what PyTorch Eager Mode is to execution—it processes operations logically and sequentially in real-time, without building a "computation graph" first.
+
+**Important clarification:** While there's no IR for the *output*, the generator does maintain a **semantic model** of the shader being generated. This model tracks:
+- Currently declared functions, structs, and uniforms
+- Local variables in scope (with C-like scoping rules)
+- A context stack modeling nested scopes (functions, if/else blocks, loops)
+- Type information for semantic checking
+
+This is what enables features like detecting use of undeclared variables, preventing type mismatches, and enforcing proper scoping—all at generation time.
 
 ## Key Differentiators
 
