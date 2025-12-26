@@ -82,12 +82,26 @@ class BaseType(base.BaseType):
         )
 
     def _assign(self, value):
+        if value is self:
+            return
+
+        if isinstance(value, BaseType) and str(self) == str(value):
+            return
+
         value_ref = self.__class__._get_value_ref(value)
         if value_ref is None:
             raise ArithmeticError('Type mismatch')
 
         self._sh._emit_indent()
         self._sh._emit( f'{self} = {value_ref};\n' )
+
+    def _assign_op(self, value, op):
+        value_ref = self.__class__._get_value_ref(value)
+        if value_ref is None:
+            raise ArithmeticError('Type mismatch')
+
+        self._sh._emit_indent()
+        self._sh._emit( f'{self} {op}= {value_ref};\n' )
 
     def __setattr__(self, name, value):
         if name == '_':
@@ -118,20 +132,38 @@ class ArithmeticType(BaseType):
             )
         )
 
+    def _inplace_binary_operator(self, rhs, op):
+        if not self._is_lvalue:
+             raise RuntimeError("Can't modify an rvalue")
+        self._assign_op(rhs, op)
+        return self
+
     def __add__(self, rhs):
         return self._rhs_binary_operator(rhs, '+')
+
+    def __iadd__(self, rhs):
+        return self._inplace_binary_operator(rhs, '+')
 
     def __sub__(self, rhs):
         return self._rhs_binary_operator(rhs, '-')
 
+    def __isub__(self, rhs):
+        return self._inplace_binary_operator(rhs, '-')
+
     def __mul__(self, rhs):
         return self._rhs_binary_operator(rhs, '*')
+
+    def __imul__(self, rhs):
+        return self._inplace_binary_operator(rhs, '*')
 
     def __div__(self, rhs):
         return self._rhs_binary_operator(rhs, '/')
     
     def __truediv__(self, rhs):
         return self._rhs_binary_operator(rhs, '/')
+
+    def __itruediv__(self, rhs):
+        return self._inplace_binary_operator(rhs, '/')
     
     def __neg__(self):
         return self._sh._instantiate_dtype(self.__class__, f'-{self}')

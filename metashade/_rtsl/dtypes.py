@@ -34,6 +34,21 @@ class _RawVector(clike.ArithmeticType):
         type_name = cls._get_related_type_name(dim)
         return getattr(sys.modules[cls.__module__], type_name)
 
+    def _assign_op(self, value, op):
+        value_ref = self.__class__._get_value_ref(value)
+
+        if (value_ref is None
+            and op in ('*', '/')
+            and value.__class__ == self._element_type
+        ):
+             value_ref = self._element_type._get_value_ref(value)
+
+        if value_ref is None:
+             raise ArithmeticError('Type mismatch')
+
+        self._sh._emit_indent()
+        self._sh._emit( f'{self} {op}= {value_ref};\n' )
+
     def __getattr__(self, name):
         '''Implements swizzling.'''
         is_valid_swizzle = False
@@ -48,10 +63,13 @@ class _RawVector(clike.ArithmeticType):
         if not is_valid_swizzle:
             raise AttributeError
         result_dtype = self._get_related_type(dim = len(name))
-        return self._sh._instantiate_dtype(
+        result = self._sh._instantiate_dtype(
             result_dtype,
             '.'.join((str(self), name))
         )
+        if self._is_lvalue:
+            result._is_lvalue = True
+        return result
 
     def _assign_write_mask(self, name, value) -> bool:
         '''Implements assignment with a swizzling mask.'''

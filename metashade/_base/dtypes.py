@@ -25,8 +25,13 @@ class BaseType:
         """
         self._sh = None
         self._name = None
+        self._is_lvalue = False
         self._expression = _ if (isinstance(_, str) or _ is None) \
             else str(self.__class__._get_value_ref(_))
+
+    @property
+    def _(self):
+        return self
         
     @classmethod
     def _get_dtype(cls):
@@ -43,6 +48,7 @@ class BaseType:
             raise RuntimeError('Initializers are not supported.')
 
         self._name = name
+        self._is_lvalue = True
         self._set_generator(sh)
 
     def __str__(self) -> str:
