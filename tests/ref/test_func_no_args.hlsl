@@ -28,7 +28,7 @@ struct PsOut
 PsOut main()
 {
 	PsOut result;
-	result.color = (getA2() + getA3());
+	result.color = getA2() + getA3();
 	return result;
 }
 

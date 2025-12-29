@@ -8,13 +8,13 @@ layout (set = 0, binding = 0) uniform cb
 
 vec4 py_add(vec4 a, vec4 b)
 {
-	vec4 c = (a + b);
+	vec4 c = a + b;
 	return c;
 }
 
 vec4 py_mul(vec4 a, vec4 b)
 {
-	vec4 c = (a * b);
+	vec4 c = a * b;
 	return c;
 }
 
