@@ -8,7 +8,7 @@ cbuffer cb : register(b0)
 
 void modifyInOut(inout float4 value)
 {
-	value = (value + value);
+	value = value + value;
 	return;
 }
 

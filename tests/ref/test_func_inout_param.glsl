@@ -8,7 +8,7 @@ layout (set = 0, binding = 0) uniform cb
 
 void modifyInOut(inout vec4 value)
 {
-	value = (value + value);
+	value = value + value;
 	return;
 }
 
