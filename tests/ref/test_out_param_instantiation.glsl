@@ -9,3 +9,4 @@ void main()
 	float val = 0.0;
 	func_with_out(val);
 }
+
