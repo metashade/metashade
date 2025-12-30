@@ -21,6 +21,10 @@ def _py_add(sh, a : 'Float4', b : 'Float4') -> 'Float4':
 def _py_clip(sh, value : 'Float') -> 'None':
     value.clip()
 
+def _py_no_return_annotation(sh, value : 'Float'):
+    '''Function with no return annotation - should default to void.'''
+    pass
+
 class TestInstantiate:
     def _generate_test_uniforms(self, sh):
         with sh.uniform_buffer(
@@ -116,3 +120,18 @@ class TestInstantiate:
                 sh.result = sh.PsOut()
                 sh.result.color = sh.g_f4B
                 sh.return_(sh.result)
+
+    def test_instantiate_py_func_no_return_annotation(self):
+        '''Test that functions without return annotations default to void.'''
+        ctx = HlslTestContext()
+        with ctx as sh:
+            self._generate_test_uniforms(sh)
+            sh.instantiate(_py_no_return_annotation)
+
+            with self._generate_ps_main_decl(sh, ctx):
+                sh._py_no_return_annotation(value = sh.g_f4A.x)
+
+                sh.result = sh.PsOut()
+                sh.result.color = sh.g_f4B
+                sh.return_(sh.result)
+
