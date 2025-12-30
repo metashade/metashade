@@ -60,6 +60,27 @@ class TestInstantiate:
                     sh.out_f4Color = sh.c
 
     @ctx_cls_hg
+    def test_instantiate_exported_py_func(self, ctx_cls):
+        '''Test instantiating a single @export-decorated function.'''
+        import _exports
+
+        ctx = ctx_cls()
+        with ctx as sh:
+            self._generate_test_uniforms(sh)
+            sh.instantiate(_exports.py_add)
+
+            with self._generate_ps_main_decl(sh, ctx):
+                sh.c = sh.py_add(a = sh.g_f4A, b = sh.g_f4B)
+
+                if isinstance(ctx, HlslTestContext):
+                    sh.result = sh.PsOut()
+                    sh.result.color = sh.c
+                    sh.return_(sh.result)
+                else:
+                    sh.out_f4Color = sh.c
+
+
+    @ctx_cls_hg
     def test_instantiate_py_module(self, ctx_cls):
         import _exports
 
