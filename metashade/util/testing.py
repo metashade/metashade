@@ -16,7 +16,6 @@ import filecmp, inspect
 from pathlib import Path
 import abc, io, os, sys
 import pytest
-import errno
 
 from metashade.glsl import frag
 from metashade.glsl.util import glslang
@@ -116,16 +115,13 @@ class HlslTestContext(_TestContext):
 
     def _compile(self):
         def dxc_compile(profile, to_spirv):
-            try:
-                dxc.compile(
-                    src_path = self._src_path,
-                    entry_point_name = self._entry_point_name,
-                    profile = profile,
-                    include_paths = [ self._parent_dir ],
-                    to_spirv = to_spirv
-                )
-            except FileNotFoundError as e:
-                pytest.skip(f"dxc not found: {e}")
+            dxc.compile(
+                src_path = self._src_path,
+                entry_point_name = self._entry_point_name,
+                profile = profile,
+                include_paths = [ self._parent_dir ],
+                to_spirv = to_spirv
+            )
 
         # LIB profiles support DXIL linking and therefore allow function
         # declarations without definitions.
@@ -150,15 +146,12 @@ class GlslTestContext(_TestContext):
         return frag.Generator(self._file, '450')
 
     def _compile(self):
-        try:
-            glslang.compile(
-                src_path = self._src_path,
-                target_env = 'vulkan1.1',
-                shader_stage = 'frag',
-                output_path = os.devnull
-            )
-        except FileNotFoundError as e:
-            pytest.skip(f"glslang not found: {e}")
+        glslang.compile(
+            src_path = self._src_path,
+            target_env = 'vulkan1.1',
+            shader_stage = 'frag',
+            output_path = os.devnull
+        )
 
 def ctx_cls_hg(func):
     wrapped_deco = pytest.mark.parametrize(
