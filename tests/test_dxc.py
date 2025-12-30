@@ -19,11 +19,8 @@ from metashade.hlsl.util import dxc
 class TestDxc:
     def test_dxc_failure(self):
         parent_dir = pathlib.Path(sys.modules[self.__module__].__file__).parent
-        try:
-            with pytest.raises(CalledProcessError):
-                dxc.compile(
-                    src_path = parent_dir / 'fail.hlsl',
-                    profile = 'lib_6_5',
-                )
-        except FileNotFoundError as e:
-            pytest.skip(f"dxc not found: {e}")
+        with pytest.raises(CalledProcessError):
+            dxc.compile(
+                src_path = parent_dir / 'fail.hlsl',
+                profile = 'lib_6_5',
+            )

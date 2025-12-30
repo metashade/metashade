@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import os
-import pytest
 import metashade.util.testing as util
 
 class GlslNoVersionTestContext(util.GlslTestContext):
@@ -26,16 +25,13 @@ class GlslNoVersionTestContext(util.GlslTestContext):
         return util.frag.Generator(self._file, glsl_version="")
     
     def _compile(self):
-        try:
-            util.glslang.compile(
-                src_path=self._src_path,
-                target_env='vulkan1.1',
-                shader_stage='frag',
-                output_path=os.devnull,
-                glsl_version='450'
-            )
-        except FileNotFoundError as e:
-            pytest.skip(f"glslang not found: {e}")
+        util.glslang.compile(
+            src_path=self._src_path,
+            target_env='vulkan1.1',
+            shader_stage='frag',
+            output_path=os.devnull,
+            glsl_version='450'
+        )
 
 
 class TestGlslVersion:
