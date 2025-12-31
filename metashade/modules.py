@@ -21,3 +21,4 @@ def export(func):
         py_module._metashade_exports = dict()
 
     py_module._metashade_exports[func.__name__] = func
+    return func
