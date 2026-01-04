@@ -12,19 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for metashade.std.surf.pbr.fresnel module.
+"""Tests for metashade.std.surf.pbr.fresnel module."""
 
-Note: This test is HLSL-only because the fresnel function uses
-intrinsics (pow) not yet implemented for GLSL.
-"""
-
-from metashade.util.testing import HlslTestContext
+from metashade.util.testing import ctx_cls_hg
 from metashade.std.surf.pbr import fresnel
 
 
 class TestFSchlick:
-    def test_F_Schlick(self):
+    @ctx_cls_hg
+    def test_F_Schlick(self, ctx_cls):
         """Test F_Schlick generates correct code."""
-        ctx = HlslTestContext(dummy_entry_point=True)
+        ctx = ctx_cls(dummy_entry_point=True)
         with ctx as sh:
             sh.instantiate(fresnel.F_Schlick)

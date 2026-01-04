@@ -14,8 +14,10 @@
 
 import numbers
 import metashade._rtsl.dtypes as rtsl
+from . import _intrinsics
 
-class Float(rtsl.Float):
+
+class Float(_intrinsics.FloatIntrinsicsMixin, rtsl.Float):
     pass
 
 class Int(rtsl.Int):
@@ -30,7 +32,7 @@ class _RawVector(rtsl._RawVector):
             if element_ref is not None else _
         )
 
-class _RawVectorF(_RawVector):
+class _RawVectorF(_intrinsics.FloatIntrinsicsMixin, _RawVector):
     _element_type = Float
 
     def normalize(self):
