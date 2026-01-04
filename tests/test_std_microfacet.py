@@ -1,4 +1,4 @@
-# Copyright 2025 Pavlo Penenko
+# Copyright 2026 Pavlo Penenko
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,27 +12,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for metashade.std.surf.pbr.microfacet module.
+"""Tests for metashade.std.surf.pbr.microfacet module."""
 
-Note: These tests are HLSL-only because the microfacet functions use
-intrinsics (saturate, sqrt) not yet implemented for GLSL.
-"""
-
-from metashade.util.testing import HlslTestContext
+from metashade.util.testing import ctx_cls_hg
 from metashade.std.surf.pbr import microfacet
 
 
 class TestDGgx:
-    def test_D_Ggx(self):
+    @ctx_cls_hg
+    def test_D_Ggx(self, ctx_cls):
         """Test D_Ggx generates correct code."""
-        ctx = HlslTestContext(dummy_entry_point=True)
+        ctx = ctx_cls(dummy_entry_point=True)
         with ctx as sh:
             sh.instantiate(microfacet.D_Ggx)
 
 
 class TestVSmithGgxCorrelated:
-    def test_V_SmithGgxCorrelated(self):
+    @ctx_cls_hg
+    def test_V_SmithGgxCorrelated(self, ctx_cls):
         """Test V_SmithGgxCorrelated generates correct code."""
-        ctx = HlslTestContext(dummy_entry_point=True)
+        ctx = ctx_cls(dummy_entry_point=True)
         with ctx as sh:
             sh.instantiate(microfacet.V_SmithGgxCorrelated)
