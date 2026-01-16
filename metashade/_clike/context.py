@@ -34,14 +34,14 @@ class FunctionDecl:
     
     Short-lived object that creates a persistent Function object.
     '''
-    def __init__(self, sh, name, return_type):
+    def __init__(self, sh, name, return_type, doc = None):
         self._sh = sh
         self._name = name
         self._return_dtype_factory = (
             None if ( return_type is None or return_type == type(None) )
             else return_type
         )
-
+        self._doc = doc
         self._param_defs = dict()
 
     def __call__(self, **kwargs):
@@ -122,6 +122,15 @@ class FunctionDecl:
 
     def __enter__(self):
         '''Begin function definition and return a FunctionDef for the body.'''
+        if self._doc is not None:
+            self._sh._emit_indent()
+            self._sh._emit('/*\n')
+            for line in self._doc.strip().split('\n'):
+                self._sh._emit_indent()
+                self._sh._emit(f' * {line.strip()}\n')
+            self._sh._emit_indent()
+            self._sh._emit(' */\n')
+
         self._emit_signature()
         self._sh._emit('\n{\n')
         self._sh._push_indent()
