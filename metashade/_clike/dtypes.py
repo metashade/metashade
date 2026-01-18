@@ -92,9 +92,6 @@ class BaseType(base.BaseType):
         if value is self:
             return
 
-        if isinstance(value, BaseType) and str(self) == str(value):
-            return
-
         value_ref = self.__class__._get_value_ref(value)
         if value_ref is None:
             raise ArithmeticError('Type mismatch')
