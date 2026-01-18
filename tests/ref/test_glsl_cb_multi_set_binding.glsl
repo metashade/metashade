@@ -20,8 +20,10 @@ layout (set = 1, binding = 1) uniform cb3
 };
 
 layout(location = 0) out vec4 out_f4Color;
+#line 90 "/app/tests/test_uniforms.py"
 void main()
 {
+#line 91 "/app/tests/test_uniforms.py"
 	out_f4Color = g_f4Color0;
 }
 

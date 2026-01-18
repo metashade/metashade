@@ -11,6 +11,7 @@
 // Returns:
 // Visibility term value
 //
+#line 36 "/app/tests/test_std_microfacet.py"
 float V_SmithGgxCorrelated(float NdotV, float NdotL, float fAlphaRoughness)
 {
 	// https://google.github.io/filament/Filament.md.html#materialsystem/specularbrdf/geometricshadowing(specularg)
@@ -22,6 +23,7 @@ float V_SmithGgxCorrelated(float NdotV, float NdotL, float fAlphaRoughness)
 	return saturate(fV);
 }
 
+#line 35 "/app/tests/test_std_microfacet.py"
 void main()
 {
 }

@@ -7,11 +7,13 @@
 // Returns:
 // Fresnel reflectance
 //
+#line 27 "/app/tests/test_std_fresnel.py"
 float3 F_Schlick(float LdotH, float3 rgbF0)
 {
 	return rgbF0 + ((1.0.xxx - rgbF0) * pow(1.0 - LdotH, 5.0));
 }
 
+#line 26 "/app/tests/test_std_fresnel.py"
 void main()
 {
 }

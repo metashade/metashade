@@ -14,7 +14,9 @@
 
 from . import dtypes
 
-import copy, inspect, sys
+import copy, inspect, sys, os
+
+_INTERNAL_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 class Generator:
     """
@@ -29,6 +31,21 @@ class Generator:
         
         self._globals = dict()
         self._context_stack = list()
+        self._last_line_directive = None
+
+    def _emit_line_directive(self):
+        frame = sys._getframe(1)
+        while frame:
+            if not frame.f_code.co_filename.startswith(_INTERNAL_DIR):
+                break
+            frame = frame.f_back
+
+        if frame:
+            filename = frame.f_code.co_filename
+            lineno = frame.f_lineno
+            if (filename, lineno) != self._last_line_directive:
+                self._emit(f'#line {lineno} "{filename}"\n')
+                self._last_line_directive = (filename, lineno)
 
     class _DtypeFactory:
         def __init__(self, sh, dtype):
@@ -138,6 +155,7 @@ class Generator:
 
         # Define a new local
         self._context_stack[-1]._locals[name] = value
+        self._emit_line_directive()
         self._emit_indent()
         value._define(self, name)
         self._emit(';\n')

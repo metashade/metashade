@@ -9,11 +9,13 @@
 // Reference:
 // https://google.github.io/filament/Filament.md.html#materialsystem/diffusebrdf
 //
+#line 27 "/app/tests/test_std_diffuse.py"
 float Fd_Lambert()
 {
 	return 0.3183098861837907;
 }
 
+#line 26 "/app/tests/test_std_diffuse.py"
 void main()
 {
 }

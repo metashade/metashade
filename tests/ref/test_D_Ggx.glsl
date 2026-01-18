@@ -8,6 +8,7 @@
 // Returns:
 // NDF value
 //
+#line 27 "/app/tests/test_std_microfacet.py"
 float D_Ggx(float NdotH, float fAlphaRoughness)
 {
 	// https://google.github.io/filament/Filament.md.html#materialsystem/specularbrdf/normaldistributionfunction(speculard)
@@ -17,6 +18,7 @@ float D_Ggx(float NdotH, float fAlphaRoughness)
 	return clamp(fASqr / ((3.141592653589793 * fF) * fF), 0.0, 1.0);
 }
 
+#line 26 "/app/tests/test_std_microfacet.py"
 void main()
 {
 }
