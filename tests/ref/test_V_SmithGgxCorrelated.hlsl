@@ -1,3 +1,16 @@
+// Smith-GGX Height-Correlated Visibility Function.
+// 
+// This is the visibility term, combining
+// the geometric shadowing and masking into a single optimized form.
+// 
+// Args:
+// NdotV: Dot product of surface normal and view direction
+// NdotL: Dot product of surface normal and light direction
+// fAlphaRoughness: Roughness parameter (perceptualRoughness^2)
+// 
+// Returns:
+// Visibility term value
+//
 float V_SmithGgxCorrelated(float NdotV, float NdotL, float fAlphaRoughness)
 {
 	// https://google.github.io/filament/Filament.md.html#materialsystem/specularbrdf/geometricshadowing(specularg)

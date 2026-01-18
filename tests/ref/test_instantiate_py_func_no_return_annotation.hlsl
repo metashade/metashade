@@ -6,6 +6,8 @@ cbuffer cb : register(b0)
 	float4 g_f4C;
 };
 
+// Function with no return annotation - should default to void.
+//
 void _py_no_return_annotation(float value)
 {
 }
