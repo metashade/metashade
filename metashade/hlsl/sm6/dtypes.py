@@ -231,22 +231,3 @@ class RgbaF(rtsl.RgbaF, Float4):
             raise RuntimeError('"rgb" must be convertible to RgbF')
 
         super().__init__(_ = _, xyz = rgb, w = a)
-
-    def __getattr__(self, name):
-        if name == 'rgb':
-            return self._sh._instantiate_dtype(
-                RgbF,
-                '.'.join((str(self), name))
-            )
-        else:
-            return super().__getattr__(name)
-
-    def __setattr__(self, name, value):
-        if name == 'rgb':
-            lvalue = self._sh._instantiate_dtype(
-                RgbF,
-                '.'.join((str(self), name))
-            )
-            lvalue._assign(value)
-        else:
-            super().__setattr__(name, value)

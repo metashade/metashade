@@ -60,3 +60,14 @@ class TestSwizzling:
                 sh.res2 = ((sh.v1 * sh.v2) + sh.v1).w
 
                 sh.return_(sh.res1 + sh.res2)
+
+    @ctx_cls_hg
+    def test_rgba_rgb_augmented(self, ctx_cls):
+        """Test augmented assignment on rgba.rgb swizzle (_is_lvalue propagation)."""
+        with ctx_cls(dummy_entry_point = True) as sh:
+            with sh.function('rgba_rgb_augmented', sh.RgbaF)(
+                rgba = sh.RgbaF, rgb = sh.RgbF
+            ):
+                # This requires _is_lvalue to be propagated from rgba to rgba.rgb
+                sh.rgba.rgb += sh.rgb
+                sh.return_(sh.rgba)
