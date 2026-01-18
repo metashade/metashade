@@ -8,7 +8,7 @@ layout (set = 0, binding = 0) uniform cb
 
 void addOutParam(vec4 a, vec4 b, out vec4 c)
 {
-	c = (a + b);
+	c = a + b;
 	return;
 }
 

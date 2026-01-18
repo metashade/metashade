@@ -45,3 +45,18 @@ class TestSwizzling:
 
                 sh.f4.xy = sh.yz
                 sh.return_(sh.x)
+
+    @ctx_cls_hg
+    def test_expression_swizzling(self, ctx_cls):
+        """Test swizzling on arithmetic expressions."""
+        with ctx_cls(dummy_entry_point = True) as sh:
+            with sh.function('expr_swizzle', sh.Float)(
+                v1 = sh.Float4, v2 = sh.Float4
+            ):
+                # (v1 + v2).x -> Should ensure (v1 + v2) is wrapped
+                sh.res1 = (sh.v1 + sh.v2).x
+
+                # ((v1 * v2) + v1).w
+                sh.res2 = ((sh.v1 * sh.v2) + sh.v1).w
+
+                sh.return_(sh.res1 + sh.res2)

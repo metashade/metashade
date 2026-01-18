@@ -1,6 +1,6 @@
 float4 add(float4 a, float4 b)
 {
-	return (a + b);
+	return a + b;
 }
 
 [[vk::binding(0, 0)]]

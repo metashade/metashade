@@ -262,7 +262,10 @@ class Function:
             return None
         else:
             dtype_class = self._return_dtype_factory._get_dtype()
-            return dtype_class(f'{self._name}({arg_str})')
+            return self._sh._instantiate_dtype(
+                dtype_class,
+                f'{self._name}({arg_str})'
+            )
     
 class _ConditionalStatement:
     def __init__(self, sh):
