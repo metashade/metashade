@@ -317,4 +317,27 @@ class RgbF:
     pass
 
 class RgbaF:
-    pass
+    def __getattr__(self, name):
+        if name == 'rgb':
+            # Get RgbF from the same module as the concrete class
+            RgbF_cls = getattr(sys.modules[self.__class__.__module__], 'RgbF')
+            result = self._sh._instantiate_dtype(
+                RgbF_cls,
+                '.'.join((str(self), name))
+            )
+            if self._is_lvalue:
+                result._is_lvalue = True
+            return result
+        else:
+            return super().__getattr__(name)
+
+    def __setattr__(self, name, value):
+        if name == 'rgb':
+            RgbF_cls = getattr(sys.modules[self.__class__.__module__], 'RgbF')
+            lvalue = self._sh._instantiate_dtype(
+                RgbF_cls,
+                '.'.join((str(self), name))
+            )
+            lvalue._assign(value)
+        else:
+            super().__setattr__(name, value)
