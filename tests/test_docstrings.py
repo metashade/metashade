@@ -30,10 +30,9 @@ def test_docstring():
 
     expected_substring = textwrap.dedent(
         '''
-        /*
-         * This is a docstring.
-         * It has multiple lines.
-         */
+        // This is a docstring.
+        // It has multiple lines.
+        //
         void ps_main()
         '''
     ).strip()

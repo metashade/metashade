@@ -123,13 +123,13 @@ class FunctionDecl:
     def __enter__(self):
         '''Begin function definition and return a FunctionDef for the body.'''
         if self._doc is not None:
-            self._sh._emit_indent()
-            self._sh._emit('/*\n')
             for line in self._doc.strip().split('\n'):
+                # Escape non-ASCII characters to \uXXXX format for safe output
+                safe_line = line.strip().encode('ascii', 'backslashreplace').decode('ascii')
                 self._sh._emit_indent()
-                self._sh._emit(f' * {line.strip()}\n')
+                self._sh._emit(f'// {safe_line}\n')
             self._sh._emit_indent()
-            self._sh._emit(' */\n')
+            self._sh._emit('//\n')
 
         self._emit_signature()
         self._sh._emit('\n{\n')
