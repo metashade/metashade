@@ -1,7 +1,7 @@
 #version 450
-vec4 assign_add(vec4 a, vec4 b)
+vec4 self_add(vec4 a)
 {
-	a += b;
+	a += a;
 	return a;
 }
 

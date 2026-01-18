@@ -24,3 +24,13 @@ class TestAugmentedAssignments:
             ):
                 sh.a += sh.b
                 sh.return_(sh.a)
+
+    @ctx_cls_hg
+    def test_augmented_self_add(self, ctx_cls):
+        """Test a += a (doubling) without using _ syntax."""
+        with ctx_cls(dummy_entry_point = True) as sh:
+            with sh.function('self_add', sh.Float4)(
+                a = sh.Float4
+            ):
+                sh.a += sh.a
+                sh.return_(sh.a)
