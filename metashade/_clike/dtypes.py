@@ -92,6 +92,11 @@ class BaseType(base.BaseType):
         if value is self:
             return
 
+        # Also check string representation for swizzle augmented assignments
+        # where __iadd__ returns a different object with same target
+        if isinstance(value, BaseType) and str(self) == str(value):
+            return
+
         value_ref = self.__class__._get_value_ref(value)
         if value_ref is None:
             raise ArithmeticError('Type mismatch')
