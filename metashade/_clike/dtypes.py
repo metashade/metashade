@@ -14,6 +14,13 @@
 
 import metashade._base.dtypes as base
 import numbers
+from enum import Enum, auto
+
+class ExprType(Enum):
+    """Expression type for determining when parentheses are needed."""
+    NONE = auto()       # Simple term (variable, literal) - no wrapping
+    ARITHMETIC = auto() # Compound expression (a + b) - wrap in binary ops
+    NEGATION = auto()   # Negation result (-a) - wrap only when negating again
 
 class BaseType(base.BaseType):
     @classmethod
@@ -114,16 +121,38 @@ class BaseType(base.BaseType):
         return cls._target_name
 
 class ArithmeticType(BaseType):
+    def __init__(self, _=None):
+        super().__init__(_)
+        self._expr_type = ExprType.NONE
+
+    def _bind(self, sh, name, allow_init):
+        super()._bind(sh, name, allow_init)
+        self._expr_type = ExprType.NONE
+
+    @staticmethod
+    def _needs_parens_in_binary_op(operand) -> bool:
+        """Check if operand needs parentheses in a binary operation."""
+        expr_type = getattr(operand, '_expr_type', ExprType.NONE)
+        return expr_type == ExprType.ARITHMETIC
+
     @staticmethod
     def _format_binary_operator(lhs : str, rhs : str, op : str) -> str:
-        return f'({lhs} {op} {rhs})'
+        lhs_expr = str(lhs)
+        if ArithmeticType._needs_parens_in_binary_op(lhs):
+            lhs_expr = f'({lhs_expr})'
+
+        rhs_expr = str(rhs)
+        if ArithmeticType._needs_parens_in_binary_op(rhs):
+            rhs_expr = f'({rhs_expr})'
+
+        return f'{lhs_expr} {op} {rhs_expr}'
 
     def _rhs_binary_operator(self, rhs, op):
         rhs_ref = self.__class__._get_value_ref(rhs)
         if rhs_ref is None:
             return NotImplemented
 
-        return self._sh._instantiate_dtype(
+        result = self._sh._instantiate_dtype(
             self.__class__,
             self.__class__._format_binary_operator(
                 lhs = self,
@@ -131,6 +160,8 @@ class ArithmeticType(BaseType):
                 op = op
             )
         )
+        result._expr_type = ExprType.ARITHMETIC
+        return result
 
     def _inplace_binary_operator(self, rhs, op):
         if not self._is_lvalue:
@@ -166,7 +197,14 @@ class ArithmeticType(BaseType):
         return self._inplace_binary_operator(rhs, '/')
     
     def __neg__(self):
-        return self._sh._instantiate_dtype(self.__class__, f'-{self}')
+        val_str = str(self)
+        expr_type = getattr(self, '_expr_type', ExprType.NONE)
+        # Wrap if arithmetic expression OR if already a negation (avoid --a)
+        if expr_type in (ExprType.ARITHMETIC, ExprType.NEGATION):
+            val_str = f'({val_str})'
+        result = self._sh._instantiate_dtype(self.__class__, f'-{val_str}')
+        result._expr_type = ExprType.NEGATION
+        return result
 
 class Scalar(ArithmeticType):
     @staticmethod

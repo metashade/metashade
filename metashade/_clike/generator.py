@@ -13,7 +13,10 @@
 # limitations under the License.
 
 import types
+import re
+from typing import Annotated
 import metashade._base.generator as base
+from metashade._rtsl.qualifiers import ParamQualifiers, Direction
 from . import arrays, context, struct
 
 class Generator(base.Generator):
@@ -53,21 +56,38 @@ class Generator(base.Generator):
         self._emit_indent()
         self._emit(f'// {comment}\n')
 
+    def _resolve_annotation(self, annotation: str):
+        match = re.match(r'^(Out|InOut)\[(.+)\]$', annotation)
+        if match:
+            qualifier_str, inner_type_name = match.groups()
+            inner_type = getattr(self, inner_type_name)
+
+            if qualifier_str == 'Out':
+                direction = Direction.OUT
+            else:
+                direction = Direction.INOUT
+
+            return Annotated[inner_type, ParamQualifiers(direction=direction)]
+
+        return getattr(self, annotation)
+
     def _instantiate_func(self, py_func):
         name = py_func.__name__
-        return_annotation = py_func.__annotations__['return']
+        return_annotation = py_func.__annotations__.get('return', 'None')
         
         if return_annotation == 'None':
             return_type = type(None)
         else:
-            return_type = getattr(self, return_annotation)
+            return_type = self._resolve_annotation(return_annotation)
 
         param_annotations = {
-            name : getattr(self, annotation)
+            name : self._resolve_annotation(annotation)
             for name, annotation in py_func.__annotations__.items()
             if name != 'return'
         }
-        func_decl = context.FunctionDecl(self, name, return_type)
+        func_decl = context.FunctionDecl(
+            self, name, return_type, py_func.__doc__
+        )
         with func_decl._init_param_defs(**param_annotations):
             # Get parameter instances from the function declaration's scope
             params = { name : getattr(self, name)

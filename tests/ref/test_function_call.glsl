@@ -1,7 +1,7 @@
 #version 450
 vec4 add(vec4 a, vec4 b)
 {
-	return (a + b);
+	return a + b;
 }
 
 layout (set = 0, binding = 0) uniform cb

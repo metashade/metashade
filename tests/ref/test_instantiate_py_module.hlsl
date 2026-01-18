@@ -8,13 +8,13 @@ cbuffer cb : register(b0)
 
 float4 py_add(float4 a, float4 b)
 {
-	float4 c = (a + b);
+	float4 c = a + b;
 	return c;
 }
 
 float4 py_mul(float4 a, float4 b)
 {
-	float4 c = (a * b);
+	float4 c = a * b;
 	return c;
 }
 

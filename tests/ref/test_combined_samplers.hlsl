@@ -28,7 +28,7 @@ PsOut main(VsOut psIn)
 	float4 f1dSample = g_t1d.Sample(g_sColor1, psIn.uv0.x);
 	float4 f3dSample = g_t3d.Sample(g_sColor1, 0.5.xxx);
 	float4 f3CubeSample = g_tCube.Sample(g_sColor1, 0.5.xxx);
-	psOut.color = (((((((rgbaSample0 * rgbaSample1) * rgbaSample2) * fShadowSample0) * fShadowSample1) * f1dSample) * f3dSample) * f3CubeSample);
+	psOut.color = ((((((rgbaSample0 * rgbaSample1) * rgbaSample2) * fShadowSample0) * fShadowSample1) * f1dSample) * f3dSample) * f3CubeSample;
 	return psOut;
 }
 

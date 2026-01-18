@@ -8,7 +8,7 @@ cbuffer cb : register(b0)
 
 void addOutParam(float4 a, float4 b, out float4 c)
 {
-	c = (a + b);
+	c = a + b;
 	return;
 }
 
