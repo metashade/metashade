@@ -234,10 +234,13 @@ class RgbaF(rtsl.RgbaF, Float4):
 
     def __getattr__(self, name):
         if name == 'rgb':
-            return self._sh._instantiate_dtype(
+            result = self._sh._instantiate_dtype(
                 RgbF,
                 '.'.join((str(self), name))
             )
+            if self._is_lvalue:
+                result._is_lvalue = True
+            return result
         else:
             return super().__getattr__(name)
 
