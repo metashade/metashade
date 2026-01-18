@@ -8,3 +8,4 @@ float2 test_swizzle(float2 v, float f)
 void main()
 {
 }
+

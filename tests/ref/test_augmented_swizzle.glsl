@@ -9,3 +9,4 @@ vec2 test_swizzle(vec2 v, float f)
 void main()
 {
 }
+
