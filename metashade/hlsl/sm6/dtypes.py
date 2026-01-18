@@ -52,73 +52,37 @@ class _RawVector(rtsl._RawVector, _MulMixin, _AnyLayoutMixin):
                 if element_ref is not None else _
         )
 
-class _RawVectorF(_RawVector):
+class _RawVectorF(_RawVector, rtsl._RawVectorF):
     _element_type = Float
 
     # TODO: auto-generate a mixin for the following methods:
     # https://github.com/metashade/metashade/issues/9
-
-    def normalize(self):
-        return self.__class__( f'normalize({self})' )
-
-    def length(self):
-        return self._sh._instantiate_dtype(
-            self.__class__._element_type,
-            f'length({self})'
-        )
-    
-    def reflect(self, rhs):
-        return self.__class__( f'reflect({self}, {rhs})' )
     
 class _RawVectorI(_RawVector):
     _element_type = Int
 
-class Float1(_RawVectorF, rtsl.RawVector1):
+class Float1(rtsl.RawVector1, _RawVectorF):
     _target_name = 'float1'
 
-class Float2(_RawVectorF, rtsl.RawVector2):
+class Float2(rtsl.RawVector2, _RawVectorF):
     _target_name = 'float2'
 
-class Float3(_RawVectorF, rtsl.RawVector3):
+class Float3(rtsl.RawVector3, _RawVectorF):
     _target_name = 'float3'
 
-class Float4(_RawVectorF, rtsl.RawVector4):
+class Float4(rtsl.RawVector4, _RawVectorF):
     _target_name = 'float4'
 
-    def __init__(self, _ = None, xyz = None, w = None):
-        if xyz is None:
-            if w is not None:
-                raise RuntimeError('Conflicting arguments')
-
-            super().__init__(_)
-        else:
-            if _ is not None:
-                raise RuntimeError('Conflicting arguments')
-
-            xyz = Float3._get_value_ref(xyz)
-            if xyz is None:
-                raise RuntimeError('"xyz" must be convertible to Float3')
-
-            if not isinstance(w, numbers.Number):
-                raise RuntimeError('"w" must be a scalar number')
-
-            expression = '{dtype}({xyz}, {w})'.format(
-                dtype = self.__class__._target_name,
-                xyz = xyz,
-                w = w
-            )
-            super().__init__(expression)
-
-class Int1(_RawVectorI, rtsl.RawVector1):
+class Int1(rtsl.RawVector1, _RawVectorI):
     _target_name = 'int1'
 
-class Int2(_RawVectorI, rtsl.RawVector2):
+class Int2(rtsl.RawVector2, _RawVectorI):
     _target_name = 'int2'
 
-class Int3(_RawVectorI, rtsl.RawVector3):
+class Int3(rtsl.RawVector3, _RawVectorI):
     _target_name = 'int3'
 
-class Int4(_RawVectorI, rtsl.RawVector4):
+class Int4(rtsl.RawVector4, _RawVectorI):
     _target_name = 'int4'
 
 class _RawMatrixF(_MulMixin, _AnyLayoutMixin, rtsl._RawMatrixF):
@@ -225,9 +189,3 @@ class RgbF(rtsl.RgbF, Float3):
 
 class RgbaF(rtsl.RgbaF, Float4):
     _swizzle_str = 'rgba'
-
-    def __init__(self, _ = None, rgb = None, a = None):
-        if ( isinstance(rgb, Float3) and not isinstance(rgb, RgbF) ):
-            raise RuntimeError('"rgb" must be convertible to RgbF')
-
-        super().__init__(_ = _, xyz = rgb, w = a)

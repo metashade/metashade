@@ -198,6 +198,19 @@ class _RawVector(clike.ArithmeticType):
     def __matmul__(self, rhs):
         return self.dot(rhs)
 
+class _RawVectorF(_RawVector):
+    def normalize(self):
+        return self.__class__( f'normalize({self})' )
+
+    def length(self):
+        return self._sh._instantiate_dtype(
+            self.__class__._element_type,
+            f'length({self})'
+        )
+    
+    def reflect(self, rhs):
+        return self.__class__( f'reflect({self}, {rhs})' )
+
 class RawVector1(_RawVector):
     _dim = 1
 
@@ -218,6 +231,30 @@ class RawVector3(_RawVector):
 
 class RawVector4(_RawVector):
     _dim = 4
+
+    def __init__(self, _ = None, xyz = None, w = None):
+        if xyz is None:
+            if w is not None:
+                raise RuntimeError('Conflicting arguments')
+            super().__init__(_)
+        else:
+            if _ is not None:
+                raise RuntimeError('Conflicting arguments')
+
+            float3_cls = self.__class__._get_related_type(3)
+            xyz_ref = float3_cls._get_value_ref(xyz)
+            if xyz_ref is None:
+                raise RuntimeError('"xyz" must be convertible to Float3')
+
+            if not isinstance(w, numbers.Number):
+                raise RuntimeError('"w" must be a scalar number')
+
+            expression = '{dtype}({xyz}, {w})'.format(
+                dtype = self.__class__._target_name,
+                xyz = xyz_ref,
+                w = w
+            )
+            super().__init__(expression)
 
 class _RawMatrixF(clike.ArithmeticType):
     @classmethod
@@ -317,6 +354,13 @@ class RgbF:
     pass
 
 class RgbaF:
+    def __init__(self, _ = None, rgb = None, a = None):
+        RgbF_cls = getattr(sys.modules[self.__class__.__module__], 'RgbF')
+        if ( isinstance(rgb, RawVector3) and not isinstance(rgb, RgbF_cls) ):
+            raise RuntimeError('"rgb" must be convertible to RgbF')
+
+        super().__init__(_ = _, xyz = rgb, w = a)
+
     def __getattr__(self, name):
         if name == 'rgb':
             # Get RgbF from the same module as the concrete class
