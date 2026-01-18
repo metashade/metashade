@@ -32,6 +32,10 @@ class BaseType:
     @property
     def _(self):
         return self
+
+    @_.setter
+    def _(self, value):
+        self._assign(value)
         
     @classmethod
     def _get_dtype(cls):

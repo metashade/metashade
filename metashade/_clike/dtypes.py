@@ -110,12 +110,6 @@ class BaseType(base.BaseType):
         self._sh._emit_indent()
         self._sh._emit( f'{self} {op}= {value_ref};\n' )
 
-    def __setattr__(self, name, value):
-        if name == '_':
-            self._assign(value)
-        else:
-            object.__setattr__(self, name, value)
-
     @classmethod
     def _get_target_type_name(cls):
         return cls._target_name
