@@ -1,0 +1,187 @@
+# Metashade
+
+> Metashade is a Python-based embedded domain-specific language (EDSL) for GPU shader generation that uses Python itself as a metaprogramming language.
+
+**Elevator Pitch:** Metashade is fundamentally *PyTorch Eager Mode for shader generation*. It uses JAX-style tracing to capture operations at runtime, but instead of dispatching kernels or building a graph, it immediately streams out GLSL/HLSL source code. This exploits the structural isomorphism between Python expressions and C-like shader languages to avoid the complexity of a compiler stack entirely.
+
+## What is Metashade?
+
+Metashade is an experimental Python library for generating GPU shader code. Unlike popular alternatives (NVIDIA Warp, Numba, Taichi, Triton) that parse Python source to build an AST, Metashade generates shader code **during normal Python execution**, line by line, using runtime tracing with proxy objects.
+
+- **Repository:** https://github.com/metashade/metashade
+- **Demo Project:** https://github.com/metashade/metashade-glTFSample
+- **Version:** 0.5.1
+- **License:** Apache 2.0
+- **Author:** Pavlo Penenko
+
+## Architecture: Two Key Design Decisions
+
+### Level 1: Input Mechanism — "Tracing over Introspection"
+
+**The Concept:** Metashade captures the programmer's intent by *executing* the Python code with proxy objects (via operator overloading), rather than *parsing* the source text.
+
+| Approach | How it works | Examples |
+|----------|--------------|----------|
+| **Runtime Tracing** (Metashade) | Relies on the Python interpreter to handle control flow and expression evaluation | JAX, PyTorch |
+| **AST Introspection** (Competitors) | Parses Python source/bytecode to build a custom Abstract Syntax Tree before processing | NVIDIA Warp, Numba, Taichi, Triton |
+
+**Analogy:** Metashade works like JAX or PyTorch—it "runs" your code to see what it does, rather than reading the source file to guess what it means.
+
+### Level 2: Output Mechanism — "Immediate Mode over Retained Mode"
+
+**The Concept:** As the trace executes, Metashade emits target code (GLSL/HLSL strings) *eagerly*, line-by-line. There is no intermediate representation (IR) or computation graph built for later compilation.
+
+| Approach | How it works | Examples |
+|----------|--------------|----------|
+| **Immediate Mode** (Metashade) | Each Python operation (e.g., `a + b`) triggers immediate emission of a corresponding shader string | — |
+| **Retained Mode** (Standard Tracers) | Trace builds an intermediate graph (jaxpr, FX Graph), then optimized and compiled in a separate pass | JAX, PyTorch FX |
+
+**Analogy:** Metashade is to code generation what PyTorch Eager Mode is to execution—it processes operations logically and sequentially in real-time, without building a "computation graph" first.
+
+**Important clarification:** While there's no IR for the *output*, the generator does maintain a **semantic model** of the shader being generated. This model tracks:
+- Currently declared functions, structs, and uniforms
+- Local variables in scope (with C-like scoping rules)
+- A context stack modeling nested scopes (functions, if/else blocks, loops)
+- Type information for semantic checking
+
+This is what enables features like detecting use of undeclared variables, preventing type mismatches, and enforcing proper scoping—all at generation time.
+
+## Key Differentiators
+
+- **Pure Python:** Unlike Triton or Warp, Metashade requires no C++/LLVM backend. It is a lightweight string generator.
+- **Full Ecosystem Access:** Because we execute runtime Python, you can use standard libraries (file I/O, numpy, pdb debuggers) inside the shader generation logic—something AST-based compilers strictly forbid.
+- **No Compiler Stack:** Python's interpreter IS the code generator. No separate compilation phase.
+- **Readable Output:** Generates human-readable source code with meaningful names and comments, not binary IR.
+
+## Target Languages
+
+- **HLSL:** Shader Model 6.x (vertex, pixel, compute shaders)
+- **GLSL:** Fragment shaders (work in progress)
+- **Future targets:** MSL (Metal), WGSL, OSL, MaterialX
+
+## How It Works: Python Techniques
+
+Metashade uses several Python mechanisms creatively:
+
+### 1. Generator Object
+All code generation goes through a "generator" object (conventionally named `sh`):
+```python
+from metashade.hlsl.sm6 import ps_6_0
+
+with open('shader.hlsl', 'w') as f:
+    sh = ps_6_0.Generator(f)
+    # Generate shader code...
+```
+
+### 2. `__setattr__` / `__getattr__`: Capturing Variable Names
+Variables are expressed as attributes on the generator:
+```python
+sh.color = sh.RgbaF(1.0, 0.0, 0.0, 1.0)
+# Generates: float4 color = float4(1.0, 0.0, 0.0, 1.0);
+```
+The `__setattr__` hook captures the name `"color"` without introspection.
+
+### 3. Operator Overloading: Building Expressions
+```python
+sh.NdotL = sh.N @ sh.L  # @ becomes dot()
+# Generates: float NdotL = dot(N, L);
+```
+
+### 4. Context Managers (`with`): Emulating C-like Scopes
+```python
+with sh.if_(sh.condition):
+    sh.result = sh.valueA
+with sh.else_():
+    sh.result = sh.valueB
+```
+Generates proper `if`/`else` blocks with braces and scoping.
+
+### 5. Design-Time vs Run-Time Conditionals
+- **Python `if`/`else`:** Design-time logic (like `#ifdef` or `if constexpr`)
+- **`with sh.if_()`:** Generates run-time conditionals in target code
+
+## Quick Example
+
+Python code:
+```python
+@export
+def D_Ggx(sh, NdotH: 'Float', fAlphaRoughness: 'Float') -> 'Float':
+    sh.fASqr = fAlphaRoughness * fAlphaRoughness
+    sh.fF = (NdotH * sh.fASqr - NdotH) * NdotH + sh.Float(1.0)
+    sh.return_((sh.fASqr / (sh.Float(math.pi) * sh.fF * sh.fF)).saturate())
+```
+
+Generated HLSL:
+```hlsl
+float D_Ggx(float NdotH, float fAlphaRoughness)
+{
+    float fASqr = (fAlphaRoughness * fAlphaRoughness);
+    float fF = ((((NdotH * fASqr) - NdotH) * NdotH) + 1.0);
+    return saturate((fASqr / ((3.141592653589793 * fF) * fF)));
+}
+```
+
+## Comparison with Similar Projects
+
+| Feature | Warp/Numba/Taichi/Triton | Metashade |
+|---------|--------------------------|-----------|
+| Input mechanism | AST introspection | Runtime tracing (like JAX/PyTorch) |
+| Output mechanism | Retained mode (build graph, then compile) | Immediate mode (stream code directly) |
+| Backend | C++/LLVM compiler stack | Pure Python string generation |
+| Python subset | Limited (must map to target) | Full (at design time) |
+| Debuggable | Partially | Fully (standard Python debugging, pdb) |
+| Output | Binary/IR | Readable source code |
+| Custom runtime | Required | Not required |
+| Shader stages | Compute only | Any (vertex, pixel, etc.) |
+| Ecosystem access | Restricted inside kernels | Full (file I/O, numpy, any library) |
+
+## Use Cases
+
+1. **Replacing C Preprocessor ubershaders** - Generate shader permutations with Python logic instead of `#ifdef`
+2. **Cross-platform shaders** - Same Python code generates HLSL, GLSL, etc.
+3. **Asset-driven generation** - Load glTF, USD, or other assets and generate specialized shaders
+4. **Custom abstractions** - Build domain-specific shader libraries in pure Python
+5. **Strong typing** - Semantic types (Point3f vs Vector3f vs RgbF) catch errors at generation time
+
+## The Problem Metashade Solves
+
+GPU programming involves many languages (HLSL, GLSL, MSL, WGSL, CUDA, OSL, MDL) with challenges:
+- **Permutation explosion:** Real-time shaders need hundreds of variants
+- **No code reuse:** Common algorithms reimplemented per language/app
+- **Low abstraction:** No "STL for shaders"
+- **Portability pain:** Not just languages, but application-specific integration
+
+Existing solutions have limitations:
+- **C Preprocessor:** Primitive text substitution, can't debug, can't interact with files
+- **Templates/Generics:** Vary wildly between languages, can't debug
+- **Transpilers (SPIRV-Cross):** Work on final shaders, lose comments/structure
+- **AST-based EDSLs:** Support only Python subset, provide own runtime
+
+Metashade's approach: Use Python as a full-powered metaprogramming language that generates readable, target-specific code.
+
+## Installation
+
+Clone the repository and install in development mode:
+```bash
+git clone https://github.com/metashade/metashade.git
+pip install -e metashade
+```
+
+## Related Concepts
+
+- Embedded Domain-Specific Languages (EDSLs)
+- GPU Shader Programming
+- Code Generation / Metaprogramming
+- Runtime Tracing (like JAX, PyTorch)
+- Immediate Mode vs Retained Mode (like PyTorch Eager vs Graph Mode)
+- HLSL / GLSL / MSL / WGSL
+- Graphics Pipeline (Vertex, Pixel/Fragment, Compute Shaders)
+- Material Systems (PBR, glTF)
+- Ubershaders and Shader Permutations
+- Operator Overloading / Proxy Objects
+
+## Links
+
+- [Presentation Video (ASWF Open Source Days 2024)](https://youtu.be/yC8VMLXYs5U)
+- [Presentation Slides](https://docs.google.com/presentation/d/e/2PACX-1vQtYIwXIkMnVC6TzWTKPAtZIA6_xeUCQc8Mvyziu0qy7HDUduz_onsJ5TabxTuuVQ/pub)
+- [glTF Demo Repository](https://github.com/metashade/metashade-glTFSample)
