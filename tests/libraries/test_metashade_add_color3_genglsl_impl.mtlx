@@ -1,4 +1,0 @@
-<?xml version="1.0"?>
-<materialx version="1.39">
-  <implementation name="IM_metashade_add_color3_genglsl" nodedef="ND_metashade_add_color3" target="genglsl" file="test_metashade_add_color3_genglsl_impl.glsl" function="metashade_add_color3" doc="Metashade-generated node that adds two color3 values" />
-</materialx>

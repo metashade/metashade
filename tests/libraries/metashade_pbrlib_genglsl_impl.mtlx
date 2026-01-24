@@ -1,4 +1,0 @@
-<?xml version="1.0"?>
-<materialx version="1.39">
-  <implementation name="IM_metashade_generalized_schlick_bsdf_genglsl" nodedef="ND_generalized_schlick_bsdf" target="genglsl" file="metashade_pbrlib_genglsl_impl.glsl" function="mx_metashade_generalized_schlick_bsdf" doc="Metashade override of generalized_schlick_bsdf" />
-</materialx>
