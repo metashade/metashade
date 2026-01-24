@@ -1,6 +1,0 @@
-[submodule "metashade"]
-	path = metashade
-	url = https://github.com/metashade/metashade.git
-[submodule "MaterialX"]
-	path = MaterialX
-	url = https://github.com/metashade/MaterialX.git
