@@ -13,3 +13,12 @@
 # limitations under the License.
 
 __version__ = "0.1.0"
+
+# Check for MaterialX dependency
+try:
+    import MaterialX as _mx
+except ImportError as e:
+    raise ImportError(
+        "The 'metashade.mtlx' module requires MaterialX. "
+        "Install with: pip install metashade[mtlx]"
+    ) from e
