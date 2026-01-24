@@ -23,7 +23,7 @@ import MaterialX as mx
 from metashade.glsl import frag
 from metashade._rtsl.qualifiers import Direction
 
-from metashade_mtlx import dtypes
+from metashade.mtlx import dtypes
 
 class GeneratorContext:
     def __init__(self, base_name, out_dir, impl_only: bool = False):

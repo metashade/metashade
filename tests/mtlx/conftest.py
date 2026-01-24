@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from pathlib import Path
-from metashade_mtlx.util import testing
+from metashade.mtlx.util import testing
 
 # Set up test context with this directory
 test_dir = Path(__file__).parent

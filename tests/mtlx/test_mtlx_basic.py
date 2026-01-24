@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from metashade_mtlx.util.testing import GlslTestContext
+from metashade.mtlx.util.testing import GlslTestContext
 
 class TestBasic:
     def test_dummy_purple(self):

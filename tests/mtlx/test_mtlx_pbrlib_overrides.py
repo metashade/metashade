@@ -19,8 +19,8 @@ These tests generate <implementation> elements that override existing
 MaterialX nodedefs with Metashade-generated shader code.
 """
 
-from metashade_mtlx.util.testing import GlslTestContext
-from metashade_mtlx.pbrlib import generalized_schlick_bsdf
+from metashade.mtlx.util.testing import GlslTestContext
+from metashade.mtlx.pbrlib import generalized_schlick_bsdf
 
 
 class TestPbrlibOverrides:
