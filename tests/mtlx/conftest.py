@@ -13,7 +13,12 @@
 # limitations under the License.
 
 from pathlib import Path
-from metashade.mtlx.util import testing
+import pytest
+
+# Skip all tests in this directory if MaterialX is not installed
+mx = pytest.importorskip("MaterialX")
+if mx:
+    from metashade.mtlx.util import testing
 
 # Set up test context with this directory
 test_dir = Path(__file__).parent

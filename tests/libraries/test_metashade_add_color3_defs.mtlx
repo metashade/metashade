@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<materialx version="1.39">
+  <nodedef name="ND_metashade_add_color3" node="metashade_add_color3" doc="Metashade-generated node that adds two color3 values">
+    <input name="in1" type="color3" doc="Input parameter in1" />
+    <input name="in2" type="color3" doc="Input parameter in2" />
+    <output name="result" type="color3" doc="Output parameter result" />
+  </nodedef>
+</materialx>
