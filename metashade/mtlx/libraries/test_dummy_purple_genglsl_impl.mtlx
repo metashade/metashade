@@ -1,0 +1,4 @@
+<?xml version="1.0"?>
+<materialx version="1.39">
+  <implementation name="IM_dummy_purple_genglsl" nodedef="ND_dummy_purple" target="genglsl" file="test_dummy_purple_genglsl_impl.glsl" function="dummy_purple" doc="Metashade-generated dummy node that returns a purple color" />
+</materialx>
