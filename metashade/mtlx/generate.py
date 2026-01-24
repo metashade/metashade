@@ -12,10 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import argparse
-import os
-from pathlib import Path
-import shutil
 import sys
 import abc
 
@@ -143,8 +139,7 @@ class GeneratorContext:
         if nodedef is None:
             impl.setNodeDefString(nodedef_name)  # Reference existing by name
         else:
-            impl.setNodeDef(nodedef)
-  # Reference newly created nodedef
+            impl.setNodeDef(nodedef)  # Reference newly created nodedef
         impl.setTarget(self._mx_target_name)
         impl.setFile(self._src_file_name)
         impl.setFunction(func_name)
