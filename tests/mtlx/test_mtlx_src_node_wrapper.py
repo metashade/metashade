@@ -28,7 +28,6 @@ mx = pytest.importorskip("MaterialX")
 
 from metashade.mtlx.mtlx_reflection import (
     discover_acquirable_nodes,
-    find_node_by_function,
     emit_wrapper_function,
     add_wrapper_impl,
     AcquireSrcCodeNode,
@@ -48,22 +47,28 @@ class TestSrcNodeReflection:
         return doc
     
     @pytest.fixture
-    def all_nodes(self, stdlib_doc: mx.Document) -> list[AcquireSrcCodeNode]:
+    def all_nodes(self, stdlib_doc: mx.Document) -> dict[str, AcquireSrcCodeNode]:
         """Discover all acquirable source-code nodes."""
         return discover_acquirable_nodes(stdlib_doc, target="genglsl")
     
-    def test_discover_nodes_with_signatures(self, all_nodes: list[AcquireSrcCodeNode]):
+    def test_discover_nodes_with_signatures(
+        self, all_nodes: dict[str, AcquireSrcCodeNode]
+    ):
         """Verify nodes are discovered with their full signatures."""
-        assert len(all_nodes) > 50, f"Expected >50 nodes, found {len(all_nodes)}"
+        assert len(all_nodes) > 50, (
+            f"Expected >50 nodes, found {len(all_nodes)}"
+        )
         
         # Each node should have outputs
-        for node in all_nodes:
+        for node in all_nodes.values():
             assert len(node.outputs) > 0, f"Node {node.impl_name} has no outputs"
     
-    def test_find_fractal3d_float(self, all_nodes: list[AcquireSrcCodeNode]):
-        """Verify fractal3d_float can be found."""
-        node = find_node_by_function(all_nodes, "mx_fractal3d_float")
-        assert node is not None, "Could not find mx_fractal3d_float"
+    def test_find_fractal3d_float(
+        self, all_nodes: dict[str, AcquireSrcCodeNode]
+    ):
+        """Verify fractal3d_float can be found by nodedef name."""
+        node = all_nodes.get("ND_fractal3d_float")
+        assert node is not None, "Could not find ND_fractal3d_float"
 
 
 class TestSrcNodeWrapper:
@@ -81,13 +86,15 @@ class TestSrcNodeWrapper:
     def fractal3d_node(self, stdlib_doc: mx.Document) -> AcquireSrcCodeNode:
         """Get the fractal3d_float node."""
         nodes = discover_acquirable_nodes(stdlib_doc, target="genglsl")
-        node = find_node_by_function(nodes, "mx_fractal3d_float")
+        node = nodes.get("ND_fractal3d_float")
         assert node is not None
         return node
     
     def test_fractal3d_wrapper(self, fractal3d_node: AcquireSrcCodeNode):
         """Generate wrapper for fractal3d_float using Metashade generator."""
-        ctx = GlslTestContext(base_name="mx_fractal3d_float_metashade", impl_only=True)
+        ctx = GlslTestContext(
+            base_name="mx_fractal3d_float_metashade", impl_only=True
+        )
         
         with ctx as test_ctx:
             sh = test_ctx._sh
@@ -101,7 +108,9 @@ class TestSrcNodeWrapper:
                 mx_doc_string="Metashade wrapper for fractal3d_float"
             )
     
-    def test_add_wrapper_impl_pymaterialx(self, fractal3d_node: AcquireSrcCodeNode):
+    def test_add_wrapper_impl_pymaterialx(
+        self, fractal3d_node: AcquireSrcCodeNode
+    ):
         """Verify add_wrapper_impl creates proper PyMaterialX implementation."""
         doc = mx.createDocument()
         

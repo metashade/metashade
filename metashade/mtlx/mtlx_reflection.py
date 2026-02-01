@@ -52,7 +52,9 @@ class AcquireSrcCodeNode:
     inputs: list[SrcCodeNodeInput]
     outputs: list[SrcCodeNodeOutput]
 
-def get_nodedef_signature(nodedef) -> tuple[list[SrcCodeNodeInput], list[SrcCodeNodeOutput]]:
+def get_nodedef_signature(nodedef) -> tuple[
+    list[SrcCodeNodeInput], list[SrcCodeNodeOutput]
+]:
     """
     Extract typed inputs and outputs from a MaterialX NodeDef.
     
@@ -79,7 +81,9 @@ def get_nodedef_signature(nodedef) -> tuple[list[SrcCodeNodeInput], list[SrcCode
     
     return inputs, outputs
 
-def discover_acquirable_nodes(doc, target: str = "genglsl") -> list[AcquireSrcCodeNode]:
+def discover_acquirable_nodes(
+    doc, target: str = "genglsl"
+) -> dict[str, AcquireSrcCodeNode]:
     """
     Discover all source-code nodes for a given target that can be acquired.
     
@@ -93,9 +97,9 @@ def discover_acquirable_nodes(doc, target: str = "genglsl") -> list[AcquireSrcCo
         target: The codegen target (default: "genglsl")
         
     Returns:
-        List of AcquireSrcCodeNode objects with full signature info
+        Dict mapping nodedef_name -> AcquireSrcCodeNode
     """
-    nodes = []
+    nodes = {}
     
     for impl in doc.getImplementations():
         if impl.getTarget() != target:
@@ -112,25 +116,20 @@ def discover_acquirable_nodes(doc, target: str = "genglsl") -> list[AcquireSrcCo
             continue
         
         inputs, outputs = get_nodedef_signature(nodedef)
+        nodedef_name = nodedef.getName()
         
-        nodes.append(AcquireSrcCodeNode(
+        nodes[nodedef_name] = AcquireSrcCodeNode(
             impl_name=impl.getName(),
-            nodedef_name=nodedef.getName(),
+            nodedef_name=nodedef_name,
             source_file=file_attr,
             function_name=func_attr,
             target=target,
             inputs=inputs,
             outputs=outputs
-        ))
+        )
     
     return nodes
 
-def find_node_by_function(nodes: list[AcquireSrcCodeNode], function_name: str) -> Optional[AcquireSrcCodeNode]:
-    """Find a node by its function name."""
-    for node in nodes:
-        if node.function_name == function_name:
-            return node
-    return None
 
 def emit_extern_function(sh, node: AcquireSrcCodeNode):
     """
