@@ -38,3 +38,47 @@ def metashade_to_mtlx(dtype_factory):
         )
     
     return type_map[dtype_name]
+
+
+# Map MaterialX types to Metashade dtype class names
+# This is the reverse of metashade_to_mtlx
+MTLX_TO_METASHADE_NAME = {
+    'float': 'Float',
+    'integer': 'Int',
+    'boolean': None,  # No direct Metashade equivalent yet
+    'vector2': 'Float2',
+    'vector3': 'Float3',
+    'vector4': 'Float4',
+    'color3': 'RgbF',
+    'color4': 'RgbaF',
+    'matrix33': 'Float3x3',
+    'matrix44': 'Float4x4',
+    'string': None,  # Uniforms, not in function signature
+    'filename': None,  # Texture references
+    'integerarray': None,  # Arrays need special handling
+    'floatarray': None,
+}
+
+
+def mtlx_to_target_type(mtlx_type: str, target_dtypes_module) -> str | None:
+    """
+    Convert a MaterialX type to a target language type name.
+    
+    Args:
+        mtlx_type: MaterialX type string (e.g., 'float', 'vector3', 'color3')
+        target_dtypes_module: The target's dtypes module (e.g., metashade.glsl.dtypes)
+        
+    Returns:
+        Target language type name (e.g., 'float', 'vec3') or None if not mappable
+    """
+    metashade_name = MTLX_TO_METASHADE_NAME.get(mtlx_type)
+    if metashade_name is None:
+        return None
+    
+    dtype_class = getattr(target_dtypes_module, metashade_name, None)
+    if dtype_class is None:
+        return None
+    
+    # Get the target-specific type name
+    return getattr(dtype_class, '_target_name', metashade_name.lower())
+

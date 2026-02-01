@@ -104,8 +104,10 @@ class TestSrcNodeWrapper:
     
     def test_fractal3d_wrapper(self, fractal3d_node: AcquireSrcCodeNode):
         """Generate wrapper for fractal3d_float and compare to reference."""
+        from metashade.glsl import dtypes as glsl_dtypes
+        
         # Generate wrapper content
-        glsl_source = generate_wrapper_source(fractal3d_node)
+        glsl_source = generate_wrapper_source(fractal3d_node, glsl_dtypes)
         mtlx_impl = generate_wrapper_mtlx_impl(fractal3d_node)
         
         # Create combined MTLX document
@@ -126,3 +128,4 @@ class TestSrcNodeWrapper:
         if _ref_differ is not None:
             _ref_differ(glsl_path)
             _ref_differ(mtlx_path)
+

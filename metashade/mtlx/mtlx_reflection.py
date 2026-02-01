@@ -22,6 +22,7 @@ using PyMaterialX, enabling Metashade to "acquire" existing nodes.
 from dataclasses import dataclass
 from typing import Optional
 
+from metashade.mtlx.dtypes import mtlx_to_target_type
 
 @dataclass
 class SrcCodeNodeInput:
@@ -30,13 +31,11 @@ class SrcCodeNodeInput:
     mtlx_type: str
     default_value: Optional[str] = None
 
-
 @dataclass
 class SrcCodeNodeOutput:
     """Represents an output parameter of a source-code node."""
     name: str
     mtlx_type: str
-
 
 @dataclass
 class AcquireSrcCodeNode:
@@ -52,7 +51,6 @@ class AcquireSrcCodeNode:
     target: str              # e.g., "genglsl"
     inputs: list[SrcCodeNodeInput]
     outputs: list[SrcCodeNodeOutput]
-
 
 def get_nodedef_signature(nodedef) -> tuple[list[SrcCodeNodeInput], list[SrcCodeNodeOutput]]:
     """
@@ -80,7 +78,6 @@ def get_nodedef_signature(nodedef) -> tuple[list[SrcCodeNodeInput], list[SrcCode
         ))
     
     return inputs, outputs
-
 
 def discover_acquirable_nodes(doc, target: str = "genglsl") -> list[AcquireSrcCodeNode]:
     """
@@ -128,7 +125,6 @@ def discover_acquirable_nodes(doc, target: str = "genglsl") -> list[AcquireSrcCo
     
     return nodes
 
-
 def find_node_by_function(nodes: list[AcquireSrcCodeNode], function_name: str) -> Optional[AcquireSrcCodeNode]:
     """Find a node by its function name."""
     for node in nodes:
@@ -136,44 +132,20 @@ def find_node_by_function(nodes: list[AcquireSrcCodeNode], function_name: str) -
             return node
     return None
 
-
-# MaterialX type to GLSL type mapping
-MTLX_TO_GLSL = {
-    "float": "float",
-    "integer": "int",
-    "boolean": "bool",
-    "vector2": "vec2",
-    "vector3": "vec3",
-    "vector4": "vec4",
-    "color3": "vec3",
-    "color4": "vec4",
-    "matrix33": "mat3",
-    "matrix44": "mat4",
-    "string": None,  # Uniforms, not in function signature
-    "filename": None,  # Texture references
-    "integerarray": None,  # Arrays need special handling
-    "floatarray": None,
-}
-
-
-def mtlx_type_to_glsl(mtlx_type: str) -> Optional[str]:
-    """Convert a MaterialX type to GLSL type."""
-    return MTLX_TO_GLSL.get(mtlx_type)
-
-
-def generate_wrapper_source(node: AcquireSrcCodeNode, wrapper_suffix: str = "_metashade") -> str:
+def generate_wrapper_source(node: AcquireSrcCodeNode, target_dtypes_module, wrapper_suffix: str = "_metashade") -> str:
     """
-    Generate wrapper GLSL source code for a source-code node.
+    Generate wrapper source code for a source-code node.
     
     The wrapper includes the original file and defines a new function
     with the given suffix that simply calls the original.
     
     Args:
         node: The node to wrap
+        target_dtypes_module: The target's dtypes module (e.g., metashade.glsl.dtypes)
         wrapper_suffix: Suffix for the wrapper function name (default: "_metashade")
         
     Returns:
-        GLSL source code string
+        Source code string
     """
     wrapper_func_name = f"{node.function_name}{wrapper_suffix}"
     
@@ -182,18 +154,18 @@ def generate_wrapper_source(node: AcquireSrcCodeNode, wrapper_suffix: str = "_me
     call_args = []
     
     for inp in node.inputs:
-        glsl_type = mtlx_type_to_glsl(inp.mtlx_type)
-        if glsl_type is None:
+        target_type = mtlx_to_target_type(inp.mtlx_type, target_dtypes_module)
+        if target_type is None:
             # Skip uniform/texture types for now
             continue
-        params.append(f"{glsl_type} {inp.name}")
+        params.append(f"{target_type} {inp.name}")
         call_args.append(inp.name)
     
     for out in node.outputs:
-        glsl_type = mtlx_type_to_glsl(out.mtlx_type)
-        if glsl_type is None:
+        target_type = mtlx_to_target_type(out.mtlx_type, target_dtypes_module)
+        if target_type is None:
             continue
-        params.append(f"out {glsl_type} {out.name}")
+        params.append(f"out {target_type} {out.name}")
         call_args.append(out.name)
     
     params_str = ", ".join(params)
@@ -208,7 +180,6 @@ void {wrapper_func_name}({params_str})
 }}
 '''
     return source
-
 
 def generate_wrapper_mtlx_impl(node: AcquireSrcCodeNode, wrapper_suffix: str = "_metashade") -> str:
     """
@@ -226,4 +197,3 @@ def generate_wrapper_mtlx_impl(node: AcquireSrcCodeNode, wrapper_suffix: str = "
     wrapper_impl_name = f"{node.impl_name}{wrapper_suffix}"
     
     return f'  <implementation name="{wrapper_impl_name}" nodedef="{node.nodedef_name}" file="{wrapper_file}" function="{wrapper_func_name}" target="{node.target}" />'
-
