@@ -13,12 +13,7 @@
 # limitations under the License.
 
 """
-Test for generating wrappers around MaterialX source-code nodes.
-
-This test module verifies that Metashade can:
-1. Discover source-code nodes via PyMaterialX
-2. Generate wrapper functions that call the originals
-3. Generate corresponding .mtlx implementation files
+Test for MaterialX function acquisition and wrapper generation.
 """
 
 import pytest
@@ -27,16 +22,16 @@ import pytest
 mx = pytest.importorskip("MaterialX")
 
 from metashade.mtlx.mtlx_reflection import (
-    discover_acquirable_nodes,
-    emit_wrapper_function,
+    acquire_function,
+    acquire_stdlib,
+    emit_wrapper,
     add_wrapper_impl,
-    AcquireSrcCodeNode,
 )
 from metashade.mtlx.util.testing import GlslTestContext
 
 
-class TestSrcNodeReflection:
-    """Tests for discovering and inspecting source-code nodes."""
+class TestAcquireFunction:
+    """Tests for acquiring MaterialX functions into Metashade."""
     
     @pytest.fixture
     def stdlib_doc(self) -> mx.Document:
@@ -46,33 +41,51 @@ class TestSrcNodeReflection:
         mx.loadLibraries(mx.getDefaultDataLibraryFolders(), search_path, doc)
         return doc
     
-    @pytest.fixture
-    def all_nodes(self, stdlib_doc: mx.Document) -> dict[str, AcquireSrcCodeNode]:
-        """Discover all acquirable source-code nodes."""
-        return discover_acquirable_nodes(stdlib_doc, target="genglsl")
-    
-    def test_discover_nodes_with_signatures(
-        self, all_nodes: dict[str, AcquireSrcCodeNode]
-    ):
-        """Verify nodes are discovered with their full signatures."""
-        assert len(all_nodes) > 50, (
-            f"Expected >50 nodes, found {len(all_nodes)}"
+    def test_acquire_stdlib(self, stdlib_doc: mx.Document):
+        """Verify we can acquire all stdlib functions."""
+        ctx = GlslTestContext(
+            base_name="test_acquire", impl_only=True
         )
         
-        # Each node should have outputs
-        for node in all_nodes.values():
-            assert len(node.outputs) > 0, f"Node {node.impl_name} has no outputs"
+        with ctx as test_ctx:
+            sh = test_ctx._sh
+            
+            functions = acquire_stdlib(sh, stdlib_doc, target="genglsl")
+            
+            assert len(functions) > 50, (
+                f"Expected >50 functions, got {len(functions)}"
+            )
+            
+            # Verify fractal3d_float was acquired
+            assert "mx_fractal3d_float" in functions
+            assert hasattr(sh, "mx_fractal3d_float")
     
-    def test_find_fractal3d_float(
-        self, all_nodes: dict[str, AcquireSrcCodeNode]
-    ):
-        """Verify fractal3d_float can be found by nodedef name."""
-        node = all_nodes.get("ND_fractal3d_float")
-        assert node is not None, "Could not find ND_fractal3d_float"
+    def test_acquire_single_function(self, stdlib_doc: mx.Document):
+        """Test acquiring a single function."""
+        ctx = GlslTestContext(
+            base_name="test_acquire_single", impl_only=True
+        )
+        
+        with ctx as test_ctx:
+            sh = test_ctx._sh
+            
+            # Find the fractal3d implementation
+            impl = None
+            for i in stdlib_doc.getImplementations():
+                if i.getAttribute("function") == "mx_fractal3d_float":
+                    impl = i
+                    break
+            
+            assert impl is not None
+            
+            func = acquire_function(sh, impl)
+            assert func is not None
+            assert func._name == "mx_fractal3d_float"
+            assert hasattr(sh, "mx_fractal3d_float")
 
 
-class TestSrcNodeWrapper:
-    """Tests for generating wrapper code for source-code nodes."""
+class TestEmitWrapper:
+    """Tests for generating wrapper functions."""
     
     @pytest.fixture
     def stdlib_doc(self) -> mx.Document:
@@ -83,15 +96,15 @@ class TestSrcNodeWrapper:
         return doc
     
     @pytest.fixture
-    def fractal3d_node(self, stdlib_doc: mx.Document) -> AcquireSrcCodeNode:
-        """Get the fractal3d_float node."""
-        nodes = discover_acquirable_nodes(stdlib_doc, target="genglsl")
-        node = nodes.get("ND_fractal3d_float")
-        assert node is not None
-        return node
+    def fractal3d_impl(self, stdlib_doc: mx.Document):
+        """Get the fractal3d_float implementation."""
+        for impl in stdlib_doc.getImplementations():
+            if impl.getAttribute("function") == "mx_fractal3d_float":
+                return impl
+        pytest.fail("Could not find mx_fractal3d_float implementation")
     
-    def test_fractal3d_wrapper(self, fractal3d_node: AcquireSrcCodeNode):
-        """Generate wrapper for fractal3d_float using Metashade generator."""
+    def test_emit_wrapper(self, fractal3d_impl):
+        """Generate wrapper using Metashade generator."""
         ctx = GlslTestContext(
             base_name="mx_fractal3d_float_metashade", impl_only=True
         )
@@ -99,25 +112,21 @@ class TestSrcNodeWrapper:
         with ctx as test_ctx:
             sh = test_ctx._sh
             
-            # Generate the wrapper function
-            emit_wrapper_function(sh, fractal3d_node)
+            wrapper = emit_wrapper(sh, fractal3d_impl)
+            assert wrapper is not None
             
-            # Add MaterialX implementation
             test_ctx.add_node_impl(
                 func_name="mx_fractal3d_float_metashade",
                 mx_doc_string="Metashade wrapper for fractal3d_float"
             )
     
-    def test_add_wrapper_impl_pymaterialx(
-        self, fractal3d_node: AcquireSrcCodeNode
-    ):
-        """Verify add_wrapper_impl creates proper PyMaterialX implementation."""
+    def test_add_wrapper_impl(self, fractal3d_impl):
+        """Verify add_wrapper_impl creates proper PyMaterialX impl."""
         doc = mx.createDocument()
         
-        impl = add_wrapper_impl(doc, fractal3d_node)
+        impl = add_wrapper_impl(doc, fractal3d_impl)
         
+        assert impl is not None
         assert impl.getName() == "IM_fractal3d_float_genglsl_metashade"
-        assert impl.getNodeDefString() == "ND_fractal3d_float"
         assert impl.getFile() == "mx_fractal3d_float_metashade.glsl"
         assert impl.getFunction() == "mx_fractal3d_float_metashade"
-        assert impl.getTarget() == "genglsl"

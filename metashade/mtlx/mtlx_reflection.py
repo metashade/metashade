@@ -13,216 +13,190 @@
 # limitations under the License.
 
 """
-MaterialX reflection utilities for discovering and wrapping source-code nodes.
+MaterialX function acquisition for Metashade.
 
-This module provides tools to inspect MaterialX NodeDefs and Implementations
-using PyMaterialX, enabling Metashade to "acquire" existing nodes.
+This module enables Metashade to acquire existing MaterialX source-code
+functions, making them callable from Metashade-generated code.
 """
 
-from dataclasses import dataclass
-from typing import Optional
-
 from metashade.mtlx.dtypes import mtlx_to_metashade_dtype
+from metashade._clike.context import Function, _ParamDef
+from metashade._rtsl.qualifiers import ParamQualifiers, Direction
 
-@dataclass
-class SrcCodeNodeInput:
-    """Represents an input parameter of a source-code node."""
-    name: str
-    mtlx_type: str
-    default_value: Optional[str] = None
 
-@dataclass
-class SrcCodeNodeOutput:
-    """Represents an output parameter of a source-code node."""
-    name: str
-    mtlx_type: str
-
-@dataclass
-class AcquireSrcCodeNode:
+def acquire_function(sh, impl):
     """
-    Represents a MaterialX source-code node that can be wrapped by Metashade.
+    Acquire a MaterialX function into the generator.
     
-    Contains all information needed to generate a wrapper function.
-    """
-    impl_name: str           # e.g., "IM_fractal3d_float_genglsl"
-    nodedef_name: str        # e.g., "ND_fractal3d_float"
-    source_file: str         # e.g., "mx_fractal3d_float.glsl"
-    function_name: str       # e.g., "mx_fractal3d_float"
-    target: str              # e.g., "genglsl"
-    inputs: list[SrcCodeNodeInput]
-    outputs: list[SrcCodeNodeOutput]
-
-def get_nodedef_signature(nodedef) -> tuple[
-    list[SrcCodeNodeInput], list[SrcCodeNodeOutput]
-]:
-    """
-    Extract typed inputs and outputs from a MaterialX NodeDef.
+    Creates a callable Function object from a MaterialX Implementation,
+    without emitting any code. The function can then be called to
+    generate GLSL/HLSL calls.
     
     Args:
-        nodedef: A MaterialX NodeDef object
+        sh: The Metashade generator instance
+        impl: A PyMaterialX Implementation object
         
     Returns:
-        Tuple of (inputs, outputs) lists
+        The callable Function object, or None if not acquirable
     """
-    inputs = []
+    file_attr = impl.getAttribute("file")
+    func_attr = impl.getAttribute("function")
+    
+    if not (file_attr and func_attr):
+        return None  # Not a source-code implementation
+    
+    nodedef = impl.getNodeDef()
+    if nodedef is None:
+        return None
+    
+    # Build param_defs in order (inputs then outputs)
+    param_defs = {}
+    
     for inp in nodedef.getInputs():
-        inputs.append(SrcCodeNodeInput(
-            name=inp.getName(),
-            mtlx_type=inp.getType(),
-            default_value=inp.getValueString() if inp.hasValueString() else None
-        ))
+        dtype = mtlx_to_metashade_dtype(inp.getType(), sh)
+        if dtype is None:
+            continue
+        param_defs[inp.getName()] = _ParamDef(
+            dtype_factory=dtype,
+            qualifiers=[]
+        )
     
-    outputs = []
     for out in nodedef.getOutputs():
-        outputs.append(SrcCodeNodeOutput(
-            name=out.getName(),
-            mtlx_type=out.getType()
-        ))
+        dtype = mtlx_to_metashade_dtype(out.getType(), sh)
+        if dtype is None:
+            continue
+        param_defs[out.getName()] = _ParamDef(
+            dtype_factory=dtype,
+            qualifiers=[ParamQualifiers(direction=Direction.OUT)]
+        )
     
-    return inputs, outputs
+    # Skip if already registered (some impls share the same function)
+    if hasattr(sh, func_attr):
+        return getattr(sh, func_attr)
+    
+    # Create Function object and register without emitting
+    func = Function(
+        sh=sh,
+        name=func_attr,
+        return_type=None,  # MaterialX source functions return void
+        param_defs=param_defs
+    )
+    sh._set_global(func_attr, func)
+    
+    return func
 
-def discover_acquirable_nodes(
-    doc, target: str = "genglsl"
-) -> dict[str, AcquireSrcCodeNode]:
+
+def acquire_stdlib(sh, doc, target: str = "genglsl") -> dict[str, Function]:
     """
-    Discover all source-code nodes for a given target that can be acquired.
+    Acquire all MaterialX source-code functions into the generator.
     
-    Source-code nodes are implementations that:
-    - Target the specified codegen target (e.g., "genglsl")
-    - Have a file attribute (external source file)
-    - Have a function attribute
+    After calling this, all MaterialX stdlib functions are available
+    as callables on the generator (e.g., sh.mx_fractal3d_float(...)).
     
     Args:
+        sh: The Metashade generator instance
         doc: A MaterialX Document with libraries loaded
         target: The codegen target (default: "genglsl")
         
     Returns:
-        Dict mapping nodedef_name -> AcquireSrcCodeNode
+        Dict mapping function_name -> Function object
     """
-    nodes = {}
+    functions = {}
     
     for impl in doc.getImplementations():
         if impl.getTarget() != target:
             continue
         
-        file_attr = impl.getAttribute("file")
-        func_attr = impl.getAttribute("function")
-        
-        if not (file_attr and func_attr):
-            continue
-        
-        nodedef = impl.getNodeDef()
-        if nodedef is None:
-            continue
-        
-        inputs, outputs = get_nodedef_signature(nodedef)
-        nodedef_name = nodedef.getName()
-        
-        nodes[nodedef_name] = AcquireSrcCodeNode(
-            impl_name=impl.getName(),
-            nodedef_name=nodedef_name,
-            source_file=file_attr,
-            function_name=func_attr,
-            target=target,
-            inputs=inputs,
-            outputs=outputs
-        )
+        func = acquire_function(sh, impl)
+        if func is not None:
+            functions[func._name] = func
     
-    return nodes
+    return functions
 
 
-def emit_extern_function(sh, node: AcquireSrcCodeNode):
+def emit_wrapper(sh, impl, suffix: str = "_metashade"):
     """
-    Include the source file and declare the external function.
+    Generate a wrapper function for a MaterialX implementation.
     
-    This creates a callable Function object that can be used to generate
-    calls to the MaterialX node implementation.
+    Includes the source file and generates a wrapper that calls
+    the original function.
     
     Args:
         sh: The Metashade generator instance
-        node: The source-code node to declare
+        impl: A PyMaterialX Implementation object
+        suffix: Suffix for the wrapper function name
         
     Returns:
-        The callable Function object for this node
+        The wrapper Function object, or None if not wrappable
     """
-    # Include the MaterialX source file
-    sh.include(node.source_file)
+    file_attr = impl.getAttribute("file")
+    func_attr = impl.getAttribute("function")
     
-    # Build parameter dict for function declaration
+    if not (file_attr and func_attr):
+        return None
+    
+    nodedef = impl.getNodeDef()
+    if nodedef is None:
+        return None
+    
+    # Include the source file
+    sh.include(file_attr)
+    
+    # Acquire the original function (no emission)
+    orig_func = acquire_function(sh, impl)
+    if orig_func is None:
+        return None
+    
+    wrapper_name = f"{func_attr}{suffix}"
+    
+    # Build parameter dict for wrapper
     params = {}
-    for inp in node.inputs:
-        dtype = mtlx_to_metashade_dtype(inp.mtlx_type, sh)
+    for inp in nodedef.getInputs():
+        dtype = mtlx_to_metashade_dtype(inp.getType(), sh)
         if dtype is not None:
-            params[inp.name] = dtype
+            params[inp.getName()] = dtype
     
-    for out in node.outputs:
-        dtype = mtlx_to_metashade_dtype(out.mtlx_type, sh)
+    for out in nodedef.getOutputs():
+        dtype = mtlx_to_metashade_dtype(out.getType(), sh)
         if dtype is not None:
-            params[out.name] = sh.Out(dtype)
-    
-    # Declare the function (creates a callable Function object)
-    sh.function(node.function_name)(**params).declare()
-    
-    # Return the callable
-    return getattr(sh, node.function_name)
-
-def emit_wrapper_function(sh, node: AcquireSrcCodeNode, suffix: str = "_metashade"):
-    """
-    Generate a wrapper function that calls the original MaterialX function.
-    
-    Args:
-        sh: The Metashade generator instance
-        node: The source-code node to wrap
-        suffix: Suffix for the wrapper function name (default: "_metashade")
-        
-    Returns:
-        The callable Function object for the wrapper
-    """
-    # First, emit the external function declaration
-    extern_func = emit_extern_function(sh, node)
-    
-    wrapper_name = f"{node.function_name}{suffix}"
-    
-    # Build parameter dict (same as original)
-    params = {}
-    for inp in node.inputs:
-        dtype = mtlx_to_metashade_dtype(inp.mtlx_type, sh)
-        if dtype is not None:
-            params[inp.name] = dtype
-    
-    for out in node.outputs:
-        dtype = mtlx_to_metashade_dtype(out.mtlx_type, sh)
-        if dtype is not None:
-            params[out.name] = sh.Out(dtype)
+            params[out.getName()] = sh.Out(dtype)
     
     # Define the wrapper function
     with sh.function(wrapper_name)(**params):
-        # Call the original function with all parameters
         call_args = {name: getattr(sh, name) for name in params}
-        extern_func(**call_args)
+        orig_func(**call_args)
     
     return getattr(sh, wrapper_name)
 
-def add_wrapper_impl(doc, node: AcquireSrcCodeNode, suffix: str = "_metashade"):
+
+def add_wrapper_impl(doc, impl, suffix: str = "_metashade"):
     """
-    Add a wrapper implementation to a MaterialX document using PyMaterialX.
+    Add a wrapper implementation to a MaterialX document.
     
     Args:
         doc: MaterialX Document to add to
-        node: The source-code node being wrapped
-        suffix: Suffix for wrapper names (default: "_metashade")
+        impl: The original Implementation being wrapped
+        suffix: Suffix for wrapper names
         
     Returns:
-        The created Implementation object
+        The created Implementation object, or None if not wrappable
     """
-    wrapper_impl_name = f"{node.impl_name}{suffix}"
-    wrapper_func_name = f"{node.function_name}{suffix}"
+    func_attr = impl.getAttribute("function")
+    if not func_attr:
+        return None
+    
+    nodedef = impl.getNodeDef()
+    if nodedef is None:
+        return None
+    
+    wrapper_impl_name = f"{impl.getName()}{suffix}"
+    wrapper_func_name = f"{func_attr}{suffix}"
     wrapper_file = f"{wrapper_func_name}.glsl"
     
-    impl = doc.addImplementation(wrapper_impl_name)
-    impl.setNodeDefString(node.nodedef_name)
-    impl.setFile(wrapper_file)
-    impl.setFunction(wrapper_func_name)
-    impl.setTarget(node.target)
+    new_impl = doc.addImplementation(wrapper_impl_name)
+    new_impl.setNodeDefString(nodedef.getName())
+    new_impl.setFile(wrapper_file)
+    new_impl.setFunction(wrapper_func_name)
+    new_impl.setTarget(impl.getTarget())
     
-    return impl
+    return new_impl
