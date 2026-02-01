@@ -18,7 +18,7 @@ Test for discovering MaterialX source-code nodes using PyMaterialX.
 This test module:
 1. Uses PyMaterialX to load stdlib/pbrlib definitions
 2. Identifies "source-code nodes" (implementations with external GLSL files)
-3. Prepares for wrapper generation that can wrap these nodes
+3. Outputs a reference list of discovered nodes for validation
 """
 
 from dataclasses import dataclass
@@ -29,6 +29,10 @@ import pytest
 # Skip if MaterialX is not installed
 mx = pytest.importorskip("MaterialX")
 
+# Reference file path (next to this test file)
+REF_DIR = Path(__file__).parent.parent / "ref" / "mtlx"
+REF_FILE = REF_DIR / "source_code_nodes.txt"
+
 
 @dataclass
 class SourceCodeNode:
@@ -37,18 +41,6 @@ class SourceCodeNode:
     nodedef_name: str    # e.g., "ND_fractal3d_float"
     glsl_file: str       # e.g., "mx_fractal3d_float.glsl"
     function_name: str   # e.g., "mx_fractal3d_float"
-
-
-def get_stdlib_path() -> Path:
-    """Get the path to MaterialX's standard library."""
-    # Use MaterialX's built-in library path discovery
-    search_path = mx.getDefaultDataSearchPath()
-    # The library path is typically in the search path
-    for path in search_path.asStringVec():
-        lib_path = Path(path)
-        if (lib_path / "stdlib").exists():
-            return lib_path
-    return None
 
 
 def discover_source_code_nodes(doc: mx.Document) -> list[SourceCodeNode]:
@@ -141,22 +133,26 @@ class TestNodeDiscovery:
         for expected_func in expected:
             assert expected_func in func_names, f"Expected to find {expected_func}"
     
-    def test_print_summary(self, stdlib_doc: mx.Document):
-        """Print a summary of discovered nodes (for debugging)."""
+    def test_reference_list(self, stdlib_doc: mx.Document):
+        """Generate/verify reference list of discovered source-code nodes."""
         nodes = discover_source_code_nodes(stdlib_doc)
         
-        print(f"\n=== Discovered {len(nodes)} source-code nodes ===")
+        # Sort by function name for stable ordering
+        nodes.sort(key=lambda n: n.function_name)
         
-        # Group by prefix (mx_noise, mx_fractal, etc.)
-        by_prefix = {}
-        for node in nodes:
-            # Extract prefix like "mx_noise", "mx_fractal"
-            parts = node.function_name.split("_")
-            if len(parts) >= 2:
-                prefix = f"{parts[0]}_{parts[1]}"
-            else:
-                prefix = node.function_name
-            by_prefix.setdefault(prefix, []).append(node)
+        # Build the reference list content
+        lines = [f"{n.function_name} ({n.glsl_file})" for n in nodes]
+        current_content = "\n".join(lines) + "\n"
         
-        for prefix, group in sorted(by_prefix.items()):
-            print(f"  {prefix}: {len(group)} variants")
+        if not REF_FILE.exists():
+            # First run: create the reference file
+            REF_FILE.parent.mkdir(parents=True, exist_ok=True)
+            REF_FILE.write_text(current_content)
+            pytest.skip(f"Created reference file: {REF_FILE}")
+        
+        # Compare against reference
+        expected_content = REF_FILE.read_text()
+        assert current_content == expected_content, (
+            f"Discovered nodes differ from reference.\n"
+            f"To update, delete {REF_FILE} and re-run test."
+        )
