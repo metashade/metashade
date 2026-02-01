@@ -1,6 +1,6 @@
 # metashade.mtlx
 
-This package prototypes extending [MaterialX](https://github.com/AcademySoftwareFoundation/MaterialX) shader code generation with [Metashade](https://github.com/metashade/metashade), a Pythonic shader EDSL.
+This package prototypes extending [MaterialX](https://github.com/AcademySoftwareFoundation/MaterialX) shader code generation with Metashade.
 
 ## Node Implementations as a Plugin Mechanism
 
