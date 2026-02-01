@@ -2,10 +2,12 @@
 ## What is Metashade?
 Metashade is an experimental Python-based GPU shading embedded domain-specific language (EDSL).
 When a Metashade script executes, it generates code in a target shading language.
-Currently, a limited useful subset HLSL is supported, GLSL support is work in progress and more targets are possible in the future.
+Currently, limited but useful subsets of HLSL and GLSL are supported, and more targets are possible in the future.
 
 To see Metashade in action, check out the glTF demo at https://github.com/metashade/metashade-glTFSample or the [tests](tests) which are run by CI:
 [![GitHub Actions CI](https://github.com/metashade/metashade/actions/workflows/python-package.yml/badge.svg)](https://github.com/metashade/metashade/actions/workflows/python-package.yml)
+
+There's also a prototype [MaterialX](https://materialx.org/) integration that allows Metashade to generate MaterialX node implementations. See the [`metashade.mtlx` package](metashade/mtlx) and the [mtlx tests](tests/mtlx) for examples.
 
 For a detailed discussion of the motivation for Metashade and its design, please see the [presentation on Google Slides](https://docs.google.com/presentation/d/e/2PACX-1vQtYIwXIkMnVC6TzWTKPAtZIA6_xeUCQc8Mvyziu0qy7HDUduz_onsJ5TabxTuuVQ/pub?start=false&loop=false&delayms=3000) or [watch this presentation](https://youtu.be/yC8VMLXYs5U?si=d_n3ngHr1IZIQ8ZH) from Academy Software Foundation Open Source Days 2024.
 
@@ -13,7 +15,7 @@ For a detailed discussion of the motivation for Metashade and its design, please
 
 * Programming at a more abstract level than the target language:
     * Metaprogramming - think C++ templates but with greater flexibility.
-    Like any other Python code, Mestashade code is polymorphic at generation time.
+    Like any other Python code, Metashade code is polymorphic at generation time.
     This approach can replace the traditional ubershader practice, effectively replacing the C preprocessor with Python.
     * Stricter typing - e.g. a 3D point and an RGB color can be represented with different Metashade types, backed by the same data type in HLSL.
 * Multi-language/cross-platform support.

@@ -94,7 +94,7 @@ In this model, Metashade integrates directly into the MaterialX `ShaderGen` step
 **Why this matters:**
 This allows for optimizations that are impossible with static files, such as baking a "Generic Blur" node that unrolls its sampling loop based on a specific kernel size, or stripping dead code branches based on constant inputs (e.g., removing Anisotropy logic if `roughness` is isotropic).
 
-A proof-of-concept implementation of this approach exists in the [`metashade/dev` branch](https://github.com/ppenenko/MaterialX/tree/metashade/dev) of MaterialX. See the [`MetashadeNode`](https://github.com/ppenenko/MaterialX/tree/metashade/dev/source/PyMaterialX/PyMaterialXMetashade) class, which demonstrates embedding Python into MaterialX's `ShaderGen` step via pybind11.
+A proof-of-concept implementation of this approach exists in the [`metashade/dev` branch](https://github.com/metashade/MaterialX/tree/metashade/dev) of a Metashade-specific fork of MaterialX. See the [`MetashadeNode`](https://github.com/metashade/MaterialX/tree/metashade/dev/source/PyMaterialX/PyMaterialXMetashade) class, which demonstrates embedding Python into MaterialX's codegen via pybind11.
 
 ---
 
