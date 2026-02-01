@@ -22,7 +22,7 @@ using PyMaterialX, enabling Metashade to "acquire" existing nodes.
 from dataclasses import dataclass
 from typing import Optional
 
-from metashade.mtlx.dtypes import mtlx_to_target_type
+from metashade.mtlx.dtypes import mtlx_to_metashade_dtype
 
 @dataclass
 class SrcCodeNodeInput:
@@ -132,68 +132,98 @@ def find_node_by_function(nodes: list[AcquireSrcCodeNode], function_name: str) -
             return node
     return None
 
-def generate_wrapper_source(node: AcquireSrcCodeNode, target_dtypes_module, wrapper_suffix: str = "_metashade") -> str:
+def emit_extern_function(sh, node: AcquireSrcCodeNode):
     """
-    Generate wrapper source code for a source-code node.
+    Include the source file and declare the external function.
     
-    The wrapper includes the original file and defines a new function
-    with the given suffix that simply calls the original.
+    This creates a callable Function object that can be used to generate
+    calls to the MaterialX node implementation.
     
     Args:
-        node: The node to wrap
-        target_dtypes_module: The target's dtypes module (e.g., metashade.glsl.dtypes)
-        wrapper_suffix: Suffix for the wrapper function name (default: "_metashade")
+        sh: The Metashade generator instance
+        node: The source-code node to declare
         
     Returns:
-        Source code string
+        The callable Function object for this node
     """
-    wrapper_func_name = f"{node.function_name}{wrapper_suffix}"
+    # Include the MaterialX source file
+    sh.include(node.source_file)
     
-    # Build parameter list
-    params = []
-    call_args = []
-    
+    # Build parameter dict for function declaration
+    params = {}
     for inp in node.inputs:
-        target_type = mtlx_to_target_type(inp.mtlx_type, target_dtypes_module)
-        if target_type is None:
-            # Skip uniform/texture types for now
-            continue
-        params.append(f"{target_type} {inp.name}")
-        call_args.append(inp.name)
+        dtype = mtlx_to_metashade_dtype(inp.mtlx_type, sh)
+        if dtype is not None:
+            params[inp.name] = dtype
     
     for out in node.outputs:
-        target_type = mtlx_to_target_type(out.mtlx_type, target_dtypes_module)
-        if target_type is None:
-            continue
-        params.append(f"out {target_type} {out.name}")
-        call_args.append(out.name)
+        dtype = mtlx_to_metashade_dtype(out.mtlx_type, sh)
+        if dtype is not None:
+            params[out.name] = sh.Out(dtype)
     
-    params_str = ", ".join(params)
-    call_args_str = ", ".join(call_args)
+    # Declare the function (creates a callable Function object)
+    sh.function(node.function_name)(**params).declare()
     
-    # Generate the wrapper source
-    source = f'''#include "{node.source_file}"
+    # Return the callable
+    return getattr(sh, node.function_name)
 
-void {wrapper_func_name}({params_str})
-{{
-    {node.function_name}({call_args_str});
-}}
-'''
-    return source
-
-def generate_wrapper_mtlx_impl(node: AcquireSrcCodeNode, wrapper_suffix: str = "_metashade") -> str:
+def emit_wrapper_function(sh, node: AcquireSrcCodeNode, suffix: str = "_metashade"):
     """
-    Generate MaterialX implementation XML for a wrapper node.
+    Generate a wrapper function that calls the original MaterialX function.
     
     Args:
-        node: The node to wrap
-        wrapper_suffix: Suffix for wrapper names (default: "_metashade")
+        sh: The Metashade generator instance
+        node: The source-code node to wrap
+        suffix: Suffix for the wrapper function name (default: "_metashade")
         
     Returns:
-        XML string for the implementation element
+        The callable Function object for the wrapper
     """
-    wrapper_func_name = f"{node.function_name}{wrapper_suffix}"
-    wrapper_file = f"{node.function_name}{wrapper_suffix}.glsl"
-    wrapper_impl_name = f"{node.impl_name}{wrapper_suffix}"
+    # First, emit the external function declaration
+    extern_func = emit_extern_function(sh, node)
     
-    return f'  <implementation name="{wrapper_impl_name}" nodedef="{node.nodedef_name}" file="{wrapper_file}" function="{wrapper_func_name}" target="{node.target}" />'
+    wrapper_name = f"{node.function_name}{suffix}"
+    
+    # Build parameter dict (same as original)
+    params = {}
+    for inp in node.inputs:
+        dtype = mtlx_to_metashade_dtype(inp.mtlx_type, sh)
+        if dtype is not None:
+            params[inp.name] = dtype
+    
+    for out in node.outputs:
+        dtype = mtlx_to_metashade_dtype(out.mtlx_type, sh)
+        if dtype is not None:
+            params[out.name] = sh.Out(dtype)
+    
+    # Define the wrapper function
+    with sh.function(wrapper_name)(**params):
+        # Call the original function with all parameters
+        call_args = {name: getattr(sh, name) for name in params}
+        extern_func(**call_args)
+    
+    return getattr(sh, wrapper_name)
+
+def add_wrapper_impl(doc, node: AcquireSrcCodeNode, suffix: str = "_metashade"):
+    """
+    Add a wrapper implementation to a MaterialX document using PyMaterialX.
+    
+    Args:
+        doc: MaterialX Document to add to
+        node: The source-code node being wrapped
+        suffix: Suffix for wrapper names (default: "_metashade")
+        
+    Returns:
+        The created Implementation object
+    """
+    wrapper_impl_name = f"{node.impl_name}{suffix}"
+    wrapper_func_name = f"{node.function_name}{suffix}"
+    wrapper_file = f"{wrapper_func_name}.glsl"
+    
+    impl = doc.addImplementation(wrapper_impl_name)
+    impl.setNodeDefString(node.nodedef_name)
+    impl.setFile(wrapper_file)
+    impl.setFunction(wrapper_func_name)
+    impl.setTarget(node.target)
+    
+    return impl

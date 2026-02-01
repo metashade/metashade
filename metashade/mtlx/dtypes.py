@@ -82,3 +82,22 @@ def mtlx_to_target_type(mtlx_type: str, target_dtypes_module) -> str | None:
     # Get the target-specific type name
     return getattr(dtype_class, '_target_name', metashade_name.lower())
 
+
+def mtlx_to_metashade_dtype(mtlx_type: str, sh):
+    """
+    Get the Metashade dtype factory for a MaterialX type, from a generator.
+    
+    Args:
+        mtlx_type: MaterialX type string (e.g., 'float', 'vector3', 'color3')
+        sh: The Metashade generator instance
+        
+    Returns:
+        Dtype factory (e.g., sh.Float, sh.Float3) or None if not mappable
+    """
+    metashade_name = MTLX_TO_METASHADE_NAME.get(mtlx_type)
+    if metashade_name is None:
+        return None
+    
+    return getattr(sh, metashade_name, None)
+
+

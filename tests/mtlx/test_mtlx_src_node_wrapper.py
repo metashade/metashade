@@ -21,36 +21,19 @@ This test module verifies that Metashade can:
 3. Generate corresponding .mtlx implementation files
 """
 
-import os
-from pathlib import Path
-
 import pytest
 
 # Skip if MaterialX is not installed
 mx = pytest.importorskip("MaterialX")
 
-from metashade.util.testing import RefDiffer
 from metashade.mtlx.mtlx_reflection import (
     discover_acquirable_nodes,
     find_node_by_function,
-    generate_wrapper_source,
-    generate_wrapper_mtlx_impl,
+    emit_wrapper_function,
+    add_wrapper_impl,
     AcquireSrcCodeNode,
 )
-
-# Output/reference directories (same pattern as other tests)
-_parent_dir = Path(__file__).parent.parent
-_ref_dir = _parent_dir / "ref" / "mtlx"
-
-_out_dir_env = os.getenv('METASHADE_PYTEST_OUT_DIR', None)
-if _out_dir_env is None:
-    _out_dir = _ref_dir
-    _ref_differ = None
-else:
-    _out_dir = Path(_out_dir_env).resolve() / "mtlx"
-    _ref_differ = RefDiffer(_ref_dir)
-
-os.makedirs(_out_dir, exist_ok=True)
+from metashade.mtlx.util.testing import GlslTestContext
 
 
 class TestSrcNodeReflection:
@@ -103,29 +86,29 @@ class TestSrcNodeWrapper:
         return node
     
     def test_fractal3d_wrapper(self, fractal3d_node: AcquireSrcCodeNode):
-        """Generate wrapper for fractal3d_float and compare to reference."""
-        from metashade.glsl import dtypes as glsl_dtypes
+        """Generate wrapper for fractal3d_float using Metashade generator."""
+        ctx = GlslTestContext(base_name="mx_fractal3d_float_metashade", impl_only=True)
         
-        # Generate wrapper content
-        glsl_source = generate_wrapper_source(fractal3d_node, glsl_dtypes)
-        mtlx_impl = generate_wrapper_mtlx_impl(fractal3d_node)
+        with ctx as test_ctx:
+            sh = test_ctx._sh
+            
+            # Generate the wrapper function
+            emit_wrapper_function(sh, fractal3d_node)
+            
+            # Add MaterialX implementation
+            test_ctx.add_node_impl(
+                func_name="mx_fractal3d_float_metashade",
+                mx_doc_string="Metashade wrapper for fractal3d_float"
+            )
+    
+    def test_add_wrapper_impl_pymaterialx(self, fractal3d_node: AcquireSrcCodeNode):
+        """Verify add_wrapper_impl creates proper PyMaterialX implementation."""
+        doc = mx.createDocument()
         
-        # Create combined MTLX document
-        mtlx_content = f'''<?xml version="1.0"?>
-<materialx version="1.39">
-{mtlx_impl}
-</materialx>
-'''
+        impl = add_wrapper_impl(doc, fractal3d_node)
         
-        # Save to output directory
-        glsl_path = _out_dir / "mx_fractal3d_float_metashade.glsl"
-        mtlx_path = _out_dir / "metashade_fractal3d_genglsl_impl.mtlx"
-        
-        glsl_path.write_text(glsl_source)
-        mtlx_path.write_text(mtlx_content)
-        
-        # Compare to reference in CI
-        if _ref_differ is not None:
-            _ref_differ(glsl_path)
-            _ref_differ(mtlx_path)
-
+        assert impl.getName() == "IM_fractal3d_float_genglsl_metashade"
+        assert impl.getNodeDefString() == "ND_fractal3d_float"
+        assert impl.getFile() == "mx_fractal3d_float_metashade.glsl"
+        assert impl.getFunction() == "mx_fractal3d_float_metashade"
+        assert impl.getTarget() == "genglsl"
