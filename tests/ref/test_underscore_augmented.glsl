@@ -1,10 +1,13 @@
 #version 450
+#line 25 "/app/tests/test_augmented_swizzle.py"
 vec2 test_underscore(vec2 v, float f)
 {
+#line 29 "/app/tests/test_augmented_swizzle.py"
 	v += v;
 	return v;
 }
 
+#line 24 "/app/tests/test_augmented_swizzle.py"
 void main()
 {
 }

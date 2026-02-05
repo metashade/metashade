@@ -19,6 +19,7 @@ layout (set = 1, binding = 1) uniform cb3
 	vec4 g_f4Color3;
 };
 
+#line 96 "/app/tests/test_uniforms.py"
 void main()
 {
 }

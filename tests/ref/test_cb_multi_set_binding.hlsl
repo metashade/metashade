@@ -22,6 +22,7 @@ cbuffer cb3 : register(b3)
 	float4 g_f4Color3;
 };
 
+#line 96 "/app/tests/test_uniforms.py"
 void main()
 {
 }

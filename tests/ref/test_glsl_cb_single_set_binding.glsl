@@ -5,8 +5,10 @@ layout (set = 0, binding = 0) uniform cb0
 };
 
 layout(location = 0) out vec4 out_f4Color;
+#line 59 "/app/tests/test_uniforms.py"
 void main()
 {
+#line 60 "/app/tests/test_uniforms.py"
 	out_f4Color = g_f4Color;
 }
 

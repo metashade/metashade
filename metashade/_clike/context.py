@@ -106,6 +106,7 @@ class FunctionDecl:
 
     def declare(self):
         '''Emit a function prototype.'''
+        self._sh._emit_line_directive()
         self._emit_signature()
         self._sh._emit(';\n\n')
         
@@ -131,6 +132,7 @@ class FunctionDecl:
             self._sh._emit_indent()
             self._sh._emit('//\n')
 
+        self._sh._emit_line_directive()
         self._emit_signature()
         self._sh._emit('\n{\n')
         self._sh._push_indent()
@@ -257,6 +259,7 @@ class Function:
         # Handle void functions - they don't return a value
         if self._return_dtype_factory is None:
             # Emit the function call statement directly
+            self._sh._emit_line_directive()
             self._sh._emit_indent()
             self._sh._emit(f'{self._name}({arg_str});\n')
             return None
@@ -276,6 +279,7 @@ class _ConditionalStatement:
         pass
 
     def __enter__(self):
+        self._sh._emit_line_directive()
         self._sh._emit_indent()
         self._emit_statement()
         self._sh._emit_indent()
