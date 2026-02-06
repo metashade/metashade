@@ -1,4 +1,4 @@
-# Copyright 2025 Pavlo Penenko
+# Copyright 2026 Pavlo Penenko
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,11 +19,32 @@ MaterialX function acquisition for Metashade.
 
 This module enables Metashade to acquire existing MaterialX source-code
 functions, making them callable from Metashade-generated code.
+
+Source-code functions are MaterialX implementations that have 'file' and
+'function' attributes pointing to external GLSL/HLSL files, as opposed to
+graph-based implementations defined in MaterialX XML.
 """
 
 from metashade.mtlx.dtypes import mtlx_to_metashade_dtype
 from metashade._clike.context import Function, _ParamDef
 from metashade._rtsl.qualifiers import ParamQualifiers, Direction
+
+# GLSL reserved keywords that can't be used as identifiers
+_GLSL_RESERVED = frozenset({
+    'in', 'out', 'inout', 'uniform', 'varying', 'attribute',
+    'const', 'void', 'bool', 'int', 'float', 'double',
+    'vec2', 'vec3', 'vec4', 'mat2', 'mat3', 'mat4',
+    'sampler2D', 'sampler3D', 'samplerCube',
+    'struct', 'if', 'else', 'for', 'while', 'do', 'switch', 'case',
+    'break', 'continue', 'return', 'discard', 'true', 'false',
+})
+
+
+def _sanitize_identifier(name: str) -> str:
+    """Sanitize an identifier to avoid GLSL reserved words."""
+    if name in _GLSL_RESERVED:
+        return f"{name}_"
+    return name
 
 
 def acquire_function(sh, impl):
@@ -58,7 +79,8 @@ def acquire_function(sh, impl):
         dtype = mtlx_to_metashade_dtype(inp.getType(), sh)
         if dtype is None:
             continue
-        param_defs[inp.getName()] = _ParamDef(
+        param_name = _sanitize_identifier(inp.getName())
+        param_defs[param_name] = _ParamDef(
             dtype_factory=dtype,
             qualifiers=[]
         )
@@ -67,7 +89,8 @@ def acquire_function(sh, impl):
         dtype = mtlx_to_metashade_dtype(out.getType(), sh)
         if dtype is None:
             continue
-        param_defs[out.getName()] = _ParamDef(
+        param_name = _sanitize_identifier(out.getName())
+        param_defs[param_name] = _ParamDef(
             dtype_factory=dtype,
             qualifiers=[ParamQualifiers(direction=Direction.OUT)]
         )
@@ -156,12 +179,14 @@ def emit_wrapper(sh, impl, suffix: str = "_metashade"):
     for inp in nodedef.getInputs():
         dtype = mtlx_to_metashade_dtype(inp.getType(), sh)
         if dtype is not None:
-            params[inp.getName()] = dtype
+            param_name = _sanitize_identifier(inp.getName())
+            params[param_name] = dtype
     
     for out in nodedef.getOutputs():
         dtype = mtlx_to_metashade_dtype(out.getType(), sh)
         if dtype is not None:
-            params[out.getName()] = sh.Out(dtype)
+            param_name = _sanitize_identifier(out.getName())
+            params[param_name] = sh.Out(dtype)
     
     # Define the wrapper function
     with sh.function(wrapper_name)(**params):
