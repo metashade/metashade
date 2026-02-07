@@ -64,29 +64,6 @@ def metashade_to_mtlx(dtype_factory):
     
     return _METASHADE_TO_MTLX[dtype_name]
 
-
-def mtlx_to_target_type(mtlx_type: str, target_dtypes_module) -> str | None:
-    """
-    Convert a MaterialX type to a target language type name.
-    
-    Args:
-        mtlx_type: MaterialX type string (e.g., 'float', 'vector3')
-        target_dtypes_module: The target's dtypes module
-        
-    Returns:
-        Target language type name (e.g., 'float', 'vec3') or None
-    """
-    metashade_name = _MTLX_TO_METASHADE.get(mtlx_type)
-    if metashade_name is None:
-        return None
-    
-    dtype_class = getattr(target_dtypes_module, metashade_name, None)
-    if dtype_class is None:
-        return None
-    
-    return getattr(dtype_class, '_target_name', metashade_name.lower())
-
-
 def mtlx_to_metashade_dtype(mtlx_type: str, sh):
     """
     Get the Metashade dtype factory for a MaterialX type.
