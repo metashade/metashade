@@ -78,7 +78,10 @@ def acquire_function(sh, impl):
     for inp in nodedef.getInputs():
         dtype = mtlx_to_metashade_dtype(inp.getType(), sh)
         if dtype is None:
-            continue
+            raise TypeError(
+                f"Cannot map MaterialX type '{inp.getType()}' for input "
+                f"'{inp.getName()}' in {func_attr}"
+            )
         param_name = _sanitize_identifier(inp.getName())
         param_defs[param_name] = _ParamDef(
             dtype_factory=dtype,
@@ -88,7 +91,10 @@ def acquire_function(sh, impl):
     for out in nodedef.getOutputs():
         dtype = mtlx_to_metashade_dtype(out.getType(), sh)
         if dtype is None:
-            continue
+            raise TypeError(
+                f"Cannot map MaterialX type '{out.getType()}' for output "
+                f"'{out.getName()}' in {func_attr}"
+            )
         param_name = _sanitize_identifier(out.getName())
         param_defs[param_name] = _ParamDef(
             dtype_factory=dtype,
@@ -118,6 +124,8 @@ def acquire_stdlib(sh, doc, target: str = "genglsl") -> dict[str, Function]:
     After calling this, all MaterialX stdlib functions are available
     as callables on the generator (e.g., sh.mx_fractal3d_float(...)).
     
+    Functions with unmappable types (e.g., string params) are skipped.
+    
     Args:
         sh: The Metashade generator instance
         doc: A MaterialX Document with libraries loaded
@@ -132,9 +140,13 @@ def acquire_stdlib(sh, doc, target: str = "genglsl") -> dict[str, Function]:
         if impl.getTarget() != target:
             continue
         
-        func = acquire_function(sh, impl)
-        if func is not None:
-            functions[func._name] = func
+        try:
+            func = acquire_function(sh, impl)
+            if func is not None:
+                functions[func._name] = func
+        except TypeError:
+            # Skip functions with unmappable types (e.g., string params)
+            pass
     
     return functions
 
@@ -178,15 +190,23 @@ def emit_wrapper(sh, impl, suffix: str = "_metashade"):
     params = {}
     for inp in nodedef.getInputs():
         dtype = mtlx_to_metashade_dtype(inp.getType(), sh)
-        if dtype is not None:
-            param_name = _sanitize_identifier(inp.getName())
-            params[param_name] = dtype
+        if dtype is None:
+            raise TypeError(
+                f"Cannot map MaterialX type '{inp.getType()}' for input "
+                f"'{inp.getName()}' in {wrapper_name}"
+            )
+        param_name = _sanitize_identifier(inp.getName())
+        params[param_name] = dtype
     
     for out in nodedef.getOutputs():
         dtype = mtlx_to_metashade_dtype(out.getType(), sh)
-        if dtype is not None:
-            param_name = _sanitize_identifier(out.getName())
-            params[param_name] = sh.Out(dtype)
+        if dtype is None:
+            raise TypeError(
+                f"Cannot map MaterialX type '{out.getType()}' for output "
+                f"'{out.getName()}' in {wrapper_name}"
+            )
+        param_name = _sanitize_identifier(out.getName())
+        params[param_name] = sh.Out(dtype)
     
     # Define the wrapper function
     with sh.function(wrapper_name)(**params):
