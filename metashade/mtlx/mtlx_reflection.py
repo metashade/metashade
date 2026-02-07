@@ -238,7 +238,7 @@ def add_wrapper_impl(doc, impl, suffix: str = "_metashade"):
     
     wrapper_impl_name = f"{impl.getName()}{suffix}"
     wrapper_func_name = f"{func_attr}{suffix}"
-    wrapper_file = f"{wrapper_func_name}.glsl"
+    wrapper_file = f"{wrapper_func_name}.glsl"  # TODO: derive from target config
     
     new_impl = doc.addImplementation(wrapper_impl_name)
     new_impl.setNodeDefString(nodedef.getName())

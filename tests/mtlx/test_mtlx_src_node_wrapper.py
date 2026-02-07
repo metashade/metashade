@@ -35,14 +35,6 @@ from metashade.mtlx.util.testing import GlslTestContext
 class TestAcquireFunction:
     """Tests for acquiring MaterialX functions into Metashade."""
     
-    @pytest.fixture
-    def stdlib_doc(self) -> mx.Document:
-        """Load the MaterialX standard library."""
-        doc = mx.createDocument()
-        search_path = mx.getDefaultDataSearchPath()
-        mx.loadLibraries(mx.getDefaultDataLibraryFolders(), search_path, doc)
-        return doc
-    
     def test_acquire_stdlib(self, stdlib_doc: mx.Document):
         """Verify we can acquire all stdlib functions."""
         ctx = GlslTestContext(
@@ -88,14 +80,6 @@ class TestAcquireFunction:
 
 class TestEmitWrapper:
     """Tests for generating wrapper functions."""
-    
-    @pytest.fixture
-    def stdlib_doc(self) -> mx.Document:
-        """Load the MaterialX standard library."""
-        doc = mx.createDocument()
-        search_path = mx.getDefaultDataSearchPath()
-        mx.loadLibraries(mx.getDefaultDataLibraryFolders(), search_path, doc)
-        return doc
     
     @pytest.fixture
     def fractal3d_impl(self, stdlib_doc: mx.Document):
