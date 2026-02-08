@@ -29,9 +29,7 @@ import pytest
 # Skip if MaterialX is not installed
 mx = pytest.importorskip("MaterialX")
 
-# Reference file path (next to this test file)
-REF_DIR = Path(__file__).parent.parent / "ref" / "mtlx"
-REF_FILE = REF_DIR / "source_code_nodes.txt"
+from metashade.mtlx.util.testing import GlslTestContext
 
 
 @dataclass
@@ -79,17 +77,6 @@ def discover_source_code_nodes(doc: mx.Document) -> list[SourceCodeNode]:
 
 class TestNodeDiscovery:
     """Tests for discovering MaterialX source-code nodes using PyMaterialX."""
-    
-    @pytest.fixture
-    def stdlib_doc(self) -> mx.Document:
-        """Load the MaterialX standard library."""
-        doc = mx.createDocument()
-        search_path = mx.getDefaultDataSearchPath()
-        
-        # Load stdlib
-        mx.loadLibraries(mx.getDefaultDataLibraryFolders(), search_path, doc)
-        
-        return doc
     
     def test_stdlib_loads(self, stdlib_doc: mx.Document):
         """Verify we can load the MaterialX standard library."""
@@ -142,17 +129,12 @@ class TestNodeDiscovery:
         
         # Build the reference list content
         lines = [f"{n.function_name} ({n.glsl_file})" for n in nodes]
-        current_content = "\n".join(lines) + "\n"
+        content = "\n".join(lines) + "\n"
         
-        if not REF_FILE.exists():
-            # First run: create the reference file
-            REF_FILE.parent.mkdir(parents=True, exist_ok=True)
-            REF_FILE.write_text(current_content)
-            pytest.skip(f"Created reference file: {REF_FILE}")
+        # Write to output file
+        out_path = GlslTestContext._out_dir / "source_code_nodes.txt"
+        out_path.write_text(content)
         
-        # Compare against reference
-        expected_content = REF_FILE.read_text()
-        assert current_content == expected_content, (
-            f"Discovered nodes differ from reference.\n"
-            f"To update, delete {REF_FILE} and re-run test."
-        )
+        # Compare against reference if in compare mode
+        if GlslTestContext._ref_differ is not None:
+            GlslTestContext._ref_differ(out_path)

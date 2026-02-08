@@ -1,0 +1,4 @@
+<?xml version="1.0"?>
+<materialx version="1.39">
+  <implementation name="IM_fractal3d_float_metashade_genglsl" nodedef="ND_mx_fractal3d_float_metashade" target="genglsl" file="mx_fractal3d_float_metashade_genglsl_impl.glsl" function="mx_fractal3d_float_metashade" doc="Metashade wrapper for fractal3d_float" />
+</materialx>
