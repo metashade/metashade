@@ -15,8 +15,8 @@
 import types
 import re
 from typing import Annotated
-import metashade._base.generator as base
-from metashade._rtsl.qualifiers import ParamQualifiers, Direction
+import metashade.targets._base.generator as base
+from metashade.targets._rtsl.qualifiers import ParamQualifiers, Direction
 from . import arrays, context, struct
 
 class Generator(base.Generator):

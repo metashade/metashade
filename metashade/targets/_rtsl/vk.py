@@ -19,7 +19,7 @@ Vulkan-related functionality common between HLSL and GLSL backends.
 
 from typing import NamedTuple
 from .generator import UniqueKeyChecker
-from metashade._base.dtypes import check_valid_index
+from metashade.targets._base.dtypes import check_valid_index
 
 class UniqueInputLocationChecker(UniqueKeyChecker):
     @staticmethod

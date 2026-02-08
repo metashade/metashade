@@ -14,7 +14,7 @@
 
 import pathlib, pytest, sys
 from subprocess import CalledProcessError
-from metashade.hlsl.util import dxc
+from metashade.targets.hlsl.util import dxc
 
 class TestDxc:
     def test_dxc_failure(self):

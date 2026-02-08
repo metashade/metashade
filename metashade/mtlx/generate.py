@@ -16,8 +16,8 @@ import sys
 import abc
 
 import MaterialX as mx
-from metashade.glsl import frag
-from metashade._rtsl.qualifiers import Direction
+from metashade.targets.glsl import frag
+from metashade.targets._rtsl.qualifiers import Direction
 
 from metashade.mtlx import dtypes
 

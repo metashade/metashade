@@ -12,15 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from metashade._base.dtypes import BaseType, check_valid_index
-import metashade._rtsl.generator as rtsl
+from metashade.targets._base.dtypes import BaseType, check_valid_index
+import metashade.targets._rtsl.generator as rtsl
 from . import dtypes
 
 from .stage_interface import (
     StageIO, StageInput, StageOutput
 )
 
-import metashade._rtsl.vk as vk
+import metashade.targets._rtsl.vk as vk
 
 class UniformBuffer:
     def __init__(self, sh, set : int, binding : int, name : str = None):

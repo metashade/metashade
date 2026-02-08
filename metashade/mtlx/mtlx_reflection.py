@@ -26,8 +26,8 @@ graph-based implementations defined in MaterialX XML.
 """
 
 from metashade.mtlx.dtypes import mtlx_to_metashade_dtype
-from metashade._clike.context import Function, _ParamDef
-from metashade._rtsl.qualifiers import ParamQualifiers, Direction
+from metashade.targets._clike.context import Function, _ParamDef
+from metashade.targets._rtsl.qualifiers import ParamQualifiers, Direction
 
 def _sanitize_identifier(name: str) -> str:
     """Sanitize an identifier to avoid reserved words.

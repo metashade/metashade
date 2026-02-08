@@ -17,10 +17,10 @@ from pathlib import Path
 import abc, io, os, sys
 import pytest
 
-from metashade.glsl import frag
-from metashade.glsl.util import glslang
-from metashade.hlsl.sm6 import ps_6_0
-from metashade.hlsl.util import dxc
+from metashade.targets.glsl import frag
+from metashade.targets.glsl.util import glslang
+from metashade.targets.hlsl.sm6 import ps_6_0
+from metashade.targets.hlsl.util import dxc
 
 class RefDiffer:
     def __init__(self, ref_dir : Path):

@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from abc import ABC, abstractmethod
-import metashade._clike.generator as clike
+import metashade.targets._clike.generator as clike
 from .qualifiers import Out, InOut
 
 class UniqueKeyChecker(ABC):

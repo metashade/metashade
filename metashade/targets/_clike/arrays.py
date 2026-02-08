@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from metashade._clike.dtypes import BaseType
+from metashade.targets._clike.dtypes import BaseType
 
 class ArrayBase(BaseType):
     _sh = None

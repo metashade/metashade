@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import metashade._rtsl.generator as rtsl
-from metashade._base.dtypes import check_valid_index
+import metashade.targets._rtsl.generator as rtsl
+from metashade.targets._base.dtypes import check_valid_index
 
 class StageIO:
     def __init__(self, dtype, location : int):
