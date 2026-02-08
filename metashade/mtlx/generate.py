@@ -90,7 +90,7 @@ class GeneratorContext:
         nodedef_name: str = None
     ):
         """
-        Add a node implementation referencing a 
+        Add a node implementation.
         
         Args:
             func_name: Name of the generated function
