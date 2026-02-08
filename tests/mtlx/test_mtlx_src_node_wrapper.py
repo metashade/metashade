@@ -37,7 +37,7 @@ class TestAcquireFunction:
     def test_acquire_stdlib(self, stdlib_doc: mx.Document):
         """Verify we can acquire all stdlib functions."""
         from io import StringIO
-        from metashade.glsl import frag
+        from metashade.targets.glsl import frag
         
         # Create generator without file output
         out = StringIO()
@@ -56,7 +56,7 @@ class TestAcquireFunction:
     def test_acquire_single_function(self, stdlib_doc: mx.Document):
         """Test acquiring a single function."""
         from io import StringIO
-        from metashade.glsl import frag
+        from metashade.targets.glsl import frag
         
         # Create generator without file output
         out = StringIO()

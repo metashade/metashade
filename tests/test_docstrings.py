@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import textwrap
-from metashade.hlsl.sm6 import ps_6_0
+from metashade.targets.hlsl.sm6 import ps_6_0
 import io
 
 def test_docstring():

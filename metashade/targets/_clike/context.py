@@ -16,7 +16,7 @@ import abc
 import typing
 from typing import NamedTuple
 
-import metashade._base.context as base
+import metashade.targets._base.context as base
 from .._rtsl.qualifiers import ParamQualifiers
 
 class _ParamDef(NamedTuple):

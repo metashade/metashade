@@ -1,5 +1,5 @@
-from metashade.hlsl.sm6 import ps_6_0
-from metashade.glsl import frag
+from metashade.targets.hlsl.sm6 import ps_6_0
+from metashade.targets.glsl import frag
 
 def generate(sh):
     # Polymorphic shader code for multiple targets

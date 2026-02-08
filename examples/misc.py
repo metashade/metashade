@@ -2,7 +2,7 @@
 # and presentations.
 
 import math
-from metashade.hlsl.sm6 import ps_6_0 as hlsl_ps
+from metashade.targets.hlsl.sm6 import ps_6_0 as hlsl_ps
 
 with open('misc.hlsl', 'w') as hlsl_file:
     sh = hlsl_ps.Generator(hlsl_file)

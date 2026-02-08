@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import metashade._base.dtypes as base
+import metashade.targets._base.dtypes as base
 import numbers
 from enum import Enum, auto
 

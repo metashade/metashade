@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import numbers
-import metashade._rtsl.dtypes as rtsl
+import metashade.targets._rtsl.dtypes as rtsl
 from . import _intrinsics
 
 

@@ -14,7 +14,7 @@
 
 import pytest
 from metashade.util.testing import ctx_cls_hg, HlslTestContext
-from metashade._rtsl.qualifiers import Direction
+from metashade.targets._rtsl.qualifiers import Direction
 
 class TestFunctions:
     def _generate_add_func(self, sh, decl_only = False):
