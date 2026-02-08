@@ -77,7 +77,7 @@ class TestAcquireFunction:
         assert hasattr(sh, "mx_fractal3d_float")
 
 
-class TestEmitWrapper:
+class TestGenerateWrapper:
     """Tests for generating wrapper functions."""
     
     @pytest.fixture
