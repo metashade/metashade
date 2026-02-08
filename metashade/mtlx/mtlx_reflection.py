@@ -29,21 +29,14 @@ from metashade.mtlx.dtypes import mtlx_to_metashade_dtype
 from metashade._clike.context import Function, _ParamDef
 from metashade._rtsl.qualifiers import ParamQualifiers, Direction
 
-# GLSL reserved keywords that can't be used as identifiers
-_GLSL_RESERVED = frozenset({
-    'in', 'out', 'inout', 'uniform', 'varying', 'attribute',
-    'const', 'void', 'bool', 'int', 'float', 'double',
-    'vec2', 'vec3', 'vec4', 'mat2', 'mat3', 'mat4',
-    'sampler2D', 'sampler3D', 'samplerCube',
-    'struct', 'if', 'else', 'for', 'while', 'do', 'switch', 'case',
-    'break', 'continue', 'return', 'discard', 'true', 'false',
-})
-
-
 def _sanitize_identifier(name: str) -> str:
-    """Sanitize an identifier to avoid GLSL reserved words."""
-    if name in _GLSL_RESERVED:
-        return f"{name}_"
+    """Sanitize an identifier to avoid reserved words.
+    
+    MaterialX commonly uses 'out' as an output parameter name, which is
+    a reserved word in GLSL/HLSL. This renames it to 'out_'.
+    """
+    if name == "out":
+        return "out_"
     return name
 
 
@@ -75,27 +68,27 @@ def acquire_function(sh, impl):
     # Build param_defs in order (inputs then outputs)
     param_defs = {}
     
-    for inp in nodedef.getInputs():
-        dtype = mtlx_to_metashade_dtype(inp.getType(), sh)
+    for input in nodedef.getInputs():
+        dtype = mtlx_to_metashade_dtype(input.getType(), sh)
         if dtype is None:
             raise TypeError(
-                f"Cannot map MaterialX type '{inp.getType()}' for input "
-                f"'{inp.getName()}' in {func_attr}"
+                f"Cannot map MaterialX type '{input.getType()}' for input "
+                f"'{input.getName()}' in {func_attr}"
             )
-        param_name = _sanitize_identifier(inp.getName())
+        param_name = _sanitize_identifier(input.getName())
         param_defs[param_name] = _ParamDef(
             dtype_factory=dtype,
             qualifiers=[]
         )
     
-    for out in nodedef.getOutputs():
-        dtype = mtlx_to_metashade_dtype(out.getType(), sh)
+    for output in nodedef.getOutputs():
+        dtype = mtlx_to_metashade_dtype(output.getType(), sh)
         if dtype is None:
             raise TypeError(
-                f"Cannot map MaterialX type '{out.getType()}' for output "
-                f"'{out.getName()}' in {func_attr}"
+                f"Cannot map MaterialX type '{output.getType()}' for output "
+                f"'{output.getName()}' in {func_attr}"
             )
-        param_name = _sanitize_identifier(out.getName())
+        param_name = _sanitize_identifier(output.getName())
         param_defs[param_name] = _ParamDef(
             dtype_factory=dtype,
             qualifiers=[ParamQualifiers(direction=Direction.OUT)]
@@ -117,7 +110,7 @@ def acquire_function(sh, impl):
     return func
 
 
-def acquire_stdlib(sh, doc, target: str = "genglsl") -> dict[str, Function]:
+def acquire_stdlib(sh, doc, target: str) -> dict[str, Function]:
     """
     Acquire all MaterialX source-code functions into the generator.
     
@@ -129,7 +122,7 @@ def acquire_stdlib(sh, doc, target: str = "genglsl") -> dict[str, Function]:
     Args:
         sh: The Metashade generator instance
         doc: A MaterialX Document with libraries loaded
-        target: The codegen target (default: "genglsl")
+        target: The codegen target (e.g., "genglsl", "genhlsl")
         
     Returns:
         Dict mapping function_name -> Function object
@@ -151,7 +144,7 @@ def acquire_stdlib(sh, doc, target: str = "genglsl") -> dict[str, Function]:
     return functions
 
 
-def emit_wrapper(sh, impl, suffix: str = "_metashade"):
+def generate_wrapper_func(sh, impl, suffix: str = "_metashade"):
     """
     Generate a wrapper function for a MaterialX implementation.
     
@@ -160,7 +153,7 @@ def emit_wrapper(sh, impl, suffix: str = "_metashade"):
     
     Args:
         sh: The Metashade generator instance
-        impl: A PyMaterialX Implementation object
+        impl: A PyMaterialX nodeimpl object
         suffix: Suffix for the wrapper function name
         
     Returns:
@@ -188,24 +181,24 @@ def emit_wrapper(sh, impl, suffix: str = "_metashade"):
     
     # Build parameter dict for wrapper
     params = {}
-    for inp in nodedef.getInputs():
-        dtype = mtlx_to_metashade_dtype(inp.getType(), sh)
+    for input in nodedef.getInputs():
+        dtype = mtlx_to_metashade_dtype(input.getType(), sh)
         if dtype is None:
             raise TypeError(
-                f"Cannot map MaterialX type '{inp.getType()}' for input "
-                f"'{inp.getName()}' in {wrapper_name}"
+                f"Cannot map MaterialX type '{input.getType()}' for input "
+                f"'{input.getName()}' in {wrapper_name}"
             )
-        param_name = _sanitize_identifier(inp.getName())
+        param_name = _sanitize_identifier(input.getName())
         params[param_name] = dtype
     
-    for out in nodedef.getOutputs():
-        dtype = mtlx_to_metashade_dtype(out.getType(), sh)
+    for output in nodedef.getOutputs():
+        dtype = mtlx_to_metashade_dtype(output.getType(), sh)
         if dtype is None:
             raise TypeError(
-                f"Cannot map MaterialX type '{out.getType()}' for output "
-                f"'{out.getName()}' in {wrapper_name}"
+                f"Cannot map MaterialX type '{output.getType()}' for output "
+                f"'{output.getName()}' in {wrapper_name}"
             )
-        param_name = _sanitize_identifier(out.getName())
+        param_name = _sanitize_identifier(output.getName())
         params[param_name] = sh.Out(dtype)
     
     # Define the wrapper function
@@ -214,36 +207,3 @@ def emit_wrapper(sh, impl, suffix: str = "_metashade"):
         orig_func(**call_args)
     
     return getattr(sh, wrapper_name)
-
-
-def add_wrapper_impl(doc, impl, suffix: str = "_metashade"):
-    """
-    Add a wrapper implementation to a MaterialX document.
-    
-    Args:
-        doc: MaterialX Document to add to
-        impl: The original Implementation being wrapped
-        suffix: Suffix for wrapper names
-        
-    Returns:
-        The created Implementation object, or None if not wrappable
-    """
-    func_attr = impl.getAttribute("function")
-    if not func_attr:
-        return None
-    
-    nodedef = impl.getNodeDef()
-    if nodedef is None:
-        return None
-    
-    wrapper_impl_name = f"{impl.getName()}{suffix}"
-    wrapper_func_name = f"{func_attr}{suffix}"
-    wrapper_file = f"{wrapper_func_name}.glsl"  # TODO: derive from target config
-    
-    new_impl = doc.addImplementation(wrapper_impl_name)
-    new_impl.setNodeDefString(nodedef.getName())
-    new_impl.setFile(wrapper_file)
-    new_impl.setFunction(wrapper_func_name)
-    new_impl.setTarget(impl.getTarget())
-    
-    return new_impl

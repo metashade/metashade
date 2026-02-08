@@ -26,8 +26,7 @@ mx = pytest.importorskip("MaterialX")
 from metashade.mtlx.mtlx_reflection import (
     acquire_function,
     acquire_stdlib,
-    emit_wrapper,
-    add_wrapper_impl,
+    generate_wrapper_func,
 )
 from metashade.mtlx.util.testing import GlslTestContext
 
@@ -89,7 +88,7 @@ class TestEmitWrapper:
                 return impl
         pytest.fail("Could not find mx_fractal3d_float implementation")
     
-    def test_emit_wrapper(self, fractal3d_impl):
+    def test_generate_wrapper_func(self, fractal3d_impl):
         """Generate wrapper using Metashade generator."""
         ctx = GlslTestContext(
             base_name="mx_fractal3d_float_metashade", impl_only=True
@@ -98,21 +97,10 @@ class TestEmitWrapper:
         with ctx as test_ctx:
             sh = test_ctx._sh
             
-            wrapper = emit_wrapper(sh, fractal3d_impl)
+            wrapper = generate_wrapper_func(sh, fractal3d_impl)
             assert wrapper is not None
             
             test_ctx.add_node_impl(
                 func_name="mx_fractal3d_float_metashade",
                 mx_doc_string="Metashade wrapper for fractal3d_float"
             )
-    
-    def test_add_wrapper_impl(self, fractal3d_impl):
-        """Verify add_wrapper_impl creates proper PyMaterialX impl."""
-        doc = mx.createDocument()
-        
-        impl = add_wrapper_impl(doc, fractal3d_impl)
-        
-        assert impl is not None
-        assert impl.getName() == "IM_fractal3d_float_genglsl_metashade"
-        assert impl.getFile() == "mx_fractal3d_float_metashade.glsl"
-        assert impl.getFunction() == "mx_fractal3d_float_metashade"
