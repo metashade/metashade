@@ -101,6 +101,6 @@ class TestEmitWrapper:
             assert wrapper is not None
             
             test_ctx.add_node_impl(
-                func_name="mx_fractal3d_float_metashade",
+                func_name=wrapper._name,
                 mx_doc_string="Metashade wrapper for fractal3d_float"
             )
