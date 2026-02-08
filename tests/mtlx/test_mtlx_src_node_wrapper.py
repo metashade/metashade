@@ -37,45 +37,45 @@ class TestAcquireFunction:
     
     def test_acquire_stdlib(self, stdlib_doc: mx.Document):
         """Verify we can acquire all stdlib functions."""
-        ctx = GlslTestContext(
-            base_name="test_acquire", impl_only=True
+        from io import StringIO
+        from metashade.glsl import frag
+        
+        # Create generator without file output
+        out = StringIO()
+        sh = frag.Generator(out, glsl_version='')
+        
+        functions = acquire_stdlib(sh, stdlib_doc, target="genglsl")
+        
+        assert len(functions) > 50, (
+            f"Expected >50 functions, got {len(functions)}"
         )
         
-        with ctx as test_ctx:
-            sh = test_ctx._sh
-            
-            functions = acquire_stdlib(sh, stdlib_doc, target="genglsl")
-            
-            assert len(functions) > 50, (
-                f"Expected >50 functions, got {len(functions)}"
-            )
-            
-            # Verify fractal3d_float was acquired
-            assert "mx_fractal3d_float" in functions
-            assert hasattr(sh, "mx_fractal3d_float")
+        # Verify fractal3d_float was acquired
+        assert "mx_fractal3d_float" in functions
+        assert hasattr(sh, "mx_fractal3d_float")
     
     def test_acquire_single_function(self, stdlib_doc: mx.Document):
         """Test acquiring a single function."""
-        ctx = GlslTestContext(
-            base_name="test_acquire_single", impl_only=True
-        )
+        from io import StringIO
+        from metashade.glsl import frag
         
-        with ctx as test_ctx:
-            sh = test_ctx._sh
-            
-            # Find the fractal3d implementation
-            impl = None
-            for i in stdlib_doc.getImplementations():
-                if i.getAttribute("function") == "mx_fractal3d_float":
-                    impl = i
-                    break
-            
-            assert impl is not None
-            
-            func = acquire_function(sh, impl)
-            assert func is not None
-            assert func._name == "mx_fractal3d_float"
-            assert hasattr(sh, "mx_fractal3d_float")
+        # Create generator without file output
+        out = StringIO()
+        sh = frag.Generator(out, glsl_version='')
+        
+        # Find the fractal3d implementation
+        impl = None
+        for i in stdlib_doc.getImplementations():
+            if i.getAttribute("function") == "mx_fractal3d_float":
+                impl = i
+                break
+        
+        assert impl is not None
+        
+        func = acquire_function(sh, impl)
+        assert func is not None
+        assert func._name == "mx_fractal3d_float"
+        assert hasattr(sh, "mx_fractal3d_float")
 
 
 class TestEmitWrapper:
