@@ -94,7 +94,8 @@ def acquire_function(sh, impl):
             qualifiers=[ParamQualifiers(direction=Direction.OUT)]
         )
     
-    # Skip if already registered (some impls share the same function)
+    # Skip if already registered - duplicates occur because MaterialX has
+    # stronger typing than GLSL/HLSL (e.g., color3 vs vector3 are both vec3)
     if hasattr(sh, func_attr):
         return getattr(sh, func_attr)
     
