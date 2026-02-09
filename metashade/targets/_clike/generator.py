@@ -23,8 +23,8 @@ class Generator(base.Generator):
     def function(self, name : str, return_type = None):
         return context.FunctionDecl(self, name, return_type)
 
-    def struct(self, name):
-        return struct.StructDef(self, name)
+    def struct(self, name, emit=True):
+        return struct.StructDef(self, name, emit=emit)
     
     def array(self, element_type, dims):
         element_type = element_type._get_dtype()
