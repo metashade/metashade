@@ -315,3 +315,34 @@ class TestFunctions:
             assert 'b' in func._param_defs
             assert func._param_defs['a'].dtype_factory == sh.Float4
             assert func._param_defs['b'].dtype_factory == sh.Float4
+
+    @ctx_cls_hg
+    def test_function_declare_no_emit(self, ctx_cls):
+        '''Test declare(emit=False) registers without emitting prototype.'''
+        ctx = ctx_cls()
+        with ctx as sh:
+            self._generate_test_uniforms(sh)
+
+            # Write an external function definition directly
+            if isinstance(ctx, HlslTestContext):
+                sh._emit('float4 externalAdd(float4 a, float4 b) { return a + b; }\n\n')
+            else:
+                sh._emit('vec4 externalAdd(vec4 a, vec4 b) { return a + b; }\n\n')
+
+            # Declare without emitting prototype
+            sh.function('externalAdd', sh.Float4)(
+                a=sh.Float4, b=sh.Float4
+            ).declare(emit=False)
+
+            # Function should be registered and callable
+            assert hasattr(sh, 'externalAdd')
+
+            with self._generate_ps_main_decl(sh, ctx):
+                sh.c = sh.externalAdd(a=sh.g_f4A, b=sh.g_f4B)
+
+                if isinstance(ctx, HlslTestContext):
+                    sh.result = sh.PsOut()
+                    sh.result.color = sh.c
+                    sh.return_(sh.result)
+                else:
+                    sh.out_f4Color = sh.c

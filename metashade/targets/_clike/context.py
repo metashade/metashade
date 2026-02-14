@@ -104,10 +104,11 @@ class FunctionDecl:
 
         self._sh._emit(')')
 
-    def declare(self):
+    def declare(self, emit=True):
         '''Emit a function prototype.'''
-        self._emit_signature()
-        self._sh._emit(';\n\n')
+        if emit:
+            self._emit_signature()
+            self._sh._emit(';\n\n')
         
         # Register the callable in the generator
         self._sh._set_global(
