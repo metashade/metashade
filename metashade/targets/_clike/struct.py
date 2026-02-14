@@ -70,7 +70,7 @@ class Struct(BaseType, StructBase):
         if not self._set_member(name, value):
             super().__setattr__(name, value)
 
-def define_struct(sh, name, member_defs):
+def define_struct(sh, name, member_defs, emit=True):
     struct_type = type(
         name,
         (Struct,),
@@ -80,6 +80,9 @@ def define_struct(sh, name, member_defs):
         }
     )
     sh._set_global(name, struct_type)
+
+    if not emit:
+        return
 
     sh._emit(f'struct {name}\n{{\n')
     sh._push_indent()
@@ -93,9 +96,10 @@ def define_struct(sh, name, member_defs):
     sh._emit('};\n\n')
 
 class StructDef:
-    def __init__(self, sh, name):
+    def __init__(self, sh, name, emit=True):
         self._sh = sh
         self._name = name
+        self._emit = emit
 
     def __call__(self, **kwargs):
         define_struct(
@@ -104,6 +108,7 @@ class StructDef:
             {
                 name : StructMemberDef(dtype_factory._get_dtype())
                 for name, dtype_factory in kwargs.items()
-            }
+            },
+            emit=self._emit
         )
 
