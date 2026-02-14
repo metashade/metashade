@@ -28,12 +28,16 @@ graph-based implementations defined in MaterialX XML.
 from metashade.mtlx.dtypes import mtlx_to_metashade_dtype
 from metashade.targets._clike.context import FunctionDecl
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from metashade.targets._clike.context import Function
+
 def _sanitize_identifier(name: str) -> str:
     """Sanitize an identifier to avoid reserved words.
     
-    MaterialX commonly uses 'out' as an output parameter name, which is
-    a reserved word in GLSL/HLSL. This function appends an underscore
-    to such identifiers.
+    MaterialX commonly uses reserved keywords like 'in', 'out', and 'inout'
+    as parameter names, which are reserved in GLSL/HLSL. This function
+    appends an underscore to such identifiers.
     """
     reserved = {'out', 'in', 'inout'}
     if name in reserved:
@@ -102,7 +106,7 @@ def acquire_function(sh, impl):
     return getattr(sh, func_attr)
 
 
-def acquire_stdlib(sh, doc, target: str) -> dict:
+def acquire_stdlib(sh, doc, target: str) -> dict[str, 'Function']:
     """
     Acquire all MaterialX source-code functions into the generator.
     
