@@ -17,11 +17,11 @@ BSDF getBsdf(vec3 r, vec3 t)
 	return b;
 }
 
-layout(location = 0) out vec4 out_Color;
+layout(location = 0) out vec4 out_f4Color;
 void main()
 {
 	BSDF bsdf = getBsdf(g_f3A, g_f3B);
 	vec4 final = vec4(bsdf.response * bsdf.throughput, 1.0);
-	out_Color = final;
+	out_f4Color = final;
 }
 

@@ -64,7 +64,7 @@ class TestStructDefinition:
                 PsOut.SV_Target('color', out_type)
             return sh.entry_point(ctx._entry_point_name, sh.PsOut)()
         else:
-            sh.out_Color = sh.stage_output(out_type, location=0)
+            sh.out_f4Color = sh.stage_output(out_type, location = 0)
             return sh.entry_point(ctx._entry_point_name)()
 
     @ctx_cls_hg
@@ -74,7 +74,7 @@ class TestStructDefinition:
         Writes struct definition directly to file first, then acquires
         without emission, then uses it in a function.
         """
-        ctx = ctx_cls(dummy_entry_point=False)
+        ctx = ctx_cls(dummy_entry_point = False)
         with ctx as sh:
             self._generate_test_uniforms(sh)
 
@@ -86,9 +86,9 @@ class TestStructDefinition:
                 sh._emit('struct ExternStruct { vec3 response; vec3 throughput; };\n\n')
             
             # Acquire the struct without emitting code
-            sh.struct('ExternStruct', emit=False)(
-                response=sh.Float3,
-                throughput=sh.Float3
+            sh.struct('ExternStruct', emit = False)(
+                response = sh.Float3,
+                throughput = sh.Float3
             )
             
             # Type should be registered
@@ -96,7 +96,7 @@ class TestStructDefinition:
             
             # Use the acquired struct in a function
             with sh.function('computeStruct', sh.ExternStruct)(
-                a=sh.Float3, b=sh.Float3
+                a = sh.Float3, b = sh.Float3
             ):
                 sh // 'Now, use the struct'
                 sh.result = sh.ExternStruct()
@@ -106,11 +106,11 @@ class TestStructDefinition:
 
             # Use in main shader to force compilation
             with self._generate_ps_main_decl(sh, ctx, sh.Float4):
-                sh.s = sh.computeStruct(a=sh.g_f3A, b=sh.g_f3B)
+                sh.s = sh.computeStruct(a = sh.g_f3A, b = sh.g_f3B)
                 # Output flattened result
                 sh.final_color = sh.Float4(
-                    xyz=sh.s.response + sh.s.throughput, 
-                    w=1.0
+                    xyz = sh.s.response + sh.s.throughput, 
+                    w = 1.0
                 )
                 
                 if isinstance(ctx, HlslTestContext):
@@ -118,12 +118,12 @@ class TestStructDefinition:
                     sh.out_struct.color = sh.final_color
                     sh.return_(sh.out_struct)
                 else:
-                    sh.out_Color = sh.final_color
+                    sh.out_f4Color = sh.final_color
 
     @ctx_cls_hg
     def test_struct_emit_false_in_function(self, ctx_cls):
         """Test that acquired struct can be used as function return type."""
-        ctx = ctx_cls(dummy_entry_point=False)
+        ctx = ctx_cls(dummy_entry_point = False)
         with ctx as sh:
             self._generate_test_uniforms(sh)
 
@@ -135,15 +135,15 @@ class TestStructDefinition:
                 sh._emit('struct BSDF { vec3 response; vec3 throughput; };\n\n')
             
             # Acquire struct without emission
-            sh.struct('BSDF', emit=False)(
-                response=sh.Float3,
-                throughput=sh.Float3
+            sh.struct('BSDF', emit = False)(
+                response = sh.Float3,
+                throughput = sh.Float3
             )
             
             # Define a function that returns the struct using Metashade
             # This verifies the struct type works in function signatures and bodies
             with sh.function('getBsdf', sh.BSDF)(
-                r=sh.Float3, t=sh.Float3
+                r = sh.Float3, t = sh.Float3
             ):
                 sh // 'Now, use the struct'
                 sh.b = sh.BSDF()
@@ -153,11 +153,11 @@ class TestStructDefinition:
 
             # Use in main shader
             with self._generate_ps_main_decl(sh, ctx, sh.Float4):
-                sh.bsdf = sh.getBsdf(r=sh.g_f3A, t=sh.g_f3B)
+                sh.bsdf = sh.getBsdf(r = sh.g_f3A, t = sh.g_f3B)
                 
                 sh.final = sh.Float4(
-                    xyz=sh.bsdf.response * sh.bsdf.throughput,
-                    w=1.0
+                    xyz = sh.bsdf.response * sh.bsdf.throughput,
+                    w = 1.0
                 )
 
                 if isinstance(ctx, HlslTestContext):
@@ -165,4 +165,4 @@ class TestStructDefinition:
                     sh.out_struct.color = sh.final
                     sh.return_(sh.out_struct)
                 else:
-                    sh.out_Color = sh.final
+                    sh.out_f4Color = sh.final
