@@ -46,6 +46,27 @@ class TestStructDefinition:
             # Struct type should be accessible
             assert hasattr(sh, 'MyStruct')
 
+
+    def _generate_test_uniforms(self, sh):
+        with sh.uniform_buffer(
+            name='cb',
+            dx_register=0,
+            vk_set=0,
+            vk_binding=0
+        ):
+            sh.uniform('g_f3A', sh.Float3)
+            sh.uniform('g_f3B', sh.Float3)
+
+    def _generate_ps_main_decl(self, sh, ctx, out_type=None):
+        out_type = out_type or sh.Float4
+        if isinstance(ctx, HlslTestContext):
+            with sh.ps_output('PsOut') as PsOut:
+                PsOut.SV_Target('color', out_type)
+            return sh.entry_point(ctx._entry_point_name, sh.PsOut)()
+        else:
+            sh.out_Color = sh.stage_output(out_type, location=0)
+            return sh.entry_point(ctx._entry_point_name)()
+
     @ctx_cls_hg
     def test_struct_emit_false(self, ctx_cls):
         """Test that emit=False registers type without emitting code.
@@ -53,9 +74,12 @@ class TestStructDefinition:
         Writes struct definition directly to file first, then acquires
         without emission, then uses it in a function.
         """
-        ctx = ctx_cls(dummy_entry_point=True)
+        ctx = ctx_cls(dummy_entry_point=False)
         with ctx as sh:
+            self._generate_test_uniforms(sh)
+
             # Write struct definition directly (simulates external definition)
+            sh // 'The struct defined in the target language'
             if isinstance(ctx, HlslTestContext):
                 sh._emit('struct ExternStruct { float3 response; float3 throughput; };\n\n')
             else:
@@ -71,16 +95,40 @@ class TestStructDefinition:
             assert hasattr(sh, 'ExternStruct')
             
             # Use the acquired struct in a function
-            with sh.function('useStruct')(s=sh.ExternStruct):
-                sh.result = sh.s.response + sh.s.throughput
-                sh.return_()
+            with sh.function('computeStruct', sh.ExternStruct)(
+                a=sh.Float3, b=sh.Float3
+            ):
+                sh // 'Now, use the struct'
+                sh.result = sh.ExternStruct()
+                sh.result.response = sh.a
+                sh.result.throughput = sh.b
+                sh.return_(sh.result)
+
+            # Use in main shader to force compilation
+            with self._generate_ps_main_decl(sh, ctx, sh.Float4):
+                sh.s = sh.computeStruct(a=sh.g_f3A, b=sh.g_f3B)
+                # Output flattened result
+                sh.final_color = sh.Float4(
+                    xyz=sh.s.response + sh.s.throughput, 
+                    w=1.0
+                )
+                
+                if isinstance(ctx, HlslTestContext):
+                    sh.out_struct = sh.PsOut()
+                    sh.out_struct.color = sh.final_color
+                    sh.return_(sh.out_struct)
+                else:
+                    sh.out_Color = sh.final_color
 
     @ctx_cls_hg
     def test_struct_emit_false_in_function(self, ctx_cls):
         """Test that acquired struct can be used as function return type."""
-        ctx = ctx_cls(dummy_entry_point=True)
+        ctx = ctx_cls(dummy_entry_point=False)
         with ctx as sh:
+            self._generate_test_uniforms(sh)
+
             # Write struct definition directly
+            sh // 'The struct defined in the target language'
             if isinstance(ctx, HlslTestContext):
                 sh._emit('struct BSDF { float3 response; float3 throughput; };\n\n')
             else:
@@ -92,5 +140,29 @@ class TestStructDefinition:
                 throughput=sh.Float3
             )
             
-            # Declare a function that returns the struct
-            sh.function('getBsdf', sh.BSDF)().declare()
+            # Define a function that returns the struct using Metashade
+            # This verifies the struct type works in function signatures and bodies
+            with sh.function('getBsdf', sh.BSDF)(
+                r=sh.Float3, t=sh.Float3
+            ):
+                sh // 'Now, use the struct'
+                sh.b = sh.BSDF()
+                sh.b.response = sh.r
+                sh.b.throughput = sh.t
+                sh.return_(sh.b)
+
+            # Use in main shader
+            with self._generate_ps_main_decl(sh, ctx, sh.Float4):
+                sh.bsdf = sh.getBsdf(r=sh.g_f3A, t=sh.g_f3B)
+                
+                sh.final = sh.Float4(
+                    xyz=sh.bsdf.response * sh.bsdf.throughput,
+                    w=1.0
+                )
+
+                if isinstance(ctx, HlslTestContext):
+                    sh.out_struct = sh.PsOut()
+                    sh.out_struct.color = sh.final
+                    sh.return_(sh.out_struct)
+                else:
+                    sh.out_Color = sh.final
