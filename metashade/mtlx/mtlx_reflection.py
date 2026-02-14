@@ -26,17 +26,18 @@ graph-based implementations defined in MaterialX XML.
 """
 
 from metashade.mtlx.dtypes import mtlx_to_metashade_dtype
-from metashade.targets._clike.context import Function, _ParamDef
-from metashade.targets._rtsl.qualifiers import ParamQualifiers, Direction
+from metashade.targets._clike.context import FunctionDecl
 
 def _sanitize_identifier(name: str) -> str:
     """Sanitize an identifier to avoid reserved words.
     
     MaterialX commonly uses 'out' as an output parameter name, which is
-    a reserved word in GLSL/HLSL. This renames it to 'out_'.
+    a reserved word in GLSL/HLSL. This function appends an underscore
+    to such identifiers.
     """
-    if name == "out":
-        return "out_"
+    reserved = {'out', 'in', 'inout'}
+    if name in reserved:
+        return name + '_'
     return name
 
 
@@ -65,8 +66,13 @@ def acquire_function(sh, impl):
     if nodedef is None:
         return None
     
-    # Build param_defs in order (inputs then outputs)
-    param_defs = {}
+    # Skip if already registered - duplicates occur because MaterialX has
+    # stronger typing than GLSL/HLSL (e.g., color3 vs vector3 are both vec3)
+    if hasattr(sh, func_attr):
+        return getattr(sh, func_attr)
+    
+    # Build param annotations (inputs then outputs)
+    param_annotations = {}
     
     for input in nodedef.getInputs():
         dtype = mtlx_to_metashade_dtype(input.getType(), sh)
@@ -76,10 +82,7 @@ def acquire_function(sh, impl):
                 f"'{input.getName()}' in {func_attr}"
             )
         param_name = _sanitize_identifier(input.getName())
-        param_defs[param_name] = _ParamDef(
-            dtype_factory=dtype,
-            qualifiers=[]
-        )
+        param_annotations[param_name] = dtype
     
     for output in nodedef.getOutputs():
         dtype = mtlx_to_metashade_dtype(output.getType(), sh)
@@ -89,29 +92,17 @@ def acquire_function(sh, impl):
                 f"'{output.getName()}' in {func_attr}"
             )
         param_name = _sanitize_identifier(output.getName())
-        param_defs[param_name] = _ParamDef(
-            dtype_factory=dtype,
-            qualifiers=[ParamQualifiers(direction=Direction.OUT)]
-        )
+        param_annotations[param_name] = sh.Out(dtype)
     
-    # Skip if already registered - duplicates occur because MaterialX has
-    # stronger typing than GLSL/HLSL (e.g., color3 vs vector3 are both vec3)
-    if hasattr(sh, func_attr):
-        return getattr(sh, func_attr)
+    # Declare the function without emitting code
+    FunctionDecl(sh, func_attr, return_type=None)(
+        **param_annotations
+    ).declare(emit=False)
     
-    # Create Function object and register without emitting
-    func = Function(
-        sh=sh,
-        name=func_attr,
-        return_type=None,  # MaterialX source functions return void
-        param_defs=param_defs
-    )
-    sh._set_global(func_attr, func)
-    
-    return func
+    return getattr(sh, func_attr)
 
 
-def acquire_stdlib(sh, doc, target: str) -> dict[str, Function]:
+def acquire_stdlib(sh, doc, target: str) -> dict:
     """
     Acquire all MaterialX source-code functions into the generator.
     
