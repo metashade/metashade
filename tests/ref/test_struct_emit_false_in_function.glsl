@@ -5,10 +5,12 @@ layout (set = 0, binding = 0) uniform cb
 	vec3 g_f3B;
 };
 
+// The struct defined in the target language
 struct BSDF { vec3 response; vec3 throughput; };
 
 BSDF getBsdf(vec3 r, vec3 t)
 {
+	// Now, use the struct
 	BSDF b;
 	b.response = r;
 	b.throughput = t;

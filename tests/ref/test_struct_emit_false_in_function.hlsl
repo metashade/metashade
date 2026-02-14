@@ -5,10 +5,12 @@ cbuffer cb : register(b0)
 	float3 g_f3B;
 };
 
+// The struct defined in the target language
 struct BSDF { float3 response; float3 throughput; };
 
 BSDF getBsdf(float3 r, float3 t)
 {
+	// Now, use the struct
 	BSDF b;
 	b.response = r;
 	b.throughput = t;
