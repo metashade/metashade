@@ -29,6 +29,7 @@ _METASHADE_TO_MTLX = {
     'Float4': 'vector4',
     'Float3x3': 'matrix33',
     'Float4x4': 'matrix44',
+    'Bool': 'boolean',
 }
 
 # Derive the inverse map from the canonical forward map
@@ -36,13 +37,21 @@ _MTLX_TO_METASHADE = {v: k for k, v in _METASHADE_TO_MTLX.items()}
 
 # Add MaterialX type aliases (not in forward map, but valid MaterialX types)
 _MTLX_TO_METASHADE.update({
-    'int': 'Int',  # Alias for 'integer'
+    'int': 'Int',        # Alias for 'integer'
+    'string': 'Int',     # Enums map to integers in shader generation
+    # Standard MaterialX Typedefs/Structs
+    'BSDF': 'BSDF',
+    'EDF': 'EDF',
+    'VDF': 'VDF',
+    'surfaceshader': 'SurfaceShader',
+    'volumeshader': 'VolumeShader',
+    'displacementshader': 'DisplacementShader',
+    'lightshader': 'LightShader',
+    'material': 'Material',
 })
 
 # Types that don't have Metashade equivalents (for documentation)
 _UNSUPPORTED_MTLX_TYPES = frozenset({
-    'boolean',      # No direct Metashade equivalent yet
-    'string',       # Uniform metadata, not in function signatures
     'filename',     # Texture references
     'integerarray', # Arrays need special handling
     'floatarray',
