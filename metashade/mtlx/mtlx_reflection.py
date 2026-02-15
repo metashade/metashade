@@ -32,6 +32,14 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from metashade.targets._clike.context import Function
 
+# Output types that require ClosureData injection (matches
+# HwShaderGenerator::nodeNeedsClosureData in MaterialX C++).
+_CLOSURE_OUTPUT_TYPES = frozenset({'BSDF', 'EDF', 'VDF'})
+
+def _node_needs_closure_data(nodedef) -> bool:
+    """Check if a nodedef's implementation requires ClosureData injection."""
+    return nodedef.getType() in _CLOSURE_OUTPUT_TYPES
+
 def _sanitize_identifier(name: str) -> str:
     """Sanitize an identifier to avoid reserved words.
     
@@ -77,6 +85,10 @@ def acquire_function(sh, impl):
     
     # Build param annotations (inputs then outputs)
     param_annotations = {}
+    
+    # Closure-type nodes get ClosureData as first parameter
+    if _node_needs_closure_data(nodedef):
+        param_annotations['closureData'] = sh.ClosureData
     
     for input in nodedef.getInputs():
         dtype = mtlx_to_metashade_dtype(input.getType(), sh)
@@ -177,6 +189,11 @@ def generate_wrapper_func(sh, impl, suffix: str = "_metashade"):
     
     # Build parameter dict for wrapper
     params = {}
+    
+    # Closure-type nodes get ClosureData as first parameter
+    if _node_needs_closure_data(nodedef):
+        params['closureData'] = sh.ClosureData
+    
     for input in nodedef.getInputs():
         dtype = mtlx_to_metashade_dtype(input.getType(), sh)
         if dtype is None:

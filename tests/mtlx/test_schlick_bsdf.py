@@ -60,6 +60,15 @@ class TestSchlickBsdfWrapper:
             sh = test_ctx._sh
             
             # Define standard structs required by the node
+            sh.struct('ClosureData', emit=False)(
+                closureType=sh.Int,
+                L=sh.Vector3f,
+                V=sh.Vector3f,
+                N=sh.Vector3f,
+                P=sh.Point3f,
+                occlusion=sh.Float
+            )
+            
             sh.struct('BSDF', emit=False)(
                 response=sh.Float3,
                 throughput=sh.Float3
