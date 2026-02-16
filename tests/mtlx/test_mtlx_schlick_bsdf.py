@@ -22,6 +22,7 @@ mx = pytest.importorskip("MaterialX")
 from metashade.mtlx.mtlx_reflection import (
     generate_wrapper_func,
 )
+from metashade.mtlx.dtypes import register_mtlx_closure_structs
 from metashade.mtlx.util.testing import GlslTestContext
 
 
@@ -59,20 +60,8 @@ class TestSchlickBsdfWrapper:
         with ctx as test_ctx:
             sh = test_ctx._sh
             
-            # Define standard structs required by the node
-            sh.struct('ClosureData', emit=False)(
-                closureType=sh.Int,
-                L=sh.Vector3f,
-                V=sh.Vector3f,
-                N=sh.Vector3f,
-                P=sh.Point3f,
-                occlusion=sh.Float
-            )
-            
-            sh.struct('BSDF', emit=False)(
-                response=sh.Float3,
-                throughput=sh.Float3
-            )
+            # Declare standard MaterialX closure structs
+            register_mtlx_closure_structs(sh)
             
             # 1. Generate the wrapper function in Metashade
             wrapper = generate_wrapper_func(sh, schlick_impl)

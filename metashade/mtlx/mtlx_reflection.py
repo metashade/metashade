@@ -25,7 +25,7 @@ Source-code functions are MaterialX implementations that have 'file' and
 graph-based implementations defined in MaterialX XML.
 """
 
-from metashade.mtlx.dtypes import mtlx_to_metashade_dtype
+from metashade.mtlx.dtypes import mtlx_to_metashade_dtype, register_mtlx_closure_structs
 from metashade.targets._clike.context import FunctionDecl
 
 from typing import TYPE_CHECKING
@@ -135,6 +135,7 @@ def acquire_stdlib(sh, doc, target: str) -> dict[str, 'Function']:
     Returns:
         Dict mapping function_name -> Function object
     """
+    register_mtlx_closure_structs(sh)
     functions = {}
     
     for impl in doc.getImplementations():

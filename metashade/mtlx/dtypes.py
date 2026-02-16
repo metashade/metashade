@@ -89,3 +89,31 @@ def mtlx_to_metashade_dtype(mtlx_type: str, sh):
         return None
     
     return getattr(sh, metashade_name, None)
+
+
+def register_mtlx_closure_structs(sh):
+    """Declare MaterialX closure-related structs on a generator.
+    
+    These structs are required by BSDF closure-type nodes and must be
+    registered before acquiring or wrapping such nodes.
+    
+    The structs are declared with ``emit=False`` because their definitions
+    are already emitted by MaterialX's standard library includes.
+    
+    Args:
+        sh: The Metashade generator instance.
+    """
+    sh.struct('ClosureData', emit=False)(
+        closureType=sh.Int,
+        L=sh.Vector3f,
+        V=sh.Vector3f,
+        N=sh.Vector3f,
+        P=sh.Point3f,
+        occlusion=sh.Float
+    )
+    
+    sh.struct('BSDF', emit=False)(
+        response=sh.Float3,
+        throughput=sh.Float3
+    )
+
