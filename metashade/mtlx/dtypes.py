@@ -29,6 +29,7 @@ _METASHADE_TO_MTLX = {
     'Float4': 'vector4',
     'Float3x3': 'matrix33',
     'Float4x4': 'matrix44',
+    'Bool': 'boolean',
 }
 
 # Derive the inverse map from the canonical forward map
@@ -36,13 +37,21 @@ _MTLX_TO_METASHADE = {v: k for k, v in _METASHADE_TO_MTLX.items()}
 
 # Add MaterialX type aliases (not in forward map, but valid MaterialX types)
 _MTLX_TO_METASHADE.update({
-    'int': 'Int',  # Alias for 'integer'
+    'int': 'Int',        # Alias for 'integer'
+    'string': 'Int',     # Enums map to integers in shader generation
+    # Standard MaterialX Typedefs/Structs
+    'BSDF': 'BSDF',
+    'EDF': 'EDF',
+    'VDF': 'VDF',
+    'surfaceshader': 'SurfaceShader',
+    'volumeshader': 'VolumeShader',
+    'displacementshader': 'DisplacementShader',
+    'lightshader': 'LightShader',
+    'material': 'Material',
 })
 
 # Types that don't have Metashade equivalents (for documentation)
 _UNSUPPORTED_MTLX_TYPES = frozenset({
-    'boolean',      # No direct Metashade equivalent yet
-    'string',       # Uniform metadata, not in function signatures
     'filename',     # Texture references
     'integerarray', # Arrays need special handling
     'floatarray',
@@ -80,3 +89,31 @@ def mtlx_to_metashade_dtype(mtlx_type: str, sh):
         return None
     
     return getattr(sh, metashade_name, None)
+
+
+def register_mtlx_closure_structs(sh):
+    """Declare MaterialX closure-related structs on a generator.
+    
+    These structs are required by BSDF closure-type nodes and must be
+    registered before acquiring or wrapping such nodes.
+    
+    The structs are declared with ``emit=False`` because their definitions
+    are already emitted by MaterialX's standard library includes.
+    
+    Args:
+        sh: The Metashade generator instance.
+    """
+    sh.struct('ClosureData', emit=False)(
+        closureType=sh.Int,
+        L=sh.Vector3f,
+        V=sh.Vector3f,
+        N=sh.Vector3f,
+        P=sh.Point3f,
+        occlusion=sh.Float
+    )
+    
+    sh.struct('BSDF', emit=False)(
+        response=sh.Float3,
+        throughput=sh.Float3
+    )
+

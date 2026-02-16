@@ -25,12 +25,20 @@ Source-code functions are MaterialX implementations that have 'file' and
 graph-based implementations defined in MaterialX XML.
 """
 
-from metashade.mtlx.dtypes import mtlx_to_metashade_dtype
+from metashade.mtlx.dtypes import mtlx_to_metashade_dtype, register_mtlx_closure_structs
 from metashade.targets._clike.context import FunctionDecl
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from metashade.targets._clike.context import Function
+
+# Output types that require ClosureData injection (matches
+# HwShaderGenerator::nodeNeedsClosureData in MaterialX C++).
+_CLOSURE_OUTPUT_TYPES = frozenset({'BSDF', 'EDF', 'VDF'})
+
+def _node_needs_closure_data(nodedef) -> bool:
+    """Check if a nodedef's implementation requires ClosureData injection."""
+    return nodedef.getType() in _CLOSURE_OUTPUT_TYPES
 
 def _sanitize_identifier(name: str) -> str:
     """Sanitize an identifier to avoid reserved words.
@@ -78,6 +86,10 @@ def acquire_function(sh, impl):
     # Build param annotations (inputs then outputs)
     param_annotations = {}
     
+    # Closure-type nodes get ClosureData as first parameter
+    if _node_needs_closure_data(nodedef):
+        param_annotations['closureData'] = sh.ClosureData
+    
     for input in nodedef.getInputs():
         dtype = mtlx_to_metashade_dtype(input.getType(), sh)
         if dtype is None:
@@ -123,6 +135,7 @@ def acquire_stdlib(sh, doc, target: str) -> dict[str, 'Function']:
     Returns:
         Dict mapping function_name -> Function object
     """
+    register_mtlx_closure_structs(sh)
     functions = {}
     
     for impl in doc.getImplementations():
@@ -177,6 +190,11 @@ def generate_wrapper_func(sh, impl, suffix: str = "_metashade"):
     
     # Build parameter dict for wrapper
     params = {}
+    
+    # Closure-type nodes get ClosureData as first parameter
+    if _node_needs_closure_data(nodedef):
+        params['closureData'] = sh.ClosureData
+    
     for input in nodedef.getInputs():
         dtype = mtlx_to_metashade_dtype(input.getType(), sh)
         if dtype is None:

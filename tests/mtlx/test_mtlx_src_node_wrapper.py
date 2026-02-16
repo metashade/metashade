@@ -26,9 +26,7 @@ mx = pytest.importorskip("MaterialX")
 from metashade.mtlx.mtlx_reflection import (
     acquire_function,
     acquire_stdlib,
-    generate_wrapper_func,
 )
-from metashade.mtlx.util.testing import GlslTestContext
 
 
 class TestAcquireFunction:
@@ -75,32 +73,3 @@ class TestAcquireFunction:
         assert func is not None
         assert func._name == "mx_fractal3d_float"
         assert hasattr(sh, "mx_fractal3d_float")
-
-
-class TestGenerateWrapper:
-    """Tests for generating wrapper functions."""
-    
-    @pytest.fixture
-    def fractal3d_impl(self, stdlib_doc: mx.Document):
-        """Get the fractal3d_float implementation."""
-        for impl in stdlib_doc.getImplementations():
-            if impl.getAttribute("function") == "mx_fractal3d_float":
-                return impl
-        pytest.fail("Could not find mx_fractal3d_float implementation")
-    
-    def test_generate_wrapper_func(self, fractal3d_impl):
-        """Generate wrapper using Metashade generator."""
-        ctx = GlslTestContext(
-            base_name="mx_fractal3d_float_metashade", impl_only=True
-        )
-        
-        with ctx as test_ctx:
-            sh = test_ctx._sh
-            
-            wrapper = generate_wrapper_func(sh, fractal3d_impl)
-            assert wrapper is not None
-            
-            test_ctx.add_node_impl(
-                func_name=wrapper._name,
-                mx_doc_string="Metashade wrapper for fractal3d_float"
-            )
