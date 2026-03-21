@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "metashade"
-version = "0.5.1"
+version = "0.6.0a1"
 description = "An experimental Python-based GPU shading embedded domain-specific language (EDSL)"
 readme = "README.md"
 requires-python = ">=3.9"
