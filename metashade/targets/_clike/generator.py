@@ -72,6 +72,7 @@ class Generator(base.Generator):
         return getattr(self, annotation)
 
     def _instantiate_func(self, py_func):
+        import inspect
         name = py_func.__name__
         return_annotation = py_func.__annotations__.get('return', 'None')
         
@@ -80,11 +81,20 @@ class Generator(base.Generator):
         else:
             return_type = self._resolve_annotation(return_annotation)
 
-        param_annotations = {
-            name : self._resolve_annotation(annotation)
-            for name, annotation in py_func.__annotations__.items()
-            if name != 'return'
-        }
+        sig = inspect.signature(py_func)
+        param_annotations = {}
+        for param_name, annotation in py_func.__annotations__.items():
+            if param_name == 'return':
+                continue
+            
+            dtype_factory = self._resolve_annotation(annotation)
+            
+            param = sig.parameters.get(param_name)
+            if param is not None and param.default is not inspect.Parameter.empty:
+                param_annotations[param_name] = (dtype_factory, param.default)
+            else:
+                param_annotations[param_name] = dtype_factory
+
         func_decl = context.FunctionDecl(
             self, name, return_type, py_func.__doc__
         )

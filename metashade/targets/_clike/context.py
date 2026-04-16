@@ -19,12 +19,15 @@ from typing import NamedTuple
 import metashade.targets._base.context as base
 from .._rtsl.qualifiers import ParamQualifiers
 
+_NO_DEFAULT = object()
+
 class _ParamDef(NamedTuple):
     '''
     Function parameter definition: dtype factory and qualifiers.
     '''
     dtype_factory: object  # Generator._DtypeFactory
     qualifiers: list  # List of ParamQualifiers
+    default: object = _NO_DEFAULT
 
 class FunctionDecl:
     '''
@@ -53,6 +56,10 @@ class FunctionDecl:
         self._param_defs = {}
         
         for name, dtype_factory in param_annotations.items():
+            default = _NO_DEFAULT
+            if isinstance(dtype_factory, tuple):
+                dtype_factory, default = dtype_factory
+
             # Check if this is an Annotated type with qualifiers
             qualifiers = []
             if typing.get_origin(dtype_factory) is typing.Annotated:
@@ -67,7 +74,8 @@ class FunctionDecl:
             
             self._param_defs[name] = _ParamDef(
                 dtype_factory=dtype_factory,
-                qualifiers=qualifiers
+                qualifiers=qualifiers,
+                default=default
             )
 
         # Return self, so that it can be entered in a with scope
@@ -230,9 +238,12 @@ class Function:
         for param_name, param_def in self._param_defs.items():
             arg = kwargs.get(param_name)
             if arg is None:
-                raise RuntimeError(
-                    f"Argument missing for parameter '{param_name}'"
-                )
+                if param_def.default is not _NO_DEFAULT:
+                    arg = param_def.default
+                else:
+                    raise RuntimeError(
+                        f"Argument missing for parameter '{param_name}'"
+                    )
             # Get the dtype class from the factory and use it for type checking
             dtype_class = param_def.dtype_factory._get_dtype()
             ref = dtype_class._get_value_ref(arg)
@@ -242,7 +253,7 @@ class Function:
                 )
             
             arg_list.append(str(ref))
-            kwargs.pop(param_name)
+            kwargs.pop(param_name, None)
 
         if kwargs:
             unmatched_arg_names = ', '.join([
