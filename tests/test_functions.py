@@ -115,7 +115,7 @@ class TestFunctions:
             self._generate_test_uniforms(sh)
             
             with sh.function('addDefault', sh.Float4)(
-                a = sh.Float4, b = (sh.Float4, (1.0, 1.0, 1.0, 1.0))
+                a = sh.Float4, b = sh.In(sh.Float4, default=(1.0, 1.0, 1.0, 1.0))
             ):
                 sh.return_(sh.a + sh.b)
 

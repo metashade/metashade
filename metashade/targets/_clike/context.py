@@ -17,9 +17,7 @@ import typing
 from typing import NamedTuple
 
 import metashade.targets._base.context as base
-from .._rtsl.qualifiers import ParamQualifiers
-
-_NO_DEFAULT = object()
+from .._rtsl.qualifiers import ParamQualifiers, _NO_DEFAULT
 
 class _ParamDef(NamedTuple):
     '''
@@ -57,8 +55,6 @@ class FunctionDecl:
         
         for name, dtype_factory in param_annotations.items():
             default = _NO_DEFAULT
-            if isinstance(dtype_factory, tuple):
-                dtype_factory, default = dtype_factory
 
             # Check if this is an Annotated type with qualifiers
             qualifiers = []
@@ -67,10 +63,11 @@ class FunctionDecl:
                 # Annotated[dtype_factory, qualifier1, qualifier2, ...]
                 typing_args = typing.get_args(dtype_factory)
                 dtype_factory = typing_args[0]
-                qualifiers = [
-                    annotation for annotation in typing_args[1:]
-                    if isinstance(annotation, ParamQualifiers)
-                ]
+                for annotation in typing_args[1:]:
+                    if isinstance(annotation, ParamQualifiers):
+                        qualifiers.append(annotation)
+                        if annotation.default is not _NO_DEFAULT:
+                            default = annotation.default
             
             self._param_defs[name] = _ParamDef(
                 dtype_factory=dtype_factory,
