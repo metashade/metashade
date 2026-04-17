@@ -54,6 +54,8 @@ class FunctionDecl:
         self._param_defs = {}
         
         for name, dtype_factory in param_annotations.items():
+            default = None
+
             # Check if this is an Annotated type with qualifiers
             qualifiers = []
             if typing.get_origin(dtype_factory) is typing.Annotated:
@@ -61,14 +63,16 @@ class FunctionDecl:
                 # Annotated[dtype_factory, qualifier1, qualifier2, ...]
                 typing_args = typing.get_args(dtype_factory)
                 dtype_factory = typing_args[0]
-                qualifiers = [
-                    annotation for annotation in typing_args[1:]
-                    if isinstance(annotation, ParamQualifiers)
-                ]
+                for annotation in typing_args[1:]:
+                    if isinstance(annotation, ParamQualifiers):
+                        qualifiers.append(annotation)
+                        if annotation.default is not None:
+                            default = annotation.default
             
             self._param_defs[name] = _ParamDef(
                 dtype_factory=dtype_factory,
-                qualifiers=qualifiers
+                qualifiers=qualifiers,
+                default=default
             )
 
         # Return self, so that it can be entered in a with scope
