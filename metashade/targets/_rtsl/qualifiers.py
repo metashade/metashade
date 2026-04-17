@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from enum import Enum
-from typing import Annotated
+from typing import Annotated, Any
 from dataclasses import dataclass
 
 class Direction(Enum):
@@ -24,14 +24,26 @@ class Direction(Enum):
 @dataclass
 class ParamQualifiers:
     direction: Direction = Direction.IN
+    default: Any = None
 
 # Convenience functions
-def Out(base_type: str) -> type:
-    """Create an output parameter type"""
-    qualifiers = ParamQualifiers(direction=Direction.OUT)
+def In(base_type: str, default: Any = None, **kwargs) -> type:
+    """Create an input parameter type"""
+    qualifiers = ParamQualifiers(
+        direction=Direction.IN, default=default, **kwargs
+    )
     return Annotated[base_type, qualifiers]
 
-def InOut(base_type: str) -> type:
+def Out(base_type: str, default: Any = None, **kwargs) -> type:
+    """Create an output parameter type"""
+    qualifiers = ParamQualifiers(
+        direction=Direction.OUT, default=default, **kwargs
+    )
+    return Annotated[base_type, qualifiers]
+
+def InOut(base_type: str, default: Any = None, **kwargs) -> type:
     """Create an input-output parameter type"""
-    qualifiers = ParamQualifiers(direction=Direction.INOUT)
+    qualifiers = ParamQualifiers(
+        direction=Direction.INOUT, default=default, **kwargs
+    )
     return Annotated[base_type, qualifiers]

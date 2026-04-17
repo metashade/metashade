@@ -25,6 +25,7 @@ class _ParamDef(NamedTuple):
     '''
     dtype_factory: object  # Generator._DtypeFactory
     qualifiers: list  # List of ParamQualifiers
+    default: object = None
 
 class FunctionDecl:
     '''
@@ -53,6 +54,8 @@ class FunctionDecl:
         self._param_defs = {}
         
         for name, dtype_factory in param_annotations.items():
+            default = None
+
             # Check if this is an Annotated type with qualifiers
             qualifiers = []
             if typing.get_origin(dtype_factory) is typing.Annotated:
@@ -60,14 +63,16 @@ class FunctionDecl:
                 # Annotated[dtype_factory, qualifier1, qualifier2, ...]
                 typing_args = typing.get_args(dtype_factory)
                 dtype_factory = typing_args[0]
-                qualifiers = [
-                    annotation for annotation in typing_args[1:]
-                    if isinstance(annotation, ParamQualifiers)
-                ]
+                for annotation in typing_args[1:]:
+                    if isinstance(annotation, ParamQualifiers):
+                        qualifiers.append(annotation)
+                        if annotation.default is not None:
+                            default = annotation.default
             
             self._param_defs[name] = _ParamDef(
                 dtype_factory=dtype_factory,
-                qualifiers=qualifiers
+                qualifiers=qualifiers,
+                default=default
             )
 
         # Return self, so that it can be entered in a with scope
@@ -126,7 +131,10 @@ class FunctionDecl:
         if self._doc is not None:
             for line in self._doc.strip().split('\n'):
                 # Escape non-ASCII characters to \uXXXX format for safe output
-                safe_line = line.strip().encode('ascii', 'backslashreplace').decode('ascii')
+                safe_line = line.strip().encode(
+                    'ascii', 'backslashreplace'
+                ).decode('ascii')
+
                 self._sh._emit_indent()
                 self._sh._emit(f'// {safe_line}\n')
             self._sh._emit_indent()
@@ -230,9 +238,12 @@ class Function:
         for param_name, param_def in self._param_defs.items():
             arg = kwargs.get(param_name)
             if arg is None:
-                raise RuntimeError(
-                    f"Argument missing for parameter '{param_name}'"
-                )
+                if param_def.default is not None:
+                    arg = param_def.default
+                else:
+                    raise RuntimeError(
+                        f"Argument missing for parameter '{param_name}'"
+                    )
             # Get the dtype class from the factory and use it for type checking
             dtype_class = param_def.dtype_factory._get_dtype()
             ref = dtype_class._get_value_ref(arg)
@@ -242,7 +253,7 @@ class Function:
                 )
             
             arg_list.append(str(ref))
-            kwargs.pop(param_name)
+            kwargs.pop(param_name, None)
 
         if kwargs:
             unmatched_arg_names = ', '.join([
