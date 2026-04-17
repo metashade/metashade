@@ -14,7 +14,7 @@
 
 import types
 import re
-from typing import Annotated, get_origin, get_args
+from typing import Annotated
 import metashade.targets._base.generator as base
 from metashade.targets._rtsl.qualifiers import ParamQualifiers, Direction, In
 from . import arrays, context, struct
