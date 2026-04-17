@@ -90,21 +90,30 @@ class Generator(base.Generator):
             dtype_factory = self._resolve_annotation(annotation)
             
             param = sig.parameters.get(param_name)
-            if param is not None and param.default is not inspect.Parameter.empty:
+            if (param is not None
+                and param.default is not inspect.Parameter.empty
+            ):
                 # If the type already has annotations, inject the default value
                 if get_origin(dtype_factory) is Annotated:
                     ann_args = get_args(dtype_factory)
                     base_type = ann_args[0]
-                    qualifiers = [arg for arg in ann_args[1:] if isinstance(arg, ParamQualifiers)]
+                    qualifiers = [
+                        arg for arg in ann_args[1:]
+                        if isinstance(arg, ParamQualifiers)
+                    ]
                     if qualifiers:
                         # Modify the existing qualifier's default
                         qualifiers[0].default = param.default
                         param_annotations[param_name] = dtype_factory
                     else:
-                        param_annotations[param_name] = In(base_type, default=param.default)
+                        param_annotations[param_name] = In(
+                            base_type, default=param.default
+                        )
                 else:
                     # Naked type, wrap as In with default
-                    param_annotations[param_name] = In(dtype_factory, default=param.default)
+                    param_annotations[param_name] = In(
+                        dtype_factory, default=param.default
+                    )
             else:
                 param_annotations[param_name] = dtype_factory
 

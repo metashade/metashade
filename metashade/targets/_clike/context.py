@@ -131,7 +131,10 @@ class FunctionDecl:
         if self._doc is not None:
             for line in self._doc.strip().split('\n'):
                 # Escape non-ASCII characters to \uXXXX format for safe output
-                safe_line = line.strip().encode('ascii', 'backslashreplace').decode('ascii')
+                safe_line = line.strip().encode(
+                    'ascii', 'backslashreplace'
+                ).decode('ascii')
+
                 self._sh._emit_indent()
                 self._sh._emit(f'// {safe_line}\n')
             self._sh._emit_indent()
