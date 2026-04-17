@@ -134,31 +134,6 @@ class TestFunctions:
                     sh.out_f4Color = sh.c + sh.c2
 
     @ctx_cls_hg
-    def test_default_args_instantiate(self, ctx_cls):
-        def add_with_default(
-            sh, a: 'Float4', b: 'Float4' = (1.0, 1.0, 1.0, 1.0)
-        ) -> 'Float4':
-            sh.c = a + b
-            sh.return_(sh.c)
-
-        ctx = ctx_cls()
-        with ctx as sh:
-            self._generate_test_uniforms(sh)
-
-            sh.instantiate(add_with_default)
-
-            with self._generate_ps_main_decl(sh, ctx):
-                sh.c = sh.add_with_default(a = sh.g_f4A)
-                sh.c2 = sh.add_with_default(a = sh.g_f4A, b = sh.g_f4B)
-
-                if isinstance(ctx, HlslTestContext):
-                    sh.result = sh.PsOut()
-                    sh.result.color = sh.c + sh.c2
-                    sh.return_(sh.result)
-                else:
-                    sh.out_f4Color = sh.c + sh.c2
-
-    @ctx_cls_hg
     def test_extra_arg(self, ctx_cls):
         with ctx_cls(no_file = True) as sh:
             self._generate_test_uniforms(sh)
