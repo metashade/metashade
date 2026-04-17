@@ -114,16 +114,16 @@ class TestFunctions:
         with ctx as sh:
             self._generate_test_uniforms(sh)
             
-            with sh.function('addDefault', sh.Float4)(
+            with sh.function('add_with_default', sh.Float4)(
                 a = sh.Float4, b = sh.In(sh.Float4, default=(1.0, 1.0, 1.0, 1.0))
             ):
                 sh.return_(sh.a + sh.b)
 
             with self._generate_ps_main_decl(sh, ctx):
                 # Call without second arg
-                sh.c = sh.addDefault(a = sh.g_f4A)
+                sh.c = sh.add_with_default(a = sh.g_f4A)
                 # Call overriding second arg
-                sh.c2 = sh.addDefault(a = sh.g_f4A, b = sh.g_f4B)
+                sh.c2 = sh.add_with_default(a = sh.g_f4A, b = sh.g_f4B)
 
                 if isinstance(ctx, HlslTestContext):
                     sh.result = sh.PsOut()
@@ -134,7 +134,7 @@ class TestFunctions:
 
     @ctx_cls_hg
     def test_default_args_instantiate(self, ctx_cls):
-        def addDefInst(sh, a: 'Float4', b: 'Float4' = (1.0, 1.0, 1.0, 1.0)) -> 'Float4':
+        def add_with_default(sh, a: 'Float4', b: 'Float4' = (1.0, 1.0, 1.0, 1.0)) -> 'Float4':
             sh.c = a + b
             sh.return_(sh.c)
 
@@ -142,11 +142,11 @@ class TestFunctions:
         with ctx as sh:
             self._generate_test_uniforms(sh)
 
-            sh.instantiate(addDefInst)
+            sh.instantiate(add_with_default)
 
             with self._generate_ps_main_decl(sh, ctx):
-                sh.c = sh.addDefInst(a = sh.g_f4A)
-                sh.c2 = sh.addDefInst(a = sh.g_f4A, b = sh.g_f4B)
+                sh.c = sh.add_with_default(a = sh.g_f4A)
+                sh.c2 = sh.add_with_default(a = sh.g_f4A, b = sh.g_f4B)
 
                 if isinstance(ctx, HlslTestContext):
                     sh.result = sh.PsOut()

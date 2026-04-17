@@ -6,7 +6,7 @@ cbuffer cb : register(b0)
 	float3 g_f3C;
 };
 
-float4 addDefault(float4 a, float4 b)
+float4 add_with_default(float4 a, float4 b)
 {
 	return a + b;
 }
@@ -18,8 +18,8 @@ struct PsOut
 
 PsOut main()
 {
-	float4 c = addDefault(g_f4A, float4(1.0, 1.0, 1.0, 1.0));
-	float4 c2 = addDefault(g_f4A, g_f4B);
+	float4 c = add_with_default(g_f4A, float4(1.0, 1.0, 1.0, 1.0));
+	float4 c2 = add_with_default(g_f4A, g_f4B);
 	PsOut result;
 	result.color = c + c2;
 	return result;
