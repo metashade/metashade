@@ -29,15 +29,21 @@ class ParamQualifiers:
 # Convenience functions
 def In(base_type: str, default: Any = None, **kwargs) -> type:
     """Create an input parameter type"""
-    qualifiers = ParamQualifiers(direction=Direction.IN, default=default, **kwargs)
+    qualifiers = ParamQualifiers(
+        direction=Direction.IN, default=default, **kwargs
+    )
     return Annotated[base_type, qualifiers]
 
 def Out(base_type: str, default: Any = None, **kwargs) -> type:
     """Create an output parameter type"""
-    qualifiers = ParamQualifiers(direction=Direction.OUT, default=default, **kwargs)
+    qualifiers = ParamQualifiers(
+        direction=Direction.OUT, default=default, **kwargs
+    )
     return Annotated[base_type, qualifiers]
 
 def InOut(base_type: str, default: Any = None, **kwargs) -> type:
     """Create an input-output parameter type"""
-    qualifiers = ParamQualifiers(direction=Direction.INOUT, default=default, **kwargs)
+    qualifiers = ParamQualifiers(
+        direction=Direction.INOUT, default=default, **kwargs
+    )
     return Annotated[base_type, qualifiers]

@@ -58,7 +58,10 @@ class Generator(base.Generator):
 
     def _resolve_annotation(self, annotation: str, default_val=None):
         import inspect
-        has_default = default_val is not None and default_val is not inspect.Parameter.empty
+        has_default = (
+            default_val is not None 
+            and default_val is not inspect.Parameter.empty
+        )
 
         match = re.match(r'^(Out|InOut)\[(.+)\]$', annotation)
         if match:
@@ -71,9 +74,14 @@ class Generator(base.Generator):
                 direction = Direction.INOUT
 
             if has_default:
-                return Annotated[inner_type, ParamQualifiers(direction=direction, default=default_val)]
+                return Annotated[
+                    inner_type, 
+                    ParamQualifiers(direction=direction, default=default_val)
+                ]
             else:
-                return Annotated[inner_type, ParamQualifiers(direction=direction)]
+                return Annotated[
+                    inner_type, ParamQualifiers(direction=direction)
+                ]
 
         dtype_factory = getattr(self, annotation)
         if has_default:
@@ -98,7 +106,10 @@ class Generator(base.Generator):
                 continue
             
             param = sig.parameters.get(param_name)
-            default_val = param.default if param is not None else inspect.Parameter.empty
+            default_val = (
+                param.default if param is not None 
+                else inspect.Parameter.empty
+            )
             
             param_annotations[param_name] = self._resolve_annotation(
                 annotation, default_val

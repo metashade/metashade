@@ -115,7 +115,8 @@ class TestFunctions:
             self._generate_test_uniforms(sh)
             
             with sh.function('add_with_default', sh.Float4)(
-                a = sh.Float4, b = sh.In(sh.Float4, default=(1.0, 1.0, 1.0, 1.0))
+                a = sh.Float4, 
+                b = sh.In(sh.Float4, default=(1.0, 1.0, 1.0, 1.0))
             ):
                 sh.return_(sh.a + sh.b)
 
@@ -134,7 +135,9 @@ class TestFunctions:
 
     @ctx_cls_hg
     def test_default_args_instantiate(self, ctx_cls):
-        def add_with_default(sh, a: 'Float4', b: 'Float4' = (1.0, 1.0, 1.0, 1.0)) -> 'Float4':
+        def add_with_default(
+            sh, a: 'Float4', b: 'Float4' = (1.0, 1.0, 1.0, 1.0)
+        ) -> 'Float4':
             sh.c = a + b
             sh.return_(sh.c)
 
