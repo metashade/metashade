@@ -56,7 +56,10 @@ class Generator(base.Generator):
         self._emit_indent()
         self._emit(f'// {comment}\n')
 
-    def _resolve_annotation(self, annotation: str):
+    def _resolve_annotation(self, annotation: str, default_val=None):
+        import inspect
+        has_default = default_val is not None and default_val is not inspect.Parameter.empty
+
         match = re.match(r'^(Out|InOut)\[(.+)\]$', annotation)
         if match:
             qualifier_str, inner_type_name = match.groups()
@@ -67,9 +70,16 @@ class Generator(base.Generator):
             else:
                 direction = Direction.INOUT
 
-            return Annotated[inner_type, ParamQualifiers(direction=direction)]
+            if has_default:
+                return Annotated[inner_type, ParamQualifiers(direction=direction, default=default_val)]
+            else:
+                return Annotated[inner_type, ParamQualifiers(direction=direction)]
 
-        return getattr(self, annotation)
+        dtype_factory = getattr(self, annotation)
+        if has_default:
+            return In(dtype_factory, default=default_val)
+            
+        return dtype_factory
 
     def _instantiate_func(self, py_func):
         import inspect
@@ -87,35 +97,12 @@ class Generator(base.Generator):
             if param_name == 'return':
                 continue
             
-            dtype_factory = self._resolve_annotation(annotation)
-            
             param = sig.parameters.get(param_name)
-            if (param is not None
-                and param.default is not inspect.Parameter.empty
-            ):
-                # If the type already has annotations, inject the default value
-                if get_origin(dtype_factory) is Annotated:
-                    ann_args = get_args(dtype_factory)
-                    base_type = ann_args[0]
-                    qualifiers = [
-                        arg for arg in ann_args[1:]
-                        if isinstance(arg, ParamQualifiers)
-                    ]
-                    if qualifiers:
-                        # Modify the existing qualifier's default
-                        qualifiers[0].default = param.default
-                        param_annotations[param_name] = dtype_factory
-                    else:
-                        param_annotations[param_name] = In(
-                            base_type, default=param.default
-                        )
-                else:
-                    # Naked type, wrap as In with default
-                    param_annotations[param_name] = In(
-                        dtype_factory, default=param.default
-                    )
-            else:
-                param_annotations[param_name] = dtype_factory
+            default_val = param.default if param is not None else inspect.Parameter.empty
+            
+            param_annotations[param_name] = self._resolve_annotation(
+                annotation, default_val
+            )
 
         func_decl = context.FunctionDecl(
             self, name, return_type, py_func.__doc__
