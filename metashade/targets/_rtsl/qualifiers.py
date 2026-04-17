@@ -16,8 +16,6 @@ from enum import Enum
 from typing import Annotated, Any
 from dataclasses import dataclass
 
-_NO_DEFAULT = object()
-
 class Direction(Enum):
     IN = ""
     OUT = "out" 
@@ -26,20 +24,20 @@ class Direction(Enum):
 @dataclass
 class ParamQualifiers:
     direction: Direction = Direction.IN
-    default: Any = _NO_DEFAULT
+    default: Any = None
 
 # Convenience functions
-def In(base_type: str, default: Any = _NO_DEFAULT, **kwargs) -> type:
+def In(base_type: str, default: Any = None, **kwargs) -> type:
     """Create an input parameter type"""
     qualifiers = ParamQualifiers(direction=Direction.IN, default=default, **kwargs)
     return Annotated[base_type, qualifiers]
 
-def Out(base_type: str, default: Any = _NO_DEFAULT, **kwargs) -> type:
+def Out(base_type: str, default: Any = None, **kwargs) -> type:
     """Create an output parameter type"""
     qualifiers = ParamQualifiers(direction=Direction.OUT, default=default, **kwargs)
     return Annotated[base_type, qualifiers]
 
-def InOut(base_type: str, default: Any = _NO_DEFAULT, **kwargs) -> type:
+def InOut(base_type: str, default: Any = None, **kwargs) -> type:
     """Create an input-output parameter type"""
     qualifiers = ParamQualifiers(direction=Direction.INOUT, default=default, **kwargs)
     return Annotated[base_type, qualifiers]
