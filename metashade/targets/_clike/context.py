@@ -237,7 +237,7 @@ class Function:
 
         for param_name, param_def in self._param_defs.items():
             arg = kwargs.get(param_name)
-            if arg is None:
+            if param_name not in kwargs:
                 if param_def.default is not None:
                     arg = param_def.default
                 else:

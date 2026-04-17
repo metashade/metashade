@@ -27,23 +27,23 @@ class ParamQualifiers:
     default: Any = None
 
 # Convenience functions
-def In(base_type: str, default: Any = None, **kwargs) -> type:
+def In(base_type: Any, default: Any = None, **kwargs) -> type:
     """Create an input parameter type"""
     qualifiers = ParamQualifiers(
         direction=Direction.IN, default=default, **kwargs
     )
     return Annotated[base_type, qualifiers]
 
-def Out(base_type: str, default: Any = None, **kwargs) -> type:
+def Out(base_type: Any, **kwargs) -> type:
     """Create an output parameter type"""
     qualifiers = ParamQualifiers(
-        direction=Direction.OUT, default=default, **kwargs
+        direction=Direction.OUT, default=None, **kwargs
     )
     return Annotated[base_type, qualifiers]
 
-def InOut(base_type: str, default: Any = None, **kwargs) -> type:
+def InOut(base_type: Any, **kwargs) -> type:
     """Create an input-output parameter type"""
     qualifiers = ParamQualifiers(
-        direction=Direction.INOUT, default=default, **kwargs
+        direction=Direction.INOUT, default=None, **kwargs
     )
     return Annotated[base_type, qualifiers]
