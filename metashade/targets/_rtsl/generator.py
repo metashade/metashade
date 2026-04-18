@@ -46,14 +46,14 @@ class Generator(clike.Generator, ABC):
     ):
         pass
 
-    def In(self, base_type, default=None, **kwargs):
+    def In(self, base_type, default=None):
         """Create an input parameter type for function signatures"""
-        return In(base_type, default=default, **kwargs)
+        return In(base_type, default=default)
 
-    def Out(self, base_type, **kwargs):
+    def Out(self, base_type):
         """Create an output parameter type for function signatures"""
-        return Out(base_type, **kwargs)
+        return Out(base_type)
     
-    def InOut(self, base_type, **kwargs):
+    def InOut(self, base_type):
         """Create an input-output parameter type for function signatures"""
-        return InOut(base_type, **kwargs)
+        return InOut(base_type)
