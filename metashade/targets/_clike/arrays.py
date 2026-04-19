@@ -34,9 +34,9 @@ class ArrayBase(BaseType):
         semantic = None,
         register : int = None,
         initializer = None,
-        qualifiers = None
+        qualifier = None
     ):
-        BaseType._emit_qualifiers(sh, qualifiers)
+        BaseType._emit_qualifier(sh, qualifier)
         
         sh._emit(
             '{element_type} {identifier}{dims}'.format(

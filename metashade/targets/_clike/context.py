@@ -17,14 +17,14 @@ import typing
 from typing import NamedTuple
 
 import metashade.targets._base.context as base
-from .._rtsl.qualifiers import ParamQualifiers
+from .._rtsl.qualifiers import _ParamDirection, _In
 
 class _ParamDef(NamedTuple):
     '''
-    Function parameter definition: dtype factory and qualifiers.
+    Function parameter definition: dtype factory and direction.
     '''
     dtype_factory: object  # Generator._DtypeFactory
-    qualifiers: list  # List of ParamQualifiers
+    direction: object = None  # _ParamDirection or None (implicit IN)
     default: object = None
 
 class FunctionDecl:
@@ -50,28 +50,25 @@ class FunctionDecl:
         return self._init_param_defs(**kwargs)
 
     def _init_param_defs(self, **param_annotations):
-        '''Parse parameter annotations to extract dtype factories and qualifiers.'''
+        '''Parse parameter annotations to extract dtype factories and direction.'''
         self._param_defs = {}
         
         for name, dtype_factory in param_annotations.items():
+            direction = None
             default = None
 
-            # Check if this is an Annotated type with qualifiers
-            qualifiers = []
             if typing.get_origin(dtype_factory) is typing.Annotated:
-                # Extract base dtype factory and qualifiers from 
-                # Annotated[dtype_factory, qualifier1, qualifier2, ...]
                 typing_args = typing.get_args(dtype_factory)
                 dtype_factory = typing_args[0]
                 for annotation in typing_args[1:]:
-                    if isinstance(annotation, ParamQualifiers):
-                        qualifiers.append(annotation)
-                        if annotation.default is not None:
+                    if isinstance(annotation, _ParamDirection):
+                        direction = annotation
+                        if isinstance(annotation, _In):
                             default = annotation.default
             
             self._param_defs[name] = _ParamDef(
                 dtype_factory=dtype_factory,
-                qualifiers=qualifiers,
+                direction=direction,
                 default=default
             )
 
@@ -104,7 +101,7 @@ class FunctionDecl:
                 self._sh,
                 name,
                 allow_init=False,
-                qualifiers=param_def.qualifiers
+                qualifier=param_def.direction
             )
 
         self._sh._emit(')')

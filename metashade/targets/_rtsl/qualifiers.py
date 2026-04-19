@@ -12,38 +12,35 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from enum import Enum
 from typing import Annotated, Any
-from dataclasses import dataclass
 
-class Direction(Enum):
-    IN = ""
-    OUT = "out" 
-    INOUT = "inout"
+class _ParamDirection:
+    """Base class for parameter direction markers in Annotated metadata."""
+    value: str
 
-@dataclass
-class ParamQualifiers:
-    direction: Direction = Direction.IN
-    default: Any = None
+class _In(_ParamDirection):
+    """Input parameter direction. Only inputs can have defaults."""
+    value = ""
+    def __init__(self, default=None):
+        self.default = default
+
+class _Out(_ParamDirection):
+    """Output parameter direction."""
+    value = "out"
+
+class _InOut(_ParamDirection):
+    """Input-output parameter direction."""
+    value = "inout"
 
 # Convenience functions
 def In(base_type: Any, default: Any = None) -> type:
     """Create an input parameter type"""
-    qualifiers = ParamQualifiers(
-        direction=Direction.IN, default=default
-    )
-    return Annotated[base_type, qualifiers]
+    return Annotated[base_type, _In(default=default)]
 
 def Out(base_type: Any) -> type:
     """Create an output parameter type"""
-    qualifiers = ParamQualifiers(
-        direction=Direction.OUT, default=None
-    )
-    return Annotated[base_type, qualifiers]
+    return Annotated[base_type, _Out()]
 
 def InOut(base_type: Any) -> type:
     """Create an input-output parameter type"""
-    qualifiers = ParamQualifiers(
-        direction=Direction.INOUT, default=None
-    )
-    return Annotated[base_type, qualifiers]
+    return Annotated[base_type, _InOut()]
