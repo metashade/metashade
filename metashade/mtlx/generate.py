@@ -17,7 +17,7 @@ import abc
 
 import MaterialX as mx
 from metashade.targets.glsl import frag
-from metashade.targets._rtsl.qualifiers import _Out
+from metashade.targets._clike.context import Out
 
 from metashade.mtlx import dtypes
 
@@ -113,9 +113,9 @@ class GeneratorContext:
             nodedef.setDocString(mx_doc_string)
 
             # Add parameters in their original order
-            for param_name, param_def in func._param_defs.items():
-                is_output = isinstance(param_def.direction, _Out)
-                param_type = dtypes.metashade_to_mtlx(param_def.dtype_factory)
+            for param_name, param in func._param_defs.items():
+                is_output = isinstance(param, Out)
+                param_type = dtypes.metashade_to_mtlx(param.dtype_factory)
                 
                 if is_output:
                     output_param = nodedef.addOutput(param_name, param_type)

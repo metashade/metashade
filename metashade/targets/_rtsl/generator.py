@@ -14,7 +14,7 @@
 
 from abc import ABC, abstractmethod
 import metashade.targets._clike.generator as clike
-from .qualifiers import In, Out, InOut
+from metashade.targets._clike.context import In, Out, InOut
 
 class UniqueKeyChecker(ABC):
     def __init__(self):

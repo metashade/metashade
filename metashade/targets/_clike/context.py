@@ -13,19 +13,41 @@
 # limitations under the License.
 
 import abc
-import typing
-from typing import NamedTuple
 
 import metashade.targets._base.context as base
-from .._rtsl.qualifiers import _ParamDirection, _In
 
-class _ParamDef(NamedTuple):
-    '''
-    Function parameter definition: dtype factory and direction.
-    '''
-    dtype_factory: object  # Generator._DtypeFactory
-    direction: object = None  # _ParamDirection or None (implicit IN)
-    default: object = None
+
+class Param:
+    """Base class for function parameter definitions.
+    
+    Used directly in function signatures to specify parameter direction.
+    """
+    _direction_str: str = ""  # "" for in, "out", "inout"
+    
+    def __init__(self, dtype_factory):
+        self.dtype_factory = dtype_factory
+    
+    @property
+    def direction_str(self):
+        return self._direction_str
+
+
+class In(Param):
+    """Input parameter - supports default values."""
+    
+    def __init__(self, dtype_factory, *, default=None):
+        super().__init__(dtype_factory)
+        self.default = default
+
+
+class Out(Param):
+    """Output parameter."""
+    _direction_str = "out"
+
+
+class InOut(Param):
+    """Input-output parameter."""
+    _direction_str = "inout"
 
 class FunctionDecl:
     '''
@@ -53,24 +75,13 @@ class FunctionDecl:
         '''Parse parameter annotations to extract dtype factories and direction.'''
         self._param_defs = {}
         
-        for name, dtype_factory in param_annotations.items():
-            direction = None
-            default = None
-
-            if typing.get_origin(dtype_factory) is typing.Annotated:
-                typing_args = typing.get_args(dtype_factory)
-                dtype_factory = typing_args[0]
-                for annotation in typing_args[1:]:
-                    if isinstance(annotation, _ParamDirection):
-                        direction = annotation
-                        if isinstance(annotation, _In):
-                            default = annotation.default
-            
-            self._param_defs[name] = _ParamDef(
-                dtype_factory=dtype_factory,
-                direction=direction,
-                default=default
-            )
+        for name, annotation in param_annotations.items():
+            if isinstance(annotation, Param):
+                # Direct Param usage: In(Float4, default=1.0), Out(Float4), etc.
+                self._param_defs[name] = annotation
+            else:
+                # Plain dtype: Float4 → implicit In with no default
+                self._param_defs[name] = In(annotation)
 
         # Return self, so that it can be entered in a with scope
         return self
@@ -89,19 +100,19 @@ class FunctionDecl:
         
         # Emit the argument declarations
         first = True
-        for name, param_def in self._param_defs.items():
+        for name, param in self._param_defs.items():
             if first:
                 first = False
             else:
                 self._sh._emit(', ')
 
             # Create a temporary instance using the dtype factory
-            param_instance = param_def.dtype_factory()
+            param_instance = param.dtype_factory()
             param_instance._define(
                 self._sh,
                 name,
                 allow_init=False,
-                qualifier=param_def.direction
+                qualifier=param.direction_str
             )
 
         self._sh._emit(')')
@@ -232,17 +243,17 @@ class Function:
         '''Generate a function call.'''
         arg_list = []
 
-        for param_name, param_def in self._param_defs.items():
+        for param_name, param in self._param_defs.items():
             arg = kwargs.get(param_name)
             if param_name not in kwargs:
-                if param_def.default is not None:
-                    arg = param_def.default
+                if isinstance(param, In) and param.default is not None:
+                    arg = param.default
                 else:
                     raise RuntimeError(
                         f"Argument missing for parameter '{param_name}'"
                     )
             # Get the dtype class from the factory and use it for type checking
-            dtype_class = param_def.dtype_factory._get_dtype()
+            dtype_class = param.dtype_factory._get_dtype()
             ref = dtype_class._get_value_ref(arg)
             if ref is None:
                 raise RuntimeError(

@@ -39,9 +39,9 @@ class BaseType(base.BaseType):
 
     @classmethod
     def _emit_qualifier(cls, sh, qualifier):
-        """Emit a single parameter direction qualifier"""
-        if qualifier is not None and qualifier.value:
-            sh._emit(f'{qualifier.value} ')
+        """Emit a single parameter direction qualifier (e.g., 'out', 'inout')"""
+        if qualifier:
+            sh._emit(f'{qualifier} ')
 
     @classmethod
     def _emit_def(

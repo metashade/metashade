@@ -14,9 +14,7 @@
 
 import types
 import re
-from typing import Annotated
 import metashade.targets._base.generator as base
-from metashade.targets._rtsl.qualifiers import _Out, _InOut
 from . import arrays, context, struct
 
 class Generator(base.Generator):
@@ -61,8 +59,10 @@ class Generator(base.Generator):
         if match:
             qualifier_str, inner_type_name = match.groups()
             inner_type = getattr(self, inner_type_name)
-            direction = _Out() if qualifier_str == 'Out' else _InOut()
-            return Annotated[inner_type, direction]
+            if qualifier_str == 'Out':
+                return context.Out(inner_type)
+            else:
+                return context.InOut(inner_type)
 
         return getattr(self, annotation)
 
