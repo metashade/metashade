@@ -14,7 +14,7 @@
 
 import pytest
 from metashade.util.testing import ctx_cls_hg, HlslTestContext
-from metashade.targets._rtsl.qualifiers import Direction
+from metashade.targets._clike.context import In, Out, InOut
 
 class TestFunctions:
     def _generate_add_func(self, sh, decl_only = False):
@@ -107,6 +107,31 @@ class TestFunctions:
                 match = "Argument missing for parameter 'b'"
             ):
                 sh.result.color = sh.add(a = sh.g_f4A)
+
+    @ctx_cls_hg
+    def test_default_args(self, ctx_cls):
+        ctx = ctx_cls()
+        with ctx as sh:
+            self._generate_test_uniforms(sh)
+            
+            with sh.function('add_with_default', sh.Float4)(
+                a = sh.Float4, 
+                b = sh.In(sh.Float4, default=(1.0, 1.0, 1.0, 1.0))
+            ):
+                sh.return_(sh.a + sh.b)
+
+            with self._generate_ps_main_decl(sh, ctx):
+                # Call without second arg
+                sh.c = sh.add_with_default(a = sh.g_f4A)
+                # Call overriding second arg
+                sh.c2 = sh.add_with_default(a = sh.g_f4A, b = sh.g_f4B)
+
+                if isinstance(ctx, HlslTestContext):
+                    sh.result = sh.PsOut()
+                    sh.result.color = sh.c + sh.c2
+                    sh.return_(sh.result)
+                else:
+                    sh.out_f4Color = sh.c + sh.c2
 
     @ctx_cls_hg
     def test_extra_arg(self, ctx_cls):
@@ -274,25 +299,23 @@ class TestFunctions:
             # Verify parameter definitions
             assert len(func._param_defs) == 3
             
-            # Check 'in_param' parameter
+            # Check 'in_param' parameter (plain dtype becomes implicit In)
             assert 'in_param' in func._param_defs
-            param_def = func._param_defs['in_param']
-            assert param_def.dtype_factory == sh.Float4
-            assert len(param_def.qualifiers) == 0
+            param = func._param_defs['in_param']
+            assert param.dtype_factory == sh.Float4
+            assert isinstance(param, In)
             
             # Check 'out_param' parameter
             assert 'out_param' in func._param_defs
-            param_def = func._param_defs['out_param']
-            assert param_def.dtype_factory == sh.Float3
-            assert len(param_def.qualifiers) == 1
-            assert param_def.qualifiers[0].direction == Direction.OUT
+            param = func._param_defs['out_param']
+            assert param.dtype_factory == sh.Float3
+            assert isinstance(param, Out)
             
             # Check 'inout_param' parameter
             assert 'inout_param' in func._param_defs
-            param_def = func._param_defs['inout_param']
-            assert param_def.dtype_factory == sh.Float2
-            assert len(param_def.qualifiers) == 1
-            assert param_def.qualifiers[0].direction == Direction.INOUT
+            param = func._param_defs['inout_param']
+            assert param.dtype_factory == sh.Float2
+            assert isinstance(param, InOut)
 
     @ctx_cls_hg
     def test_void_function_reflection(self, ctx_cls):

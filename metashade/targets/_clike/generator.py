@@ -14,9 +14,7 @@
 
 import types
 import re
-from typing import Annotated
 import metashade.targets._base.generator as base
-from metashade.targets._rtsl.qualifiers import ParamQualifiers, Direction
 from . import arrays, context, struct
 
 class Generator(base.Generator):
@@ -61,13 +59,10 @@ class Generator(base.Generator):
         if match:
             qualifier_str, inner_type_name = match.groups()
             inner_type = getattr(self, inner_type_name)
-
             if qualifier_str == 'Out':
-                direction = Direction.OUT
+                return context.Out(inner_type)
             else:
-                direction = Direction.INOUT
-
-            return Annotated[inner_type, ParamQualifiers(direction=direction)]
+                return context.InOut(inner_type)
 
         return getattr(self, annotation)
 

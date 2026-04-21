@@ -13,18 +13,41 @@
 # limitations under the License.
 
 import abc
-import typing
-from typing import NamedTuple
 
 import metashade.targets._base.context as base
-from .._rtsl.qualifiers import ParamQualifiers
 
-class _ParamDef(NamedTuple):
-    '''
-    Function parameter definition: dtype factory and qualifiers.
-    '''
-    dtype_factory: object  # Generator._DtypeFactory
-    qualifiers: list  # List of ParamQualifiers
+
+class Param:
+    """Base class for function parameter definitions.
+    
+    Used directly in function signatures to specify parameter direction.
+    """
+    _direction_str: str = ""  # "" for in, "out", "inout"
+    
+    def __init__(self, dtype_factory):
+        self.dtype_factory = dtype_factory
+    
+    @property
+    def direction_str(self):
+        return self._direction_str
+
+
+class In(Param):
+    """Input parameter - supports default values."""
+    
+    def __init__(self, dtype_factory, *, default=None):
+        super().__init__(dtype_factory)
+        self.default = default
+
+
+class Out(Param):
+    """Output parameter."""
+    _direction_str = "out"
+
+
+class InOut(Param):
+    """Input-output parameter."""
+    _direction_str = "inout"
 
 class FunctionDecl:
     '''
@@ -49,26 +72,16 @@ class FunctionDecl:
         return self._init_param_defs(**kwargs)
 
     def _init_param_defs(self, **param_annotations):
-        '''Parse parameter annotations to extract dtype factories and qualifiers.'''
+        '''Parse parameter annotations to extract dtype factories and direction.'''
         self._param_defs = {}
         
-        for name, dtype_factory in param_annotations.items():
-            # Check if this is an Annotated type with qualifiers
-            qualifiers = []
-            if typing.get_origin(dtype_factory) is typing.Annotated:
-                # Extract base dtype factory and qualifiers from 
-                # Annotated[dtype_factory, qualifier1, qualifier2, ...]
-                typing_args = typing.get_args(dtype_factory)
-                dtype_factory = typing_args[0]
-                qualifiers = [
-                    annotation for annotation in typing_args[1:]
-                    if isinstance(annotation, ParamQualifiers)
-                ]
-            
-            self._param_defs[name] = _ParamDef(
-                dtype_factory=dtype_factory,
-                qualifiers=qualifiers
-            )
+        for name, annotation in param_annotations.items():
+            if isinstance(annotation, Param):
+                # Direct Param usage: In(Float4, default=1.0), Out(Float4), etc.
+                self._param_defs[name] = annotation
+            else:
+                # Plain dtype: Float4 → implicit In with no default
+                self._param_defs[name] = In(annotation)
 
         # Return self, so that it can be entered in a with scope
         return self
@@ -87,19 +100,19 @@ class FunctionDecl:
         
         # Emit the argument declarations
         first = True
-        for name, param_def in self._param_defs.items():
+        for name, param in self._param_defs.items():
             if first:
                 first = False
             else:
                 self._sh._emit(', ')
 
             # Create a temporary instance using the dtype factory
-            param_instance = param_def.dtype_factory()
+            param_instance = param.dtype_factory()
             param_instance._define(
                 self._sh,
                 name,
                 allow_init=False,
-                qualifiers=param_def.qualifiers
+                qualifier=param.direction_str
             )
 
         self._sh._emit(')')
@@ -126,7 +139,10 @@ class FunctionDecl:
         if self._doc is not None:
             for line in self._doc.strip().split('\n'):
                 # Escape non-ASCII characters to \uXXXX format for safe output
-                safe_line = line.strip().encode('ascii', 'backslashreplace').decode('ascii')
+                safe_line = line.strip().encode(
+                    'ascii', 'backslashreplace'
+                ).decode('ascii')
+
                 self._sh._emit_indent()
                 self._sh._emit(f'// {safe_line}\n')
             self._sh._emit_indent()
@@ -227,14 +243,17 @@ class Function:
         '''Generate a function call.'''
         arg_list = []
 
-        for param_name, param_def in self._param_defs.items():
+        for param_name, param in self._param_defs.items():
             arg = kwargs.get(param_name)
-            if arg is None:
-                raise RuntimeError(
-                    f"Argument missing for parameter '{param_name}'"
-                )
+            if param_name not in kwargs:
+                if isinstance(param, In) and param.default is not None:
+                    arg = param.default
+                else:
+                    raise RuntimeError(
+                        f"Argument missing for parameter '{param_name}'"
+                    )
             # Get the dtype class from the factory and use it for type checking
-            dtype_class = param_def.dtype_factory._get_dtype()
+            dtype_class = param.dtype_factory._get_dtype()
             ref = dtype_class._get_value_ref(arg)
             if ref is None:
                 raise RuntimeError(
@@ -242,7 +261,7 @@ class Function:
                 )
             
             arg_list.append(str(ref))
-            kwargs.pop(param_name)
+            kwargs.pop(param_name, None)
 
         if kwargs:
             unmatched_arg_names = ', '.join([
