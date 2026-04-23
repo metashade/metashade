@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import inspect
 import types
 import re
 import metashade.targets._base.generator as base
@@ -66,29 +67,55 @@ class Generator(base.Generator):
 
         return getattr(self, annotation)
 
+    def _resolve_param(self, param: inspect.Parameter):
+        """Resolve a function parameter to a Param instance."""
+        annotation = param.annotation
+        if annotation is inspect.Parameter.empty:
+            raise ValueError(f"Parameter '{param.name}' has no type annotation")
+        
+        # Resolve the dtype from string annotation
+        resolved = self._resolve_annotation(annotation)
+        
+        # Check if there's a default value
+        if param.default is not inspect.Parameter.empty:
+            # Has default - wrap in In() if not already a Param
+            if isinstance(resolved, context.Param):
+                # Already a Param (e.g., Out/InOut from _resolve_annotation)
+                # Out/InOut shouldn't have defaults, but we'll let it pass
+                return resolved
+            else:
+                # Plain dtype with default - create In with default
+                return context.In(resolved, default=param.default)
+        else:
+            # No default - return as-is (will become implicit In in _init_param_defs)
+            return resolved
+
     def _instantiate_func(self, py_func):
         name = py_func.__name__
-        return_annotation = py_func.__annotations__.get('return', 'None')
+        sig = inspect.signature(py_func)
         
-        if return_annotation == 'None':
+        # Get return type
+        return_annotation = sig.return_annotation
+        if return_annotation is inspect.Signature.empty or return_annotation == 'None':
             return_type = type(None)
         else:
             return_type = self._resolve_annotation(return_annotation)
 
-        param_annotations = {
-            name : self._resolve_annotation(annotation)
-            for name, annotation in py_func.__annotations__.items()
-            if name != 'return'
-        }
+        # Build param definitions, skipping 'sh' parameter
+        param_defs = {}
+        for param_name, param in sig.parameters.items():
+            if param_name == 'sh':
+                continue
+            param_defs[param_name] = self._resolve_param(param)
+        
         func_decl = context.FunctionDecl(
             self, name, return_type, py_func.__doc__
         )
-        with func_decl._init_param_defs(**param_annotations):
+        with func_decl._init_param_defs(**param_defs):
             # Get parameter instances from the function declaration's scope
-            params = { name : getattr(self, name)
-                       for name in param_annotations.keys() }
+            params = {pname: getattr(self, pname) for pname in param_defs.keys()}
             # Generate the function body by calling the Python function
-            py_func(sh = self, **params)
+            py_func(sh=self, **params)
 
     def instantiate(self, py_obj):
         if isinstance(py_obj, types.FunctionType):

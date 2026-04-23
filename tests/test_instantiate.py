@@ -25,6 +25,11 @@ def _py_no_return_annotation(sh, value : 'Float'):
     '''Function with no return annotation - should default to void.'''
     pass
 
+def _py_add_with_default(sh, a : 'Float4', b : 'Float4' = (1.0, 1.0, 1.0, 1.0)) -> 'Float4':
+    '''Function with default parameter value.'''
+    sh.c = a + b
+    sh.return_(sh.c)
+
 class TestInstantiate:
     def _generate_test_uniforms(self, sh):
         with sh.uniform_buffer(
@@ -134,4 +139,25 @@ class TestInstantiate:
                 sh.result = sh.PsOut()
                 sh.result.color = sh.g_f4B
                 sh.return_(sh.result)
+
+    @ctx_cls_hg
+    def test_instantiate_py_func_with_default(self, ctx_cls):
+        '''Test instantiating a function with default parameter values.'''
+        ctx = ctx_cls()
+        with ctx as sh:
+            self._generate_test_uniforms(sh)
+            sh.instantiate(_py_add_with_default)
+
+            with self._generate_ps_main_decl(sh, ctx):
+                # Call without second arg - uses default
+                sh.c = sh._py_add_with_default(a=sh.g_f4A)
+                # Call with second arg - overrides default
+                sh.c2 = sh._py_add_with_default(a=sh.g_f4A, b=sh.g_f4B)
+
+                if isinstance(ctx, HlslTestContext):
+                    sh.result = sh.PsOut()
+                    sh.result.color = sh.c + sh.c2
+                    sh.return_(sh.result)
+                else:
+                    sh.out_f4Color = sh.c + sh.c2
 
