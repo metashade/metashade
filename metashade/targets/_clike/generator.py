@@ -78,17 +78,17 @@ class Generator(base.Generator):
         
         # Check if there's a default value
         if param.default is not inspect.Parameter.empty:
-            # Has default - wrap in In() if not already a Param
             if isinstance(resolved, context.Param):
-                # Already a Param (e.g., Out/InOut from _resolve_annotation)
-                # Out/InOut shouldn't have defaults, but we'll let it pass
-                return resolved
-            else:
-                # Plain dtype with default - create In with default
-                return context.In(resolved, default=param.default)
-        else:
-            # No default - return as-is (will become implicit In in _init_param_defs)
-            return resolved
+                raise ValueError(
+                    f"Parameter '{param.name}' cannot have"
+                    f" a default value; defaults are only"
+                    f" supported for input parameters"
+                )
+            # Plain dtype with default - create In with default
+            return context.In(resolved, default=param.default)
+
+        # No default - return as-is
+        return resolved
 
     def _instantiate_func(self, py_func):
         name = py_func.__name__

@@ -161,3 +161,22 @@ class TestInstantiate:
                 else:
                     sh.out_f4Color = sh.c + sh.c2
 
+    def test_out_param_rejects_default(self):
+        '''Out parameters must not have defaults.'''
+        import pytest
+
+        def bad_func(
+            sh, 
+            a: 'Float4', 
+            result: 'Out[Float4]' = None
+        ) -> 'None':
+            pass
+
+        ctx = HlslTestContext(no_file=True)
+        with ctx as sh:
+            self._generate_test_uniforms(sh)
+            with pytest.raises(
+                ValueError, 
+                match="defaults are only supported"
+            ):
+                sh.instantiate(bad_func)
