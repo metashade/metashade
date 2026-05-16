@@ -4,10 +4,10 @@ Metashade is an experimental Python-based GPU shading embedded domain-specific l
 When a Metashade script executes, it generates code in a target shading language.
 Currently, limited but useful subsets of HLSL and GLSL are supported, and more targets are possible in the future.
 
-To see Metashade in action, check out the glTF demo at https://github.com/metashade/metashade-glTFSample or the [tests](tests) which are run by CI:
+To see Metashade in action, check out the glTF demo at https://github.com/metashade/metashade-glTFSample or the [tests](https://github.com/metashade/metashade/tree/main/tests) which are run by CI:
 [![GitHub Actions CI](https://github.com/metashade/metashade/actions/workflows/python-package.yml/badge.svg)](https://github.com/metashade/metashade/actions/workflows/python-package.yml)
 
-There's also a prototype [MaterialX](https://materialx.org/) integration that allows Metashade to generate MaterialX node implementations. See the [`metashade.mtlx` package](metashade/mtlx) and the [mtlx tests](tests/mtlx) for examples.
+There's also a prototype [MaterialX](https://materialx.org/) integration that allows Metashade to generate MaterialX node implementations. See the [`metashade.mtlx` package](https://github.com/metashade/metashade/tree/main/metashade/mtlx) and the [mtlx tests](https://github.com/metashade/metashade/tree/main/tests/mtlx) for examples.
 
 For a detailed discussion of the motivation for Metashade and its design, please see the [presentation on Google Slides](https://docs.google.com/presentation/d/e/2PACX-1vQtYIwXIkMnVC6TzWTKPAtZIA6_xeUCQc8Mvyziu0qy7HDUduz_onsJ5TabxTuuVQ/pub?start=false&loop=false&delayms=3000) or [watch this presentation](https://youtu.be/yC8VMLXYs5U?si=d_n3ngHr1IZIQ8ZH) from Academy Software Foundation Open Source Days 2024.
 
@@ -175,11 +175,10 @@ sh.color.r = 1
 sh // 'Intrinsics example'
 sh.N = sh.N.normalize()
 
-sh // 'Dot product == Python 3 matmul'
-sh // '(a.k.a. "walrus") operator'
+sh // 'Dot product == Python 3 matmul operator'
 sh.NdotL = sh.N @ sh.L
 
-# The walrus operator is also used to
+# The matmul operator is also used to
 # combine textures and samplers
 combined_sampler = sh.g_tColor @ sh.g_sColor
 
@@ -202,8 +201,7 @@ color.r = 1;
 // Intrinsics example
 N = normalize(N);
 
-// Dot product == Python 3 matmul
-// (a.k.a. "walrus") operator
+// Dot product == Python 3 matmul operator
 float NdotL = dot(N, L);
 
 // Sample the texture
