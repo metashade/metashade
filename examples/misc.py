@@ -30,11 +30,10 @@ with open('misc.hlsl', 'w') as hlsl_file:
         sh // 'Intrinsics example'
         sh.N = sh.N.normalize()
 
-        sh // 'Dot product == Python 3 matmul'
-        sh // '(a.k.a. "walrus") operator'
+        sh // 'Dot product == Python 3 matmul operator'
         sh.NdotL = sh.N @ sh.L
 
-        # The walrus operator is also used to
+        # The matmul operator is also used to
         # combine textures and samplers
         combined_sampler = sh.g_tColor @ sh.g_sColor
 
