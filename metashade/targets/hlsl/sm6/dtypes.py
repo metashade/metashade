@@ -44,6 +44,9 @@ class Float(rtsl.Float, _AnyLayoutMixin):
 class Int(rtsl.Int, _AnyLayoutMixin):
     pass
 
+class Bool(rtsl.Bool):
+    pass
+
 class _RawVector(rtsl._RawVector, _MulMixin, _AnyLayoutMixin):
     def __init__(self, _ = None):
         element_ref = self.__class__._element_type._get_value_ref(_)

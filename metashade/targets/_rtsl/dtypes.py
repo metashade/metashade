@@ -14,7 +14,7 @@
 
 import collections, numbers, sys
 import metashade.targets._clike.dtypes as clike
-from metashade.targets._clike.dtypes import Float, Int, ExprType
+from metashade.targets._clike.dtypes import Float, Int, Bool, ExprType
 
 class _RawVector(clike.ArithmeticType):
     _swizzle_str = 'xyzw'
