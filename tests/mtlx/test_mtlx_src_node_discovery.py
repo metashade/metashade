@@ -137,4 +137,8 @@ class TestNodeDiscovery:
         
         # Compare against reference if in compare mode
         if GlslTestContext._ref_differ is not None:
-            GlslTestContext._ref_differ(out_path)
+            ref_path = GlslTestContext._ref_differ._ref_dir / out_path.name
+            ref_lines = set(ref_path.read_text().splitlines())
+            out_lines = set(content.splitlines())
+            missing_lines = ref_lines - out_lines
+            assert not missing_lines, f"Missing expected nodes: {missing_lines}"

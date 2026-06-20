@@ -199,16 +199,29 @@ class ArithmeticType(BaseType):
         result._expr_type = ExprType.NEGATION
         return result
 
-class Scalar(ArithmeticType):
+class Scalar(BaseType):
     @staticmethod
     def _get_value_ref_static(concrete_cls, value):
+        if isinstance(value, bool):
+            return None  # Reject: use Bool type explicitly
         return (str(value) if isinstance(value, numbers.Number)
             else super()._get_value_ref_static(concrete_cls, value)
         )
 
-class Float(Scalar):
+class Float(ArithmeticType, Scalar):
     _target_name = 'float'
 
-class Int(Scalar):
+class Int(ArithmeticType, Scalar):
     _target_name = 'int'
+
+class Bool(Scalar):
+    _target_name = 'bool'
+
+    @staticmethod
+    def _get_value_ref_static(concrete_cls, value):
+        if isinstance(value, bool):
+            return 'true' if value else 'false'
+        if isinstance(value, numbers.Number):
+            return None
+        return super()._get_value_ref_static(concrete_cls, value)
 

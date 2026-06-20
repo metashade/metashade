@@ -23,6 +23,9 @@ class Float(_intrinsics.FloatIntrinsicsMixin, rtsl.Float):
 class Int(rtsl.Int):
     pass
 
+class Bool(rtsl.Bool):
+    pass
+
 class _RawVector(rtsl._RawVector):
     def __init__(self, _ = None):
         element_ref = self.__class__._element_type._get_value_ref(_)
