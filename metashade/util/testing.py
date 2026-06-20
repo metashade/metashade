@@ -27,19 +27,7 @@ class RefDiffer:
         self._ref_dir = ref_dir
 
     def __call__(self, path : Path):
-        ref_path = self._ref_dir / path.name
-        if not filecmp.cmp(path, ref_path):
-            import difflib
-            try:
-                with open(path, 'r', encoding='utf-8') as f1, open(ref_path, 'r', encoding='utf-8') as f2:
-                    diff = list(difflib.unified_diff(
-                        f2.readlines(), f1.readlines(),
-                        fromfile=str(ref_path), tofile=str(path)
-                    ))
-                    sys.stderr.write(''.join(diff))
-            except Exception:
-                pass
-            assert False, f"Files differ: {path} and {ref_path}"
+        assert filecmp.cmp(path, self._ref_dir / path.name)
 
 def get_test_func_name():
     for frame in inspect.stack():
