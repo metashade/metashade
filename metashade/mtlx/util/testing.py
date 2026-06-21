@@ -25,8 +25,13 @@ class GlslTestContext(GlslGeneratorContext):
         
         # Consistent with metashade.util.testing
         out_dir = os.getenv('METASHADE_PYTEST_OUT_DIR', None)
-        # Assuming tests are in tests/mtlx, refs are in tests/ref/mtlx
-        ref_dir = test_dir.parent / 'ref' / 'mtlx'
+        
+        ref_dir_env = os.getenv('METASHADE_MTLX_PYTEST_REF_DIR', None)
+        if ref_dir_env:
+            ref_dir = Path(ref_dir_env).resolve()
+        else:
+            # Assuming tests are in tests/mtlx, refs are in tests/ref/mtlx
+            ref_dir = test_dir.parent / 'ref' / 'mtlx'
 
         if out_dir is None:
             # Update mode: write directly to reference directory
