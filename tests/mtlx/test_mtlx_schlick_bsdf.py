@@ -26,27 +26,24 @@ from metashade.mtlx.dtypes import register_mtlx_closure_structs
 from metashade.mtlx.util.testing import GlslTestContext
 
 
-class TestSchlickBsdfWrapper:
-    """Tests for generating wrapper for generalized_schlick_bsdf."""
-    
-    @pytest.fixture
-    def schlick_impl(self, stdlib_doc: mx.Document):
-        """Get the localized implementation for generalized_schlick_bsdf."""
-        # Find implementation for "genglsl" target
-        for impl in stdlib_doc.getImplementations():
-            if (
-                impl.getNodeDefString().endswith("generalized_schlick_bsdf") and
-                impl.getTarget() == "genglsl"
-            ):
-                return impl
-        
-        # Fallback: try searching by nodedef name directly if possible, or just print what we have
-        # But 'ending with' is safer because names can have prefixes
-        pytest.fail("Could not find genglsl implementation for generalized_schlick_bsdf")
+@pytest.fixture
+def schlick_impl(stdlib_doc: mx.Document):
+    """Get the genglsl implementation for generalized_schlick_bsdf."""
+    for impl in stdlib_doc.getImplementations():
+        if (
+            impl.getNodeDefString().endswith("generalized_schlick_bsdf") and
+            impl.getTarget() == "genglsl"
+        ):
+            return impl
+    pytest.fail("Could not find genglsl implementation for generalized_schlick_bsdf")
 
-    def test_generate_schlick_wrapper(self, schlick_impl):
+
+class TestSchlickBsdfPassthru:
+    """Passthru wrapper: calls the original Schlick unchanged."""
+
+    def test_generate_schlick_passthru(self, schlick_impl):
         """
-        Generate a wrapper implementation for generalized_schlick_bsdf.
+        Generate a passthru wrapper implementation for generalized_schlick_bsdf.
         
         This verifies we can acquire the standard node and re-emit it 
         as a Metashade-managed implementation (Phase 2 acquisition).
@@ -63,16 +60,55 @@ class TestSchlickBsdfWrapper:
             # Declare standard MaterialX closure structs
             register_mtlx_closure_structs(sh)
             
-            # 1. Generate the wrapper function in Metashade
+            # Generate the wrapper function in Metashade
             wrapper = generate_wrapper_func(sh, schlick_impl)
             
             assert wrapper is not None
             assert hasattr(sh, wrapper._name)
             
-            # 2. Register this wrapper as an implementation for the ORIGINAL nodedef
-            # This is the "overload" part - providing a new implementation for ND_generalized_schlick_bsdf
+            # Register this wrapper as an implementation for the ORIGINAL nodedef
             test_ctx.add_node_impl(
                 func_name=wrapper._name,
-                mx_doc_string="Metashade wrapper for generalized_schlick_bsdf",
+                mx_doc_string="Metashade passthru wrapper for generalized_schlick_bsdf",
+                nodedef_name="ND_generalized_schlick_bsdf"
+            )
+
+
+class TestSchlickBsdfBroken:
+    """Broken Schlick: returns hot pink, proving the override pipeline works."""
+
+    def test_generate_broken_schlick(self, schlick_impl):
+        """
+        Generate a deliberately broken Schlick that returns hot pink.
+        
+        Uses the body callback to override the default passthru behavior,
+        validating both the callback mechanism and the subdir scoping.
+        """
+        def broken_body(sh, orig_func):
+            sh.out_.response = [1.0, 0.0, 0.5]
+            sh.out_.throughput = [0.0, 0.0, 0.0]
+
+        ctx = GlslTestContext(
+            base_name="mx_generalized_schlick_bsdf_broken",
+            impl_only=True,
+            subdir="broken_schlick"
+        )
+        
+        with ctx as test_ctx:
+            sh = test_ctx._sh
+            
+            register_mtlx_closure_structs(sh)
+            
+            wrapper = generate_wrapper_func(
+                sh, schlick_impl,
+                suffix="_broken",
+                body=broken_body
+            )
+            
+            assert wrapper is not None
+            
+            test_ctx.add_node_impl(
+                func_name=wrapper._name,
+                mx_doc_string="Broken Schlick: returns hot pink to validate override pipeline",
                 nodedef_name="ND_generalized_schlick_bsdf"
             )

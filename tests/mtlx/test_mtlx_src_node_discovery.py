@@ -29,6 +29,7 @@ import pytest
 # Skip if MaterialX is not installed
 mx = pytest.importorskip("MaterialX")
 
+from metashade.util.testing import RefDiffer
 from metashade.mtlx.util.testing import GlslTestContext
 
 
@@ -132,9 +133,9 @@ class TestNodeDiscovery:
         content = "\n".join(lines) + "\n"
         
         # Write to output file
-        out_path = GlslTestContext._out_dir / "source_code_nodes.txt"
+        out_path = GlslTestContext._out_dir_root / "source_code_nodes.txt"
         out_path.write_text(content)
         
         # Compare against reference if in compare mode
-        if GlslTestContext._ref_differ is not None:
-            GlslTestContext._ref_differ(out_path)
+        if GlslTestContext._ref_dir_root is not None:
+            RefDiffer(GlslTestContext._ref_dir_root)(out_path)

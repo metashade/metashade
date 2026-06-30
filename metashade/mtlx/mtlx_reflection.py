@@ -153,17 +153,20 @@ def acquire_stdlib(sh, doc, target: str) -> dict[str, 'Function']:
     return functions
 
 
-def generate_wrapper_func(sh, impl, suffix: str = "_metashade"):
+def generate_wrapper_func(sh, impl, suffix: str = "_metashade", body=None):
     """
     Generate a wrapper function for a MaterialX implementation.
     
     Includes the source file and generates a wrapper that calls
-    the original function.
+    the original function — unless ``body`` is provided.
     
     Args:
         sh: The Metashade generator instance
         impl: A PyMaterialX nodeimpl object
         suffix: Suffix for the wrapper function name
+        body: Optional callback ``(sh, orig_func) -> None`` that emits the
+              function body using the EDSL.  When *None* the wrapper
+              performs a pass-through call to the original function.
         
     Returns:
         The wrapper Function object, or None if not wrappable
@@ -217,7 +220,10 @@ def generate_wrapper_func(sh, impl, suffix: str = "_metashade"):
     
     # Define the wrapper function
     with sh.function(wrapper_name)(**params):
-        call_args = {name: getattr(sh, name) for name in params}
-        orig_func(**call_args)
+        if body is not None:
+            body(sh, orig_func)
+        else:
+            call_args = {name: getattr(sh, name) for name in params}
+            orig_func(**call_args)
     
     return getattr(sh, wrapper_name)

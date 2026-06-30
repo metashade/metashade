@@ -34,17 +34,19 @@ class GlslTestContext(GlslGeneratorContext):
             ref_dir = test_dir.parent / 'ref' / 'mtlx'
 
         if out_dir is None:
-            # Update mode: write directly to reference directory
-            cls._out_dir = ref_dir
-            cls._ref_differ = None
+            # Update mode: write directly to reference directory.
+            # No comparison — the developer examines diffs in git.
+            cls._out_dir_root = ref_dir
+            cls._ref_dir_root = None
         else:
             # Compare mode: write to temp dir and compare
-            cls._out_dir = Path(out_dir).resolve() / 'mtlx'
-            cls._ref_differ = RefDiffer(ref_dir)
+            cls._out_dir_root = Path(out_dir).resolve() / 'mtlx'
+            cls._ref_dir_root = ref_dir
         
-        os.makedirs(cls._out_dir, exist_ok=True)
+        os.makedirs(cls._out_dir_root, exist_ok=True)
 
-    def __init__(self, base_name: str = None, impl_only: bool = False):
+    def __init__(self, base_name: str = None, impl_only: bool = False,
+                 subdir: str = None):
         """
         Initialize a GLSL test context.
         
@@ -53,20 +55,33 @@ class GlslTestContext(GlslGeneratorContext):
                        If not provided, uses the test function name.
                        For library-level overrides, use e.g., 'metashade_pbrlib'
             impl_only: If True, skip nodedef generation (for overrides)
+            subdir: Optional subdirectory within the output/ref dirs.
+                    Used to scope generated files per experiment/environment.
         """
         if base_name is None:
             base_name = get_test_func_name()
-        super().__init__(base_name, self._out_dir, impl_only=impl_only)
+
+        out_dir = self._out_dir_root
+        if subdir is not None:
+            out_dir = out_dir / subdir
+        os.makedirs(out_dir, exist_ok=True)
+
+        self._subdir = subdir
+        super().__init__(base_name, out_dir, impl_only=impl_only)
 
     def __exit__(self, exc_type, exc_value, traceback):
         # Allow parent to generate files first
         success = super().__exit__(exc_type, exc_value, traceback)
         
-        if success and self._ref_differ is not None:
-            # Verify generated files against references
+        if success and self._ref_dir_root is not None:
+            ref_dir = self._ref_dir_root
+            if self._subdir is not None:
+                ref_dir = ref_dir / self._subdir
+            ref_differ = RefDiffer(ref_dir)
+
             if self._nodedef_doc_path is not None:
-                self._ref_differ(self._nodedef_doc_path)
-            self._ref_differ(self._impl_doc_path)
-            self._ref_differ(self._src_path)
+                ref_differ(self._nodedef_doc_path)
+            ref_differ(self._impl_doc_path)
+            ref_differ(self._src_path)
             
         return success
