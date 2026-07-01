@@ -51,7 +51,8 @@ class TestSchlickBsdfPassthru:
         # Use a distinctive base name for the output files
         ctx = GlslTestContext(
             base_name="mx_generalized_schlick_bsdf_metashade", 
-            impl_only=True
+            impl_only=True,
+            subdir="source_code_node_passthrus"
         )
         
         with ctx as test_ctx:
