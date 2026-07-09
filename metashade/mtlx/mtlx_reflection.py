@@ -108,7 +108,8 @@ def acquire_function(sh, impl):
                 f"'{output.getName()}' in {func_attr}"
             )
         param_name = _sanitize_identifier(output.getName())
-        param_annotations[param_name] = sh.Out(dtype)
+        qualifier = sh.InOut if output.getType() in _CLOSURE_OUTPUT_TYPES else sh.Out
+        param_annotations[param_name] = qualifier(dtype)
     
     # Declare the function without emitting code
     FunctionDecl(sh, func_attr, return_type=None)(
@@ -216,7 +217,8 @@ def generate_wrapper_func(sh, impl, suffix: str = "_metashade", body=None):
                 f"'{output.getName()}' in {wrapper_name}"
             )
         param_name = _sanitize_identifier(output.getName())
-        params[param_name] = sh.Out(dtype)
+        qualifier = sh.InOut if output.getType() in _CLOSURE_OUTPUT_TYPES else sh.Out
+        params[param_name] = qualifier(dtype)
     
     # Define the wrapper function
     with sh.function(wrapper_name)(**params):
