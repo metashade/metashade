@@ -86,8 +86,8 @@ class TestSchlickBsdfBroken:
         validating both the callback mechanism and the subdir scoping.
         """
         def broken_body(sh, orig_func):
-            sh.out_.response = [1.0, 0.0, 0.5]
-            sh.out_.throughput = [0.0, 0.0, 0.0]
+            sh.bsdf.response = [1.0, 0.0, 0.5]
+            sh.bsdf.throughput = [0.0, 0.0, 0.0]
 
         ctx = GlslTestContext(
             base_name="mx_generalized_schlick_bsdf_broken",
