@@ -53,6 +53,42 @@ def _sanitize_identifier(name: str) -> str:
     return name
 
 
+def _build_params(sh, nodedef, context: str) -> dict:
+    """Build parameter annotations from a MaterialX nodedef.
+
+    Closure output types (BSDF, EDF, VDF) are emitted as ``inout`` and
+    named after their type (e.g. ``bsdf``) to match the standard library
+    convention.  Non-closure outputs use ``out`` with a sanitized name.
+    """
+    params = {}
+
+    if _node_needs_closure_data(nodedef):
+        params['closureData'] = sh.ClosureData
+
+    for input in nodedef.getInputs():
+        dtype = mtlx_to_metashade_dtype(input.getType(), sh)
+        if dtype is None:
+            raise TypeError(
+                f"Cannot map MaterialX type '{input.getType()}' for input "
+                f"'{input.getName()}' in {context}"
+            )
+        params[_sanitize_identifier(input.getName())] = dtype
+
+    for output in nodedef.getOutputs():
+        dtype = mtlx_to_metashade_dtype(output.getType(), sh)
+        if dtype is None:
+            raise TypeError(
+                f"Cannot map MaterialX type '{output.getType()}' for output "
+                f"'{output.getName()}' in {context}"
+            )
+        is_closure = output.getType() in _CLOSURE_OUTPUT_TYPES
+        name = output.getType().lower() if is_closure else _sanitize_identifier(output.getName())
+        wrapper = sh.InOut if is_closure else sh.Out
+        params[name] = wrapper(dtype)
+
+    return params
+
+
 def acquire_function(sh, impl):
     """
     Acquire a MaterialX function into the generator.
@@ -83,32 +119,7 @@ def acquire_function(sh, impl):
     if hasattr(sh, func_attr):
         return getattr(sh, func_attr)
     
-    # Build param annotations (inputs then outputs)
-    param_annotations = {}
-    
-    # Closure-type nodes get ClosureData as first parameter
-    if _node_needs_closure_data(nodedef):
-        param_annotations['closureData'] = sh.ClosureData
-    
-    for input in nodedef.getInputs():
-        dtype = mtlx_to_metashade_dtype(input.getType(), sh)
-        if dtype is None:
-            raise TypeError(
-                f"Cannot map MaterialX type '{input.getType()}' for input "
-                f"'{input.getName()}' in {func_attr}"
-            )
-        param_name = _sanitize_identifier(input.getName())
-        param_annotations[param_name] = dtype
-    
-    for output in nodedef.getOutputs():
-        dtype = mtlx_to_metashade_dtype(output.getType(), sh)
-        if dtype is None:
-            raise TypeError(
-                f"Cannot map MaterialX type '{output.getType()}' for output "
-                f"'{output.getName()}' in {func_attr}"
-            )
-        param_name = _sanitize_identifier(output.getName())
-        param_annotations[param_name] = sh.Out(dtype)
+    param_annotations = _build_params(sh, nodedef, func_attr)
     
     # Declare the function without emitting code
     FunctionDecl(sh, func_attr, return_type=None)(
@@ -190,34 +201,8 @@ def generate_wrapper_func(sh, impl, suffix: str = "_metashade", body=None):
         return None
     
     wrapper_name = f"{func_attr}{suffix}"
-    
-    # Build parameter dict for wrapper
-    params = {}
-    
-    # Closure-type nodes get ClosureData as first parameter
-    if _node_needs_closure_data(nodedef):
-        params['closureData'] = sh.ClosureData
-    
-    for input in nodedef.getInputs():
-        dtype = mtlx_to_metashade_dtype(input.getType(), sh)
-        if dtype is None:
-            raise TypeError(
-                f"Cannot map MaterialX type '{input.getType()}' for input "
-                f"'{input.getName()}' in {wrapper_name}"
-            )
-        param_name = _sanitize_identifier(input.getName())
-        params[param_name] = dtype
-    
-    for output in nodedef.getOutputs():
-        dtype = mtlx_to_metashade_dtype(output.getType(), sh)
-        if dtype is None:
-            raise TypeError(
-                f"Cannot map MaterialX type '{output.getType()}' for output "
-                f"'{output.getName()}' in {wrapper_name}"
-            )
-        param_name = _sanitize_identifier(output.getName())
-        params[param_name] = sh.Out(dtype)
-    
+    params = _build_params(sh, nodedef, wrapper_name)
+
     # Define the wrapper function
     with sh.function(wrapper_name)(**params):
         if body is not None:

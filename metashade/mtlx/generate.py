@@ -17,7 +17,7 @@ import abc
 
 import MaterialX as mx
 from metashade.targets.glsl import frag
-from metashade.targets._clike.context import Out
+from metashade.targets._clike.context import Out, InOut
 
 from metashade.mtlx import dtypes
 
@@ -114,7 +114,7 @@ class GeneratorContext:
 
             # Add parameters in their original order
             for param_name, param in func._param_defs.items():
-                is_output = isinstance(param, Out)
+                is_output = isinstance(param, (Out, InOut))
                 param_type = dtypes.metashade_to_mtlx(param.dtype_factory)
                 
                 if is_output:
