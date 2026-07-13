@@ -26,10 +26,12 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/metashade/metashade"
+Homepage = "https://metashade.dev"
+Documentation = "https://metashade.dev"
 Repository = "https://github.com/metashade/metashade"
 Issues = "https://github.com/metashade/metashade/issues"
-Documentation = "https://github.com/metashade/metashade/blob/main/README.md"
+Releases = "https://github.com/metashade/metashade/releases"
+"PyCon DE 2026 Presentation" = "https://metashade.dev/metashade-pyconde-pydata-2026/"
 
 [project.optional-dependencies]
 mtlx = [
