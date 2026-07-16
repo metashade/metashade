@@ -100,23 +100,29 @@ class GeneratorContext:
         """
         # Get the function from the generator to access reflection data
         func = getattr(self._sh, func_name)
+        node_category = func_name.removeprefix("mx_")
         if nodedef_name is None:
-            nodedef_name = f'ND_{func_name}'
-   
+            nodedef_name = f'ND_{node_category}'
+
         if self._nodedef_doc is not None:
             # Create new nodedef
             nodedef = self._nodedef_doc.addNodeDef(
                 name=nodedef_name,
-                node=func_name,
+                node=node_category,
                 type=''  # Empty type means no auto-created output
             )
             nodedef.setDocString(mx_doc_string)
 
-            # Add parameters in their original order
+            # Add parameters in their original order, skipping codegen-injected
+            # params (closureData) that don't belong in the nodedef schema.
+            _CODEGEN_PARAMS = {'closureData'}
             for param_name, param in func._param_defs.items():
+                if param_name in _CODEGEN_PARAMS:
+                    continue
+
                 is_output = isinstance(param, (Out, InOut))
                 param_type = dtypes.metashade_to_mtlx(param.dtype_factory)
-                
+
                 if is_output:
                     output_param = nodedef.addOutput(param_name, param_type)
                     output_param.setDocString(f'Output parameter {param_name}')
@@ -124,12 +130,10 @@ class GeneratorContext:
                     input_param = nodedef.addInput(param_name, param_type)
                     input_param.setDocString(f'Input parameter {param_name}')
 
-            # Impl name for new nodes
-            impl_name = f'IM_{func_name}_{self._mx_target_name}'
         else:
             nodedef = None
-            # Override: replace mx_ prefix with IM_
-            impl_name = f'IM_{func_name.removeprefix("mx_")}_{self._mx_target_name}'
+
+        impl_name = f'IM_{node_category}_{self._mx_target_name}'
 
         # Create implementation
         impl = self._impl_doc.addImplementation(impl_name)
