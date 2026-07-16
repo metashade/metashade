@@ -65,7 +65,7 @@ class TestStandardSurfacePink:
     or BSDF nodes needed -- just verifies the plumbing.
     """
 
-    _FUNC_NAME = "mx_standard_surface_surfaceshader_metashade"
+    _FUNC_NAME = "mx_metashade_standard_surface_surfaceshader"
 
     def test_generate_pink_ss(self, ss_nodedef):
         """Generate a hot-pink Standard Surface override."""

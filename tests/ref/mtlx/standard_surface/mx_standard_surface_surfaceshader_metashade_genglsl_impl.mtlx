@@ -1,4 +1,0 @@
-<?xml version="1.0"?>
-<materialx version="1.39">
-  <implementation name="IM_standard_surface_surfaceshader_metashade_genglsl" nodedef="ND_standard_surface_surfaceshader" target="genglsl" file="mx_standard_surface_surfaceshader_metashade_genglsl_impl.glsl" function="mx_standard_surface_surfaceshader_metashade" doc="Pink diagnostic override for Standard Surface" />
-</materialx>
