@@ -27,7 +27,7 @@ class RefDiffer:
         self._ref_dir = ref_dir
 
     def __call__(self, path : Path):
-        assert filecmp.cmp(path, self._ref_dir / path.name)
+        assert filecmp.cmp(path, self._ref_dir / path.name, shallow=False)
 
 def get_test_func_name():
     for frame in inspect.stack():
