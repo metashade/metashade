@@ -8,6 +8,10 @@ on:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
+  schedule:
+    # Every Friday at 8:00 AM EDT (12:00 UTC)
+    - cron: '0 12 * * 5'
+
 
 jobs:
   build:
