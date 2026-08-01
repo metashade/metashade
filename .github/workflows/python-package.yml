@@ -46,7 +46,7 @@ jobs:
         repository: KhronosGroup/glslang
         extract: true
         tag: main-tot
-        fileName: glslang-master-windows-Release.zip
+        fileName: glslang-main-windows-x86_64-release.zip
         out-file-path: '.glslang'
     - name: Print the directory tree
       run: |
