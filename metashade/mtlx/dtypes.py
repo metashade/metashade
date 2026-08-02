@@ -30,6 +30,10 @@ _METASHADE_TO_MTLX = {
     'Float3x3': 'matrix33',
     'Float4x4': 'matrix44',
     'Bool': 'boolean',
+    'BSDF': 'BSDF',
+    'EDF': 'EDF',
+    'VDF': 'VDF',
+    'surfaceshader': 'surfaceshader',
 }
 
 # Derive the inverse map from the canonical forward map
@@ -43,7 +47,7 @@ _MTLX_TO_METASHADE.update({
     'BSDF': 'BSDF',
     'EDF': 'EDF',
     'VDF': 'VDF',
-    'surfaceshader': 'SurfaceShader',
+    'surfaceshader': 'surfaceshader',
     'volumeshader': 'VolumeShader',
     'displacementshader': 'DisplacementShader',
     'lightshader': 'LightShader',

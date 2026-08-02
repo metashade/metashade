@@ -65,7 +65,7 @@ def _build_params(sh, nodedef, context: str) -> dict:
     if _node_needs_closure_data(nodedef):
         params['closureData'] = sh.ClosureData
 
-    for input in nodedef.getInputs():
+    for input in nodedef.getActiveInputs():
         dtype = mtlx_to_metashade_dtype(input.getType(), sh)
         if dtype is None:
             raise TypeError(
@@ -74,7 +74,7 @@ def _build_params(sh, nodedef, context: str) -> dict:
             )
         params[_sanitize_identifier(input.getName())] = dtype
 
-    for output in nodedef.getOutputs():
+    for output in nodedef.getActiveOutputs():
         dtype = mtlx_to_metashade_dtype(output.getType(), sh)
         if dtype is None:
             raise TypeError(
