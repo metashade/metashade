@@ -37,7 +37,7 @@ from metashade.mtlx.dtypes import register_mtlx_closure_structs
 from metashade.mtlx.util.testing import GlslTestContext
 
 
-_SUBDIR = "standard_surface"
+_SUBDIR = "standard_surface_pink"
 _SS_NODEDEF = "ND_standard_surface_surfaceshader"
 
 
