@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<materialx version="1.39">
+  <!--
+    Thin nodegraph overriding ND_standard_surface_surfaceshader.
+    Wires the Metashade-generated metashade_ss_bsdf BSDF node to the
+    stock surface constructor.  Only the inputs used by the BSDF node
+    are forwarded; unused SS inputs (coat, sheen, subsurface, etc.)
+    are left unconnected.
+  -->
+  <nodegraph name="NG_metashade_standard_surface" nodedef="ND_standard_surface_surfaceshader">
+
+    <metashade_ss_bsdf name="ss_bsdf" type="BSDF">
+      <input name="base" type="float" interfacename="base" />
+      <input name="base_color" type="color3" interfacename="base_color" />
+      <input name="diffuse_roughness" type="float" interfacename="diffuse_roughness" />
+      <input name="specular" type="float" interfacename="specular" />
+      <input name="specular_color" type="color3" interfacename="specular_color" />
+      <input name="specular_roughness" type="float" interfacename="specular_roughness" />
+      <input name="specular_IOR" type="float" interfacename="specular_IOR" />
+      <input name="specular_anisotropy" type="float" interfacename="specular_anisotropy" />
+      <input name="thin_film_thickness" type="float" interfacename="thin_film_thickness" />
+      <input name="thin_film_IOR" type="float" interfacename="thin_film_IOR" />
+      <input name="normal" type="vector3" interfacename="normal" />
+      <input name="tangent" type="vector3" interfacename="tangent" />
+    </metashade_ss_bsdf>
+
+    <surface name="surface_ctor" type="surfaceshader">
+      <input name="bsdf" type="BSDF" nodename="ss_bsdf" />
+    </surface>
+
+    <output name="out" type="surfaceshader" nodename="surface_ctor" />
+
+  </nodegraph>
+</materialx>

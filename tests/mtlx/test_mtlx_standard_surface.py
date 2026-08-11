@@ -13,34 +13,37 @@
 # limitations under the License.
 
 """
-Metashade reimplementation of the MaterialX Standard Surface nodegraph.
+Metashade reimplementation of the MaterialX Standard Surface.
 
-Phase 1: A direct ``surfaceshader``-outputting source-code override of
-    ``ND_standard_surface_surfaceshader``.
+Two-layer architecture:
 
-    - ``TestStandardSurfacePink``: hot-pink diagnostic that validates the
-      override pipeline without any BSDF logic.
-    - ``TestStandardSurfaceDefault``: Diffuse + Specular implementation
-      targeting ``standard_surface_default.mtlx``.  Acquires and calls
-      ``mx_oren_nayar_diffuse_bsdf``, ``mx_dielectric_bsdf``, and
-      ``mx_roughness_anisotropy`` from the MaterialX stdlib, then layers
-      specular over diffuse inline.  ClosureData is manually injected
-      into the surfaceshader-outputting function.
+1. A BSDF-outputting source-code node (``metashade_ss_bsdf``) that
+   receives ``ClosureData`` injection from the shader generator and
+   calls stdlib BSDFs (Oren-Nayar diffuse, dielectric specular).
 
-Phase 2 (future): A two-layer architecture with a BSDF-outputting
-    source-code node (gets ``ClosureData`` injection) wired through
-    a thin nodegraph to the stock ``surface`` constructor.  This will
-    be needed once we start calling BSDF SCNs.
+2. A thin hand-written nodegraph that wires the BSDF to the stock
+   ``surface`` constructor, overriding ``ND_standard_surface_surfaceshader``.
+   The nodegraph lives in ``data/`` and is copied to the output directory
+   alongside the generated files.
+
+``TestStandardSurfacePink`` is a separate diagnostic override that
+validates the surfaceshader override pipeline without any BSDF logic.
 """
 
 from __future__ import annotations
+
+import shutil
+from pathlib import Path
 
 import pytest
 
 mx = pytest.importorskip("MaterialX")
 
 from metashade.mtlx.mtlx_reflection import _build_params, acquire_function
-from metashade.mtlx.dtypes import register_mtlx_closure_structs
+from metashade.mtlx.dtypes import (
+    mtlx_to_metashade_dtype,
+    register_mtlx_closure_structs,
+)
 from metashade.mtlx.util.testing import GlslTestContext
 
 
@@ -115,28 +118,64 @@ def _find_genglsl_impl(stdlib_doc, nodedef_suffix):
     return None
 
 
+_DATA_DIR = Path(__file__).parent / "data"
+
+_BSDF_INPUTS = frozenset({
+    "base", "base_color", "diffuse_roughness",
+    "specular", "specular_color", "specular_roughness",
+    "specular_IOR", "specular_anisotropy",
+    "thin_film_thickness", "thin_film_IOR",
+    "normal", "tangent",
+})
+
+
+def _build_bsdf_params(sh, ss_nodedef):
+    """Build BSDF node params from a subset of Standard Surface inputs.
+
+    Types are derived from the authoritative SS nodedef so that
+    ``color3`` vs ``vector3`` distinctions are preserved in the
+    generated nodedef.  ``closureData`` is placed first (skipped from
+    the nodedef by ``add_node_impl``) and the BSDF output is last.
+    """
+    params = {"closureData": sh.ClosureData}
+
+    for inp in ss_nodedef.getActiveInputs():
+        name = inp.getName()
+        if name not in _BSDF_INPUTS:
+            continue
+        dtype = mtlx_to_metashade_dtype(inp.getType(), sh)
+        assert dtype is not None, (
+            f"Unmappable type for {name}: {inp.getType()}"
+        )
+        params[name] = dtype
+
+    params["bsdf"] = sh.InOut(sh.BSDF)
+    return params
+
+
 class TestStandardSurfaceDefault:
-    """Diffuse + Specular Standard Surface for standard_surface_default.mtlx.
+    """BSDF node for Standard Surface diffuse + specular.
 
-    Acquires ``mx_oren_nayar_diffuse_bsdf``, ``mx_dielectric_bsdf``, and
-    ``mx_roughness_anisotropy`` from the MaterialX stdlib.  Layers
-    specular over diffuse inline (the ``layer`` BSDF combiner) and maps
-    the result to a ``surfaceshader`` output.
+    Generates a custom BSDF source-code node (``metashade_ss_bsdf``)
+    that acquires ``mx_oren_nayar_diffuse_bsdf``,
+    ``mx_dielectric_bsdf``, and ``mx_roughness_anisotropy`` from the
+    MaterialX stdlib, then layers specular over diffuse.
 
-    ClosureData is manually injected as a codegen artifact (not in the
-    nodedef schema) so internal BSDF calls receive proper lighting context.
-
-    Covers Tier 1 materials: default, plastic, greysphere.
+    ``closureData`` is injected automatically by the shader generator
+    (not in the nodedef schema).  A thin hand-written nodegraph wires
+    this BSDF to the stock ``surface`` constructor, overriding
+    ``ND_standard_surface_surfaceshader``.
     """
 
-    _FUNC_NAME = "mx_metashade_standard_surface_surfaceshader"
+    _FUNC_NAME = "mx_metashade_ss_bsdf"
+    _NODEGRAPH_FILE = "mx_metashade_standard_surface_ng.mtlx"
 
     # MaterialX GLSL enum constants (from mx_closure_type.glsl / pbrlib)
     _SCATTER_R = 0
     _DISTRIBUTION_GGX = 0
 
-    def test_generate_default_ss(self, ss_nodedef, stdlib_doc):
-        """Generate a Diffuse + Specular Standard Surface override."""
+    def test_generate_bsdf(self, ss_nodedef, stdlib_doc):
+        """Generate a diffuse + specular BSDF source-code node."""
         oren_nayar_impl = _find_genglsl_impl(
             stdlib_doc, "oren_nayar_diffuse_bsdf"
         )
@@ -159,7 +198,7 @@ class TestStandardSurfaceDefault:
 
         ctx = GlslTestContext(
             base_name=self._FUNC_NAME,
-            impl_only=True,
+            impl_only=False,
             subdir=_SUBDIR_DIFFUSE,
         )
 
@@ -167,7 +206,6 @@ class TestStandardSurfaceDefault:
             sh = test_ctx._sh
 
             register_mtlx_closure_structs(sh)
-            _register_surfaceshader_struct(sh)
 
             sh.include(roughness_aniso_impl.getAttribute("file"))
             sh.include(oren_nayar_impl.getAttribute("file"))
@@ -177,8 +215,7 @@ class TestStandardSurfaceDefault:
             acquire_function(sh, oren_nayar_impl)
             acquire_function(sh, dielectric_impl)
 
-            params = _build_params(sh, ss_nodedef, self._FUNC_NAME)
-            params = {'closureData': sh.ClosureData, **params}
+            params = _build_bsdf_params(sh, ss_nodedef)
 
             with sh.function(self._FUNC_NAME)(**params):
                 # --- Roughness ---
@@ -220,16 +257,20 @@ class TestStandardSurfaceDefault:
                 )
 
                 # --- Layer: specular over diffuse ---
-                sh.out_.color = (
+                sh.bsdf.response = (
                     sh.specular_bsdf.response
                     + sh.diffuse_bsdf.response * sh.specular_bsdf.throughput
                 )
-                sh.out_.transparency = [0.0, 0.0, 0.0]
+                sh.bsdf.throughput = (
+                    sh.specular_bsdf.throughput * sh.diffuse_bsdf.throughput
+                )
 
             test_ctx.add_node_impl(
                 func_name=self._FUNC_NAME,
                 mx_doc_string=(
-                    "Metashade Standard Surface (diffuse + specular)"
+                    "Metashade Standard Surface BSDF (diffuse + specular)"
                 ),
-                nodedef_name=_SS_NODEDEF,
             )
+
+        out_dir = GlslTestContext._out_dir_root / _SUBDIR_DIFFUSE
+        shutil.copy(_DATA_DIR / self._NODEGRAPH_FILE, out_dir)
