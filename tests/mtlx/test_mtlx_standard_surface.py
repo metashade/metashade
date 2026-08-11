@@ -167,8 +167,8 @@ class TestStandardSurfaceDefault:
     ``ND_standard_surface_surfaceshader``.
     """
 
-    _FUNC_NAME = "mx_metashade_ss_bsdf"
-    _NODEGRAPH_FILE = "mx_metashade_standard_surface_ng.mtlx"
+    _FUNC_NAME = "mx_metashade_standard_surface_bsdf"
+    _NODEGRAPH_FILE = "mx_metashade_standard_surface_surfaceshader.mtlx"
 
     # MaterialX GLSL enum constants (from mx_closure_type.glsl / pbrlib)
     _SCATTER_R = 0

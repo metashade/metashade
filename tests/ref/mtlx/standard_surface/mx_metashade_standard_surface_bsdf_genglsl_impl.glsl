@@ -1,7 +1,7 @@
 #include "mx_roughness_anisotropy.glsl"
 #include "mx_oren_nayar_diffuse_bsdf.glsl"
 #include "mx_dielectric_bsdf.glsl"
-void mx_metashade_ss_bsdf(ClosureData closureData, float base, vec3 base_color, float diffuse_roughness, float specular, vec3 specular_color, float specular_roughness, float specular_IOR, float specular_anisotropy, float thin_film_thickness, float thin_film_IOR, vec3 normal, vec3 tangent, inout BSDF bsdf)
+void mx_metashade_standard_surface_bsdf(ClosureData closureData, float base, vec3 base_color, float diffuse_roughness, float specular, vec3 specular_color, float specular_roughness, float specular_IOR, float specular_anisotropy, float thin_film_thickness, float thin_film_IOR, vec3 normal, vec3 tangent, inout BSDF bsdf)
 {
 	vec2 main_roughness;
 	mx_roughness_anisotropy(specular_roughness, specular_anisotropy, main_roughness);
