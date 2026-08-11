@@ -17,7 +17,7 @@ Metashade reimplementation of the MaterialX Standard Surface.
 
 Two-layer architecture:
 
-1. A BSDF-outputting source-code node (``metashade_ss_bsdf``) that
+1. A BSDF-outputting source-code node (``metashade_standard_surface_bsdf``) that
    receives ``ClosureData`` injection from the shader generator and
    calls stdlib BSDFs (Oren-Nayar diffuse, dielectric specular).
 
@@ -46,8 +46,6 @@ from metashade.mtlx.dtypes import (
 from metashade.mtlx.util.testing import GlslTestContext
 
 
-_SUBDIR_PINK = "standard_surface_pink"
-_SUBDIR_DIFFUSE = "standard_surface"
 _SS_NODEDEF = "ND_standard_surface_surfaceshader"
 
 
@@ -76,13 +74,14 @@ class TestStandardSurfacePink:
     """
 
     _FUNC_NAME = "mx_metashade_standard_surface_surfaceshader"
+    _SUBDIR = "standard_surface_pink"
 
     def test_generate_pink_ss(self, ss_nodedef):
         """Generate a hot-pink Standard Surface override."""
         ctx = GlslTestContext(
             base_name=self._FUNC_NAME,
             impl_only=True,
-            subdir=_SUBDIR_PINK,
+            subdir=self._SUBDIR,
         )
 
         with ctx as test_ctx:
@@ -153,7 +152,7 @@ def _build_bsdf_params(sh, ss_nodedef):
 class TestStandardSurfaceDefault:
     """BSDF node for Standard Surface diffuse + specular.
 
-    Generates a custom BSDF source-code node (``metashade_ss_bsdf``)
+    Generates a custom BSDF source-code node (``metashade_standard_surface_bsdf``)
     that acquires ``mx_oren_nayar_diffuse_bsdf``,
     ``mx_dielectric_bsdf``, and ``mx_roughness_anisotropy`` from the
     MaterialX stdlib, then layers specular over diffuse.
@@ -165,6 +164,7 @@ class TestStandardSurfaceDefault:
     """
 
     _FUNC_NAME = "mx_metashade_standard_surface_bsdf"
+    _SUBDIR = "standard_surface"
 
     # MaterialX GLSL enum constants (from mx_closure_type.glsl / pbrlib)
     _SCATTER_R = 0
@@ -195,7 +195,7 @@ class TestStandardSurfaceDefault:
         ctx = GlslTestContext(
             base_name=self._FUNC_NAME,
             impl_only=False,
-            subdir=_SUBDIR_DIFFUSE,
+            subdir=self._SUBDIR,
         )
 
         with ctx as test_ctx:
