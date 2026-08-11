@@ -46,7 +46,7 @@ from metashade.mtlx.dtypes import (
 from metashade.mtlx.util.testing import GlslTestContext
 
 
-_SS_NODEDEF = "ND_standard_surface_surfaceshader"
+_SURFACESHADER_NODEDEF = "ND_standard_surface_surfaceshader"
 
 
 def _register_surfaceshader_struct(sh):
@@ -58,10 +58,10 @@ def _register_surfaceshader_struct(sh):
 
 
 @pytest.fixture
-def ss_nodedef(stdlib_doc: mx.Document):
+def surfaceshader_nodedef(stdlib_doc: mx.Document):
     """Get the default-version Standard Surface nodedef."""
-    nodedef = stdlib_doc.getNodeDef(_SS_NODEDEF)
-    assert nodedef is not None, f"Could not find {_SS_NODEDEF}"
+    nodedef = stdlib_doc.getNodeDef(_SURFACESHADER_NODEDEF)
+    assert nodedef is not None, f"Could not find {_SURFACESHADER_NODEDEF}"
     return nodedef
 
 
@@ -76,7 +76,7 @@ class TestStandardSurfacePink:
     _FUNC_NAME = "mx_metashade_standard_surface_surfaceshader"
     _SUBDIR = "standard_surface_pink"
 
-    def test_generate_pink_ss(self, ss_nodedef):
+    def test_generate_pink_surfaceshader(self, surfaceshader_nodedef):
         """Generate a hot-pink Standard Surface override."""
         ctx = GlslTestContext(
             base_name=self._FUNC_NAME,
@@ -90,7 +90,7 @@ class TestStandardSurfacePink:
             register_mtlx_closure_structs(sh)
             _register_surfaceshader_struct(sh)
 
-            params = _build_params(sh, ss_nodedef, self._FUNC_NAME)
+            params = _build_params(sh, surfaceshader_nodedef, self._FUNC_NAME)
 
             with sh.function(self._FUNC_NAME)(**params):
                 sh.out_.color = [1.0, 0.0, 0.5]
@@ -101,7 +101,7 @@ class TestStandardSurfacePink:
                 mx_doc_string=(
                     "Pink diagnostic override for Standard Surface"
                 ),
-                nodedef_name=_SS_NODEDEF,
+                nodedef_name=_SURFACESHADER_NODEDEF,
             )
 
 
@@ -125,17 +125,17 @@ _BSDF_INPUTS = frozenset({
 })
 
 
-def _build_bsdf_params(sh, ss_nodedef):
-    """Build BSDF node params from a subset of Standard Surface inputs.
+def _build_bsdf_params(sh, surfaceshader_nodedef):
+    """Build BSDF node params from a subset of the surfaceshader nodedef inputs.
 
-    Types are derived from the authoritative SS nodedef so that
+    Types are derived from the surfaceshader nodedef so that
     ``color3`` vs ``vector3`` distinctions are preserved in the
-    generated nodedef.  ``closureData`` is placed first (skipped from
-    the nodedef by ``add_node_impl``) and the BSDF output is last.
+    generated BSDF nodedef.  ``closureData`` is placed first (skipped
+    from the nodedef by ``add_node_impl``) and the BSDF output is last.
     """
     params = {"closureData": sh.ClosureData}
 
-    for inp in ss_nodedef.getActiveInputs():
+    for inp in surfaceshader_nodedef.getActiveInputs():
         name = inp.getName()
         if name not in _BSDF_INPUTS:
             continue
@@ -170,7 +170,7 @@ class TestStandardSurfaceDefault:
     _SCATTER_R = 0
     _DISTRIBUTION_GGX = 0
 
-    def test_generate_bsdf(self, ss_nodedef, stdlib_doc):
+    def test_generate_bsdf(self, surfaceshader_nodedef, stdlib_doc):
         """Generate a diffuse + specular BSDF source-code node."""
         oren_nayar_impl = _find_genglsl_impl(
             stdlib_doc, "oren_nayar_diffuse_bsdf"
@@ -211,7 +211,7 @@ class TestStandardSurfaceDefault:
             acquire_function(sh, oren_nayar_impl)
             acquire_function(sh, dielectric_impl)
 
-            params = _build_bsdf_params(sh, ss_nodedef)
+            params = _build_bsdf_params(sh, surfaceshader_nodedef)
 
             with sh.function(self._FUNC_NAME)(**params):
                 # --- Roughness ---
