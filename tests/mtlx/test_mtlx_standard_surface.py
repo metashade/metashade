@@ -23,8 +23,8 @@ Two-layer architecture:
 
 2. A thin hand-written nodegraph that wires the BSDF to the stock
    ``surface`` constructor, overriding ``ND_standard_surface_surfaceshader``.
-   The nodegraph lives in ``data/`` and is copied to the output directory
-   alongside the generated files.
+   The nodegraph lives in ``libraries/standard_surface/`` and is loaded
+   as an additional library path by the MaterialX render tests.
 
 ``TestStandardSurfacePink`` is a separate diagnostic override that
 validates the surfaceshader override pipeline without any BSDF logic.
@@ -32,7 +32,6 @@ validates the surfaceshader override pipeline without any BSDF logic.
 
 from __future__ import annotations
 
-import shutil
 from pathlib import Path
 
 import pytest
@@ -118,8 +117,6 @@ def _find_genglsl_impl(stdlib_doc, nodedef_suffix):
     return None
 
 
-_DATA_DIR = Path(__file__).parent / "data"
-
 _BSDF_INPUTS = frozenset({
     "base", "base_color", "diffuse_roughness",
     "specular", "specular_color", "specular_roughness",
@@ -168,7 +165,6 @@ class TestStandardSurfaceDefault:
     """
 
     _FUNC_NAME = "mx_metashade_standard_surface_bsdf"
-    _NODEGRAPH_FILE = "mx_metashade_standard_surface_surfaceshader.mtlx"
 
     # MaterialX GLSL enum constants (from mx_closure_type.glsl / pbrlib)
     _SCATTER_R = 0
@@ -271,6 +267,3 @@ class TestStandardSurfaceDefault:
                     "Metashade Standard Surface BSDF (diffuse + specular)"
                 ),
             )
-
-        out_dir = GlslTestContext._out_dir_root / _SUBDIR_DIFFUSE
-        shutil.copy(_DATA_DIR / self._NODEGRAPH_FILE, out_dir)
