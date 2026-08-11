@@ -222,6 +222,8 @@ class TestStandardSurfaceDefault:
 
                 # --- Diffuse BSDF (Oren-Nayar) ---
                 sh.diffuse_bsdf = sh.BSDF()
+                sh.diffuse_bsdf.response = [0.0, 0.0, 0.0]
+                sh.diffuse_bsdf.throughput = [1.0, 1.0, 1.0]
                 sh.mx_oren_nayar_diffuse_bsdf(
                     closureData=sh.closureData,
                     weight=sh.base,
@@ -234,6 +236,8 @@ class TestStandardSurfaceDefault:
 
                 # --- Specular BSDF (dielectric reflection) ---
                 sh.specular_bsdf = sh.BSDF()
+                sh.specular_bsdf.response = [0.0, 0.0, 0.0]
+                sh.specular_bsdf.throughput = [1.0, 1.0, 1.0]
                 sh.mx_dielectric_bsdf(
                     closureData=sh.closureData,
                     weight=sh.specular,
