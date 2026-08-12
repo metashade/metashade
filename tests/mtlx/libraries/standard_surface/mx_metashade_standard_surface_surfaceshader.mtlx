@@ -17,6 +17,7 @@
       <input name="specular_color" type="color3" interfacename="specular_color" />
       <input name="specular_roughness" type="float" interfacename="specular_roughness" />
       <input name="specular_IOR" type="float" interfacename="specular_IOR" />
+      <input name="metalness" type="float" interfacename="metalness" />
       <input name="specular_anisotropy" type="float" interfacename="specular_anisotropy" />
       <input name="thin_film_thickness" type="float" interfacename="thin_film_thickness" />
       <input name="thin_film_IOR" type="float" interfacename="thin_film_IOR" />

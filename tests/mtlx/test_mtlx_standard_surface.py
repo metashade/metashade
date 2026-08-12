@@ -116,6 +116,7 @@ def _find_genglsl_impl(stdlib_doc, nodedef_suffix):
 
 _BSDF_INPUTS = frozenset({
     "base", "base_color", "diffuse_roughness",
+    "metalness",
     "specular", "specular_color", "specular_roughness",
     "specular_IOR", "specular_anisotropy",
     "thin_film_thickness", "thin_film_IOR",
@@ -148,16 +149,13 @@ def _build_bsdf_params(sh, surfaceshader_nodedef):
 
 
 class TestStandardSurfaceDefault:
-    """BSDF node for Standard Surface diffuse + specular.
+    """Metashade reimplementation of the Standard Surface BSDF.
 
-    Generates a custom BSDF source-code node (``metashade_standard_surface_bsdf``)
-    that acquires ``mx_oren_nayar_diffuse_bsdf``,
-    ``mx_dielectric_bsdf``, and ``mx_roughness_anisotropy`` from the
-    MaterialX stdlib, then layers specular over diffuse.
-
-    ``closureData`` is injected automatically by the shader generator
-    (not in the nodedef schema).  A thin hand-written nodegraph wires
-    this BSDF to the stock ``surface`` constructor, overriding
+    Generates ``metashade_standard_surface_bsdf``, a source-code node
+    that acquires stdlib BSDFs and progressively rebuilds the
+    Standard Surface shading model.  ``closureData`` is injected by
+    the shader generator; a thin hand-written nodegraph wires this
+    BSDF to the stock ``surface`` constructor, overriding
     ``ND_standard_surface_surfaceshader``.
     """
 
@@ -169,12 +167,18 @@ class TestStandardSurfaceDefault:
     _DISTRIBUTION_GGX = 0
 
     def test_generate_bsdf(self, surfaceshader_nodedef, stdlib_doc):
-        """Generate a diffuse + specular BSDF source-code node."""
+        """Generate a diffuse + specular + conductor BSDF source-code node."""
         oren_nayar_impl = _find_genglsl_impl(
             stdlib_doc, "oren_nayar_diffuse_bsdf"
         )
         dielectric_impl = _find_genglsl_impl(
             stdlib_doc, "dielectric_bsdf"
+        )
+        conductor_impl = _find_genglsl_impl(
+            stdlib_doc, "conductor_bsdf"
+        )
+        artistic_ior_impl = _find_genglsl_impl(
+            stdlib_doc, "artistic_ior"
         )
         roughness_aniso_impl = _find_genglsl_impl(
             stdlib_doc, "roughness_anisotropy"
@@ -185,6 +189,12 @@ class TestStandardSurfaceDefault:
         )
         assert dielectric_impl is not None, (
             "Could not find genglsl impl for dielectric_bsdf"
+        )
+        assert conductor_impl is not None, (
+            "Could not find genglsl impl for conductor_bsdf"
+        )
+        assert artistic_ior_impl is not None, (
+            "Could not find genglsl impl for artistic_ior"
         )
         assert roughness_aniso_impl is not None, (
             "Could not find genglsl impl for roughness_anisotropy"
@@ -204,10 +214,14 @@ class TestStandardSurfaceDefault:
             sh.include(roughness_aniso_impl.getAttribute("file"))
             sh.include(oren_nayar_impl.getAttribute("file"))
             sh.include(dielectric_impl.getAttribute("file"))
+            sh.include(conductor_impl.getAttribute("file"))
+            sh.include(artistic_ior_impl.getAttribute("file"))
 
             acquire_function(sh, roughness_aniso_impl)
             acquire_function(sh, oren_nayar_impl)
             acquire_function(sh, dielectric_impl)
+            acquire_function(sh, conductor_impl)
+            acquire_function(sh, artistic_ior_impl)
 
             params = _build_bsdf_params(sh, surfaceshader_nodedef)
 
@@ -263,9 +277,52 @@ class TestStandardSurfaceDefault:
                     sh.specular_bsdf.throughput * sh.diffuse_bsdf.throughput
                 )
 
+                # --- Artistic IOR (reflectivity/edge-color -> physical IOR/extinction) ---
+                sh.metal_reflectivity = sh.base_color * sh.base
+                sh.metal_edgecolor = sh.specular_color * sh.specular
+                sh.ior_n = sh.RgbF()
+                sh.ior_k = sh.RgbF()
+                sh.mx_artistic_ior(
+                    reflectivity=sh.metal_reflectivity,
+                    edge_color=sh.metal_edgecolor,
+                    ior=sh.ior_n,
+                    extinction=sh.ior_k,
+                )
+
+                # --- Conductor BSDF (metal reflection) ---
+                sh.metal_bsdf = sh.BSDF()
+                sh.metal_bsdf.response = [0.0, 0.0, 0.0]
+                sh.metal_bsdf.throughput = [1.0, 1.0, 1.0]
+                sh.mx_conductor_bsdf(
+                    closureData=sh.closureData,
+                    weight=1.0,
+                    ior=sh.ior_n,
+                    extinction=sh.ior_k,
+                    roughness=sh.main_roughness,
+                    retroreflective=False,
+                    thinfilm_thickness=sh.thin_film_thickness,
+                    thinfilm_ior=sh.thin_film_IOR,
+                    normal=sh.normal,
+                    tangent=sh.tangent,
+                    distribution=self._DISTRIBUTION_GGX,
+                    bsdf=sh.metal_bsdf,
+                )
+
+                # --- Metalness mix: conductor (fg) vs specular+diffuse (bg) ---
+                sh.one_minus_metalness = sh.Float(1) - sh.metalness
+                sh.bsdf.response = (
+                    sh.metal_bsdf.response * sh.metalness
+                    + sh.bsdf.response * sh.one_minus_metalness
+                )
+                sh.bsdf.throughput = (
+                    sh.metal_bsdf.throughput * sh.metalness
+                    + sh.bsdf.throughput * sh.one_minus_metalness
+                )
+
             test_ctx.add_node_impl(
                 func_name=self._FUNC_NAME,
                 mx_doc_string=(
-                    "Metashade Standard Surface BSDF (diffuse + specular)"
+                    "Metashade Standard Surface BSDF "
+                    "(diffuse + specular + conductor)"
                 ),
             )
