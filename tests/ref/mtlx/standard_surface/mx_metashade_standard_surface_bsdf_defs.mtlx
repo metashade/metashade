@@ -1,9 +1,10 @@
 <?xml version="1.0"?>
 <materialx version="1.39">
-  <nodedef name="ND_metashade_standard_surface_bsdf" node="metashade_standard_surface_bsdf" doc="Metashade Standard Surface BSDF (diffuse + specular)">
+  <nodedef name="ND_metashade_standard_surface_bsdf" node="metashade_standard_surface_bsdf" doc="Metashade Standard Surface BSDF (diffuse + specular + conductor)">
     <input name="base" type="float" doc="Input parameter base" />
     <input name="base_color" type="color3" doc="Input parameter base_color" />
     <input name="diffuse_roughness" type="float" doc="Input parameter diffuse_roughness" />
+    <input name="metalness" type="float" doc="Input parameter metalness" />
     <input name="specular" type="float" doc="Input parameter specular" />
     <input name="specular_color" type="color3" doc="Input parameter specular_color" />
     <input name="specular_roughness" type="float" doc="Input parameter specular_roughness" />
