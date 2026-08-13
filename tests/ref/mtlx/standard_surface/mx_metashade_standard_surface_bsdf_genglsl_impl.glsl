@@ -25,9 +25,9 @@ void mx_metashade_standard_surface_bsdf(ClosureData closureData, float base, vec
 	BSDF metal_bsdf;
 	metal_bsdf.response = vec3(0.0, 0.0, 0.0);
 	metal_bsdf.throughput = vec3(1.0, 1.0, 1.0);
-	mx_conductor_bsdf(closureData, 1.0, ior_n, ior_k, main_roughness, false, thin_film_thickness, thin_film_IOR, normal, tangent, 0, metal_bsdf);
+	mx_conductor_bsdf(closureData, metalness, ior_n, ior_k, main_roughness, false, thin_film_thickness, thin_film_IOR, normal, tangent, 0, metal_bsdf);
 	float one_minus_metalness = 1 - metalness;
-	bsdf.response = (metal_bsdf.response * metalness) + (bsdf.response * one_minus_metalness);
-	bsdf.throughput = (metal_bsdf.throughput * metalness) + (bsdf.throughput * one_minus_metalness);
+	bsdf.response = metal_bsdf.response + (bsdf.response * one_minus_metalness);
+	bsdf.throughput = metal_bsdf.throughput + (bsdf.throughput * one_minus_metalness);
 }
 

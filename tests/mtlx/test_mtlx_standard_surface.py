@@ -295,7 +295,7 @@ class TestStandardSurfaceDefault:
                 sh.metal_bsdf.throughput = [1.0, 1.0, 1.0]
                 sh.mx_conductor_bsdf(
                     closureData=sh.closureData,
-                    weight=1.0,
+                    weight=sh.metalness,
                     ior=sh.ior_n,
                     extinction=sh.ior_k,
                     roughness=sh.main_roughness,
@@ -309,13 +309,15 @@ class TestStandardSurfaceDefault:
                 )
 
                 # --- Metalness mix: conductor (fg) vs specular+diffuse (bg) ---
+                # Conductor response is already scaled by metalness (the weight),
+                # so we just add it to the attenuated dielectric+diffuse stack.
                 sh.one_minus_metalness = sh.Float(1) - sh.metalness
                 sh.bsdf.response = (
-                    sh.metal_bsdf.response * sh.metalness
+                    sh.metal_bsdf.response
                     + sh.bsdf.response * sh.one_minus_metalness
                 )
                 sh.bsdf.throughput = (
-                    sh.metal_bsdf.throughput * sh.metalness
+                    sh.metal_bsdf.throughput
                     + sh.bsdf.throughput * sh.one_minus_metalness
                 )
 
