@@ -208,7 +208,8 @@ class TestStandardSurfaceDefault:
             params = _build_bsdf_params(sh, surfaceshader_nodedef)
 
             with sh.function(self._FUNC_NAME)(**params):
-                # --- Roughness ---
+                sh // ""
+                sh // "Roughness"
                 sh.main_roughness = sh.Float2()
                 sh.mx_roughness_anisotropy(
                     roughness=sh.specular_roughness,
@@ -216,7 +217,8 @@ class TestStandardSurfaceDefault:
                     out_=sh.main_roughness,
                 )
 
-                # --- Diffuse BSDF (Oren-Nayar) ---
+                sh // ""
+                sh // "Diffuse BSDF (Oren-Nayar)"
                 sh.diffuse_bsdf = sh.BSDF()
                 sh.diffuse_bsdf.response = [0.0, 0.0, 0.0]
                 sh.diffuse_bsdf.throughput = [1.0, 1.0, 1.0]
@@ -230,7 +232,8 @@ class TestStandardSurfaceDefault:
                     bsdf=sh.diffuse_bsdf,
                 )
 
-                # --- Specular BSDF (dielectric reflection) ---
+                sh // ""
+                sh // "Specular BSDF (dielectric reflection)"
                 sh.specular_bsdf = sh.BSDF()
                 sh.specular_bsdf.response = [0.0, 0.0, 0.0]
                 sh.specular_bsdf.throughput = [1.0, 1.0, 1.0]
@@ -250,7 +253,8 @@ class TestStandardSurfaceDefault:
                     bsdf=sh.specular_bsdf,
                 )
 
-                # --- Layer: specular over diffuse ---
+                sh // ""
+                sh // "Layer: specular over diffuse"
                 sh.bsdf.response = (
                     sh.specular_bsdf.response
                     + sh.diffuse_bsdf.response * sh.specular_bsdf.throughput
@@ -259,7 +263,8 @@ class TestStandardSurfaceDefault:
                     sh.specular_bsdf.throughput * sh.diffuse_bsdf.throughput
                 )
 
-                # --- Artistic IOR (reflectivity/edge-color -> physical IOR/extinction) ---
+                sh // ""
+                sh // "Artistic IOR (reflectivity/edge-color -> physical IOR/extinction)"
                 sh.metal_reflectivity = sh.base_color * sh.base
                 sh.metal_edgecolor = sh.specular_color * sh.specular
                 sh.ior_n = sh.RgbF()
@@ -271,7 +276,8 @@ class TestStandardSurfaceDefault:
                     extinction=sh.ior_k,
                 )
 
-                # --- Conductor BSDF (metal reflection) ---
+                sh // ""
+                sh // "Conductor BSDF (metal reflection)"
                 sh.metal_bsdf = sh.BSDF()
                 sh.metal_bsdf.response = [0.0, 0.0, 0.0]
                 sh.metal_bsdf.throughput = [1.0, 1.0, 1.0]
@@ -290,9 +296,10 @@ class TestStandardSurfaceDefault:
                     bsdf=sh.metal_bsdf,
                 )
 
-                # --- Metalness mix: conductor (fg) vs specular+diffuse (bg) ---
-                # Conductor response is already scaled by metalness (the weight),
-                # so we just add it to the attenuated dielectric+diffuse stack.
+                sh // ""
+                sh // "Metalness mix: conductor (fg) vs specular+diffuse (bg)"
+                sh // "Conductor response is already scaled by metalness (the weight),"
+                sh // "so we just add it to the attenuated dielectric+diffuse stack."
                 sh.one_minus_metalness = sh.Float(1) - sh.metalness
                 sh.bsdf.response = (
                     sh.metal_bsdf.response
