@@ -103,15 +103,32 @@ class TestStandardSurfacePink:
             )
 
 
-def _find_genglsl_impl(stdlib_doc, nodedef_suffix):
-    """Find the genglsl source-code implementation for a nodedef."""
+def _find_genglsl_impl(stdlib_doc, node_name):
+    """Find the genglsl source-code implementation for a node."""
     for impl in stdlib_doc.getImplementations():
         if (
-            impl.getNodeDefString().endswith(nodedef_suffix)
+            impl.getNodeDefString().endswith(node_name)
             and impl.getTarget() == "genglsl"
         ):
             return impl
     return None
+
+
+def _acquire_stdlib_sourcecode_nodes(sh, stdlib_doc, node_names):
+    """Resolve, include, and acquire stdlib sourcecode nodes.
+
+    *node_names* is an ordered sequence of MaterialX source-code node
+    names whose genglsl implementations will be included and acquired.
+    Order matters: dependencies must come before dependents so that
+    ``#include`` directives are emitted in the right order.
+    """
+    for name in node_names:
+        impl = _find_genglsl_impl(stdlib_doc, name)
+        assert impl is not None, (
+            f"Could not find genglsl impl for {name}"
+        )
+        sh.include(impl.getAttribute("file"))
+        acquire_function(sh, impl)
 
 
 _BSDF_INPUTS = frozenset({
@@ -166,40 +183,16 @@ class TestStandardSurfaceDefault:
     _SCATTER_R = 0
     _DISTRIBUTION_GGX = 0
 
+    _STDLIB_IMPORTS = (
+        "roughness_anisotropy",
+        "oren_nayar_diffuse_bsdf",
+        "dielectric_bsdf",
+        "conductor_bsdf",
+        "artistic_ior",
+    )
+
     def test_generate_bsdf(self, surfaceshader_nodedef, stdlib_doc):
-        """Generate a diffuse + specular + conductor BSDF source-code node."""
-        oren_nayar_impl = _find_genglsl_impl(
-            stdlib_doc, "oren_nayar_diffuse_bsdf"
-        )
-        dielectric_impl = _find_genglsl_impl(
-            stdlib_doc, "dielectric_bsdf"
-        )
-        conductor_impl = _find_genglsl_impl(
-            stdlib_doc, "conductor_bsdf"
-        )
-        artistic_ior_impl = _find_genglsl_impl(
-            stdlib_doc, "artistic_ior"
-        )
-        roughness_aniso_impl = _find_genglsl_impl(
-            stdlib_doc, "roughness_anisotropy"
-        )
-
-        assert oren_nayar_impl is not None, (
-            "Could not find genglsl impl for oren_nayar_diffuse_bsdf"
-        )
-        assert dielectric_impl is not None, (
-            "Could not find genglsl impl for dielectric_bsdf"
-        )
-        assert conductor_impl is not None, (
-            "Could not find genglsl impl for conductor_bsdf"
-        )
-        assert artistic_ior_impl is not None, (
-            "Could not find genglsl impl for artistic_ior"
-        )
-        assert roughness_aniso_impl is not None, (
-            "Could not find genglsl impl for roughness_anisotropy"
-        )
-
+        """Generate the Standard Surface BSDF source-code node."""
         ctx = GlslTestContext(
             base_name=self._FUNC_NAME,
             impl_only=False,
@@ -210,23 +203,13 @@ class TestStandardSurfaceDefault:
             sh = test_ctx._sh
 
             register_mtlx_closure_structs(sh)
-
-            sh.include(roughness_aniso_impl.getAttribute("file"))
-            sh.include(oren_nayar_impl.getAttribute("file"))
-            sh.include(dielectric_impl.getAttribute("file"))
-            sh.include(conductor_impl.getAttribute("file"))
-            sh.include(artistic_ior_impl.getAttribute("file"))
-
-            acquire_function(sh, roughness_aniso_impl)
-            acquire_function(sh, oren_nayar_impl)
-            acquire_function(sh, dielectric_impl)
-            acquire_function(sh, conductor_impl)
-            acquire_function(sh, artistic_ior_impl)
+            _acquire_stdlib_sourcecode_nodes(sh, stdlib_doc, self._STDLIB_IMPORTS)
 
             params = _build_bsdf_params(sh, surfaceshader_nodedef)
 
             with sh.function(self._FUNC_NAME)(**params):
-                # --- Roughness ---
+                sh // ""
+                sh // "Roughness"
                 sh.main_roughness = sh.Float2()
                 sh.mx_roughness_anisotropy(
                     roughness=sh.specular_roughness,
@@ -234,7 +217,8 @@ class TestStandardSurfaceDefault:
                     out_=sh.main_roughness,
                 )
 
-                # --- Diffuse BSDF (Oren-Nayar) ---
+                sh // ""
+                sh // "Diffuse BSDF (Oren-Nayar)"
                 sh.diffuse_bsdf = sh.BSDF()
                 sh.diffuse_bsdf.response = [0.0, 0.0, 0.0]
                 sh.diffuse_bsdf.throughput = [1.0, 1.0, 1.0]
@@ -248,7 +232,8 @@ class TestStandardSurfaceDefault:
                     bsdf=sh.diffuse_bsdf,
                 )
 
-                # --- Specular BSDF (dielectric reflection) ---
+                sh // ""
+                sh // "Specular BSDF (dielectric reflection)"
                 sh.specular_bsdf = sh.BSDF()
                 sh.specular_bsdf.response = [0.0, 0.0, 0.0]
                 sh.specular_bsdf.throughput = [1.0, 1.0, 1.0]
@@ -268,7 +253,8 @@ class TestStandardSurfaceDefault:
                     bsdf=sh.specular_bsdf,
                 )
 
-                # --- Layer: specular over diffuse ---
+                sh // ""
+                sh // "Layer: specular over diffuse"
                 sh.bsdf.response = (
                     sh.specular_bsdf.response
                     + sh.diffuse_bsdf.response * sh.specular_bsdf.throughput
@@ -277,7 +263,8 @@ class TestStandardSurfaceDefault:
                     sh.specular_bsdf.throughput * sh.diffuse_bsdf.throughput
                 )
 
-                # --- Artistic IOR (reflectivity/edge-color -> physical IOR/extinction) ---
+                sh // ""
+                sh // "Artistic IOR (reflectivity/edge-color -> physical IOR/extinction)"
                 sh.metal_reflectivity = sh.base_color * sh.base
                 sh.metal_edgecolor = sh.specular_color * sh.specular
                 sh.ior_n = sh.RgbF()
@@ -289,7 +276,8 @@ class TestStandardSurfaceDefault:
                     extinction=sh.ior_k,
                 )
 
-                # --- Conductor BSDF (metal reflection) ---
+                sh // ""
+                sh // "Conductor BSDF (metal reflection)"
                 sh.metal_bsdf = sh.BSDF()
                 sh.metal_bsdf.response = [0.0, 0.0, 0.0]
                 sh.metal_bsdf.throughput = [1.0, 1.0, 1.0]
@@ -308,9 +296,10 @@ class TestStandardSurfaceDefault:
                     bsdf=sh.metal_bsdf,
                 )
 
-                # --- Metalness mix: conductor (fg) vs specular+diffuse (bg) ---
-                # Conductor response is already scaled by metalness (the weight),
-                # so we just add it to the attenuated dielectric+diffuse stack.
+                sh // ""
+                sh // "Metalness mix: conductor (fg) vs specular+diffuse (bg)"
+                sh // "Conductor response is already scaled by metalness (the weight),"
+                sh // "so we just add it to the attenuated dielectric+diffuse stack."
                 sh.one_minus_metalness = sh.Float(1) - sh.metalness
                 sh.bsdf.response = (
                     sh.metal_bsdf.response
