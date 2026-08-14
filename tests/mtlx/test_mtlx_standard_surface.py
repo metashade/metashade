@@ -103,15 +103,32 @@ class TestStandardSurfacePink:
             )
 
 
-def _find_genglsl_impl(stdlib_doc, nodedef_suffix):
-    """Find the genglsl source-code implementation for a nodedef."""
+def _find_genglsl_impl(stdlib_doc, node_name):
+    """Find the genglsl source-code implementation for a node."""
     for impl in stdlib_doc.getImplementations():
         if (
-            impl.getNodeDefString().endswith(nodedef_suffix)
+            impl.getNodeDefString().endswith(node_name)
             and impl.getTarget() == "genglsl"
         ):
             return impl
     return None
+
+
+def _acquire_stdlib_sourcecode_nodes(sh, stdlib_doc, node_names):
+    """Resolve, include, and acquire stdlib sourcecode nodes.
+
+    *node_names* is an ordered sequence of MaterialX source-code node
+    names whose genglsl implementations will be included and acquired.
+    Order matters: dependencies must come before dependents so that
+    ``#include`` directives are emitted in the right order.
+    """
+    for name in node_names:
+        impl = _find_genglsl_impl(stdlib_doc, name)
+        assert impl is not None, (
+            f"Could not find genglsl impl for {name}"
+        )
+        sh.include(impl.getAttribute("file"))
+        acquire_function(sh, impl)
 
 
 _BSDF_INPUTS = frozenset({
@@ -166,40 +183,16 @@ class TestStandardSurfaceDefault:
     _SCATTER_R = 0
     _DISTRIBUTION_GGX = 0
 
+    _STDLIB_IMPORTS = (
+        "roughness_anisotropy",
+        "oren_nayar_diffuse_bsdf",
+        "dielectric_bsdf",
+        "conductor_bsdf",
+        "artistic_ior",
+    )
+
     def test_generate_bsdf(self, surfaceshader_nodedef, stdlib_doc):
-        """Generate a diffuse + specular + conductor BSDF source-code node."""
-        oren_nayar_impl = _find_genglsl_impl(
-            stdlib_doc, "oren_nayar_diffuse_bsdf"
-        )
-        dielectric_impl = _find_genglsl_impl(
-            stdlib_doc, "dielectric_bsdf"
-        )
-        conductor_impl = _find_genglsl_impl(
-            stdlib_doc, "conductor_bsdf"
-        )
-        artistic_ior_impl = _find_genglsl_impl(
-            stdlib_doc, "artistic_ior"
-        )
-        roughness_aniso_impl = _find_genglsl_impl(
-            stdlib_doc, "roughness_anisotropy"
-        )
-
-        assert oren_nayar_impl is not None, (
-            "Could not find genglsl impl for oren_nayar_diffuse_bsdf"
-        )
-        assert dielectric_impl is not None, (
-            "Could not find genglsl impl for dielectric_bsdf"
-        )
-        assert conductor_impl is not None, (
-            "Could not find genglsl impl for conductor_bsdf"
-        )
-        assert artistic_ior_impl is not None, (
-            "Could not find genglsl impl for artistic_ior"
-        )
-        assert roughness_aniso_impl is not None, (
-            "Could not find genglsl impl for roughness_anisotropy"
-        )
-
+        """Generate the Standard Surface BSDF source-code node."""
         ctx = GlslTestContext(
             base_name=self._FUNC_NAME,
             impl_only=False,
@@ -210,18 +203,7 @@ class TestStandardSurfaceDefault:
             sh = test_ctx._sh
 
             register_mtlx_closure_structs(sh)
-
-            sh.include(roughness_aniso_impl.getAttribute("file"))
-            sh.include(oren_nayar_impl.getAttribute("file"))
-            sh.include(dielectric_impl.getAttribute("file"))
-            sh.include(conductor_impl.getAttribute("file"))
-            sh.include(artistic_ior_impl.getAttribute("file"))
-
-            acquire_function(sh, roughness_aniso_impl)
-            acquire_function(sh, oren_nayar_impl)
-            acquire_function(sh, dielectric_impl)
-            acquire_function(sh, conductor_impl)
-            acquire_function(sh, artistic_ior_impl)
+            _acquire_stdlib_sourcecode_nodes(sh, stdlib_doc, self._STDLIB_IMPORTS)
 
             params = _build_bsdf_params(sh, surfaceshader_nodedef)
 
