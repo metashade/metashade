@@ -235,6 +235,52 @@ class TestStandardSurfaceDefault:
                 )
 
                 sh // ""
+                sh // "Transmission roughness"
+                sh.transmission_roughness_scalar = (
+                    (sh.specular_roughness + sh.transmission_extra_roughness)
+                    .clamp(0.0, 1.0)
+                )
+                sh.transmission_roughness = sh.Float2()
+                sh.mx_roughness_anisotropy(
+                    roughness=sh.transmission_roughness_scalar,
+                    anisotropy=sh.specular_anisotropy,
+                    out_=sh.transmission_roughness,
+                )
+
+                sh // ""
+                sh // "Transmission BSDF (dielectric transmission)"
+                sh.transmission_bsdf = sh.BSDF()
+                sh.transmission_bsdf.response = [0.0, 0.0, 0.0]
+                sh.transmission_bsdf.throughput = [1.0, 1.0, 1.0]
+                sh.mx_dielectric_bsdf(
+                    closureData=sh.closureData,
+                    weight=1.0,
+                    tint=sh.transmission_color,
+                    ior=sh.specular_IOR,
+                    roughness=sh.transmission_roughness,
+                    retroreflective=False,
+                    thinfilm_thickness=0.0,
+                    thinfilm_ior=1.5,
+                    normal=sh.normal,
+                    tangent=sh.tangent,
+                    distribution=self._DISTRIBUTION_GGX,
+                    scatter_mode=self._SCATTER_T,
+                    bsdf=sh.transmission_bsdf,
+                )
+
+                sh // ""
+                sh // "Transmission mix: blend transmission with diffuse"
+                sh.one_minus_transmission = sh.Float(1) - sh.transmission
+                sh.bsdf.response = (
+                    sh.transmission_bsdf.response * sh.transmission
+                    + sh.diffuse_bsdf.response * sh.one_minus_transmission
+                )
+                sh.bsdf.throughput = (
+                    sh.transmission_bsdf.throughput * sh.transmission
+                    + sh.diffuse_bsdf.throughput * sh.one_minus_transmission
+                )
+
+                sh // ""
                 sh // "Specular BSDF (dielectric reflection)"
                 sh.specular_bsdf = sh.BSDF()
                 sh.specular_bsdf.response = [0.0, 0.0, 0.0]
@@ -256,13 +302,13 @@ class TestStandardSurfaceDefault:
                 )
 
                 sh // ""
-                sh // "Layer: specular over diffuse"
+                sh // "Layer: specular over transmission mix"
                 sh.bsdf.response = (
                     sh.specular_bsdf.response
-                    + sh.diffuse_bsdf.response * sh.specular_bsdf.throughput
+                    + sh.bsdf.response * sh.specular_bsdf.throughput
                 )
                 sh.bsdf.throughput = (
-                    sh.specular_bsdf.throughput * sh.diffuse_bsdf.throughput
+                    sh.specular_bsdf.throughput * sh.bsdf.throughput
                 )
 
                 sh // ""
@@ -299,9 +345,9 @@ class TestStandardSurfaceDefault:
                 )
 
                 sh // ""
-                sh // "Metalness mix: conductor (fg) vs specular+diffuse (bg)"
+                sh // "Metalness mix: conductor (fg) vs specular layer (bg)"
                 sh // "Conductor response is already scaled by metalness (the weight),"
-                sh // "so we just add it to the attenuated dielectric+diffuse stack."
+                sh // "so we just add it to the attenuated specular layer."
                 sh.one_minus_metalness = sh.Float(1) - sh.metalness
                 sh.bsdf.response = (
                     sh.metal_bsdf.response
@@ -310,52 +356,6 @@ class TestStandardSurfaceDefault:
                 sh.bsdf.throughput = (
                     sh.metal_bsdf.throughput
                     + sh.bsdf.throughput * sh.one_minus_metalness
-                )
-
-                sh // ""
-                sh // "Transmission roughness"
-                sh.transmission_roughness_scalar = (
-                    (sh.specular_roughness + sh.transmission_extra_roughness)
-                    .clamp(0.0, 1.0)
-                )
-                sh.transmission_roughness = sh.Float2()
-                sh.mx_roughness_anisotropy(
-                    roughness=sh.transmission_roughness_scalar,
-                    anisotropy=sh.specular_anisotropy,
-                    out_=sh.transmission_roughness,
-                )
-
-                sh // ""
-                sh // "Transmission BSDF (dielectric transmission)"
-                sh.transmission_bsdf = sh.BSDF()
-                sh.transmission_bsdf.response = [0.0, 0.0, 0.0]
-                sh.transmission_bsdf.throughput = [1.0, 1.0, 1.0]
-                sh.mx_dielectric_bsdf(
-                    closureData=sh.closureData,
-                    weight=1.0,
-                    tint=sh.transmission_color,
-                    ior=sh.specular_IOR,
-                    roughness=sh.transmission_roughness,
-                    retroreflective=False,
-                    thinfilm_thickness=0.0,
-                    thinfilm_ior=1.5,
-                    normal=sh.normal,
-                    tangent=sh.tangent,
-                    distribution=self._DISTRIBUTION_GGX,
-                    scatter_mode=self._SCATTER_T,
-                    bsdf=sh.transmission_bsdf,
-                )
-
-                sh // ""
-                sh // "Transmission mix"
-                sh.one_minus_transmission = sh.Float(1) - sh.transmission
-                sh.bsdf.response = (
-                    sh.transmission_bsdf.response * sh.transmission
-                    + sh.bsdf.response * sh.one_minus_transmission
-                )
-                sh.bsdf.throughput = (
-                    sh.transmission_bsdf.throughput * sh.transmission
-                    + sh.bsdf.throughput * sh.one_minus_transmission
                 )
 
             test_ctx.add_node_impl(
