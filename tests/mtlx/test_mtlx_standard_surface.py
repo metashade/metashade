@@ -135,7 +135,7 @@ _BSDF_INPUTS = frozenset({
     "base", "base_color", "diffuse_roughness",
     "metalness",
     "specular", "specular_color", "specular_roughness",
-    "specular_IOR", "specular_anisotropy",
+    "specular_IOR", "specular_anisotropy", "specular_rotation",
     "transmission", "transmission_color", "transmission_extra_roughness",
     "thin_film_thickness", "thin_film_IOR",
     "normal", "tangent",
@@ -187,6 +187,7 @@ class TestStandardSurfaceDefault:
 
     _STDLIB_IMPORTS = (
         "roughness_anisotropy",
+        "rotate3d_vector3",
         "oren_nayar_diffuse_bsdf",
         "dielectric_bsdf",
         "conductor_bsdf",
@@ -218,6 +219,20 @@ class TestStandardSurfaceDefault:
                     anisotropy=sh.specular_anisotropy,
                     out_=sh.main_roughness,
                 )
+
+                sh // ""
+                sh // "Tangent rotation"
+                sh.main_tangent = sh.tangent
+                with sh.if_(sh.specular_anisotropy > 0.0):
+                    sh.tangent_rotate_degree = sh.specular_rotation * 360.0
+                    sh.tangent_rotated = sh.Float3()
+                    sh.mx_rotate_vector3(
+                        in_=sh.tangent,
+                        amount=sh.tangent_rotate_degree,
+                        axis=sh.normal,
+                        out_=sh.tangent_rotated,
+                    )
+                    sh.main_tangent = sh.tangent_rotated.normalize()
 
                 sh // ""
                 sh // "Diffuse BSDF (Oren-Nayar)"
@@ -262,7 +277,7 @@ class TestStandardSurfaceDefault:
                     thinfilm_thickness=0.0,
                     thinfilm_ior=1.5,
                     normal=sh.normal,
-                    tangent=sh.tangent,
+                    tangent=sh.main_tangent,
                     distribution=self._DISTRIBUTION_GGX,
                     scatter_mode=self._SCATTER_T,
                     bsdf=sh.transmission_bsdf,
@@ -295,7 +310,7 @@ class TestStandardSurfaceDefault:
                     thinfilm_thickness=sh.thin_film_thickness,
                     thinfilm_ior=sh.thin_film_IOR,
                     normal=sh.normal,
-                    tangent=sh.tangent,
+                    tangent=sh.main_tangent,
                     distribution=self._DISTRIBUTION_GGX,
                     scatter_mode=self._SCATTER_R,
                     bsdf=sh.specular_bsdf,
@@ -339,7 +354,7 @@ class TestStandardSurfaceDefault:
                     thinfilm_thickness=sh.thin_film_thickness,
                     thinfilm_ior=sh.thin_film_IOR,
                     normal=sh.normal,
-                    tangent=sh.tangent,
+                    tangent=sh.main_tangent,
                     distribution=self._DISTRIBUTION_GGX,
                     bsdf=sh.metal_bsdf,
                 )
