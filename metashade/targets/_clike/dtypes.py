@@ -208,10 +208,59 @@ class Scalar(BaseType):
             else super()._get_value_ref_static(concrete_cls, value)
         )
 
-class Float(ArithmeticType, Scalar):
+class _ScalarComparisons:
+    """Scalar comparison operators returning Bool.
+
+    Mixed into Float and Int only; vector comparisons (which would
+    return bvecN / ivecN) are not yet supported.
+    """
+
+    def _comparison_operator(self, rhs, op):
+        if isinstance(rhs, bool):
+            raise TypeError(
+                f"'{op}' not supported between "
+                f"'{type(self).__name__}' and 'bool'"
+            )
+        rhs_ref = self.__class__._get_value_ref(rhs)
+        if rhs_ref is None:
+            raise TypeError(
+                f"'{op}' not supported between "
+                f"'{type(self).__name__}' and '{type(rhs).__name__}'"
+            )
+
+        return self._sh._instantiate_dtype(
+            Bool,
+            self.__class__._format_binary_operator(
+                lhs=self, rhs=rhs_ref, op=op
+            )
+        )
+
+    def __gt__(self, rhs):
+        return self._comparison_operator(rhs, '>')
+
+    def __lt__(self, rhs):
+        return self._comparison_operator(rhs, '<')
+
+    def __ge__(self, rhs):
+        return self._comparison_operator(rhs, '>=')
+
+    def __le__(self, rhs):
+        return self._comparison_operator(rhs, '<=')
+
+    def __eq__(self, rhs):
+        return self._comparison_operator(rhs, '==')
+
+    def __ne__(self, rhs):
+        return self._comparison_operator(rhs, '!=')
+
+    # Python sets __hash__ = None when __eq__ is overridden; restore it
+    # so Float/Int instances stay usable in sets and dicts.
+    __hash__ = object.__hash__
+
+class Float(_ScalarComparisons, ArithmeticType, Scalar):
     _target_name = 'float'
 
-class Int(ArithmeticType, Scalar):
+class Int(_ScalarComparisons, ArithmeticType, Scalar):
     _target_name = 'int'
 
 class Bool(Scalar):
