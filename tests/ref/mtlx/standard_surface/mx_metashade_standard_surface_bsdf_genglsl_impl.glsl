@@ -13,7 +13,7 @@ void mx_metashade_standard_surface_bsdf(ClosureData closureData, float base, vec
 	// 
 	// Tangent rotation
 	vec3 main_tangent = tangent;
-	if (specular_anisotropy)
+	if (specular_anisotropy > 0.0)
 	{
 		float tangent_rotate_degree = specular_rotation * 360.0;
 		vec3 tangent_rotated;
