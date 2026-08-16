@@ -19,6 +19,7 @@
       <input name="specular_IOR" type="float" interfacename="specular_IOR" />
       <input name="metalness" type="float" interfacename="metalness" />
       <input name="specular_anisotropy" type="float" interfacename="specular_anisotropy" />
+      <input name="specular_rotation" type="float" interfacename="specular_rotation" />
       <input name="transmission" type="float" interfacename="transmission" />
       <input name="transmission_color" type="color3" interfacename="transmission_color" />
       <input name="transmission_extra_roughness" type="float" interfacename="transmission_extra_roughness" />

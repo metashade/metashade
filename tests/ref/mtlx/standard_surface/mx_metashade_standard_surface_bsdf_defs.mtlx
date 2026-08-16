@@ -10,6 +10,7 @@
     <input name="specular_roughness" type="float" doc="Input parameter specular_roughness" />
     <input name="specular_IOR" type="float" doc="Input parameter specular_IOR" />
     <input name="specular_anisotropy" type="float" doc="Input parameter specular_anisotropy" />
+    <input name="specular_rotation" type="float" doc="Input parameter specular_rotation" />
     <input name="transmission" type="float" doc="Input parameter transmission" />
     <input name="transmission_color" type="color3" doc="Input parameter transmission_color" />
     <input name="transmission_extra_roughness" type="float" doc="Input parameter transmission_extra_roughness" />
