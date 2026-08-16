@@ -1,4 +1,4 @@
 <?xml version="1.0"?>
 <materialx version="1.39">
-  <implementation name="IM_metashade_standard_surface_bsdf_genglsl" nodedef="ND_metashade_standard_surface_bsdf" target="genglsl" file="mx_metashade_standard_surface_bsdf_genglsl_impl.glsl" function="mx_metashade_standard_surface_bsdf" doc="Metashade Standard Surface BSDF (diffuse + specular + conductor + transmission)" />
+  <implementation name="IM_metashade_standard_surface_bsdf_genglsl" nodedef="ND_metashade_standard_surface_bsdf" target="genglsl" file="mx_metashade_standard_surface_bsdf_genglsl_impl.glsl" function="mx_metashade_standard_surface_bsdf" doc="Metashade Standard Surface BSDF (diffuse + sheen + specular + conductor + transmission)" />
 </materialx>
