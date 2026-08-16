@@ -136,6 +136,7 @@ _BSDF_INPUTS = frozenset({
     "metalness",
     "specular", "specular_color", "specular_roughness",
     "specular_IOR", "specular_anisotropy",
+    "transmission", "transmission_color", "transmission_extra_roughness",
     "thin_film_thickness", "thin_film_IOR",
     "normal", "tangent",
 })
@@ -181,6 +182,7 @@ class TestStandardSurfaceDefault:
 
     # MaterialX GLSL enum constants (from mx_closure_type.glsl / pbrlib)
     _SCATTER_R = 0
+    _SCATTER_T = 1
     _DISTRIBUTION_GGX = 0
 
     _STDLIB_IMPORTS = (
@@ -310,10 +312,56 @@ class TestStandardSurfaceDefault:
                     + sh.bsdf.throughput * sh.one_minus_metalness
                 )
 
+                sh // ""
+                sh // "Transmission roughness"
+                sh.transmission_roughness_scalar = (
+                    (sh.specular_roughness + sh.transmission_extra_roughness)
+                    .clamp(0.0, 1.0)
+                )
+                sh.transmission_roughness = sh.Float2()
+                sh.mx_roughness_anisotropy(
+                    roughness=sh.transmission_roughness_scalar,
+                    anisotropy=sh.specular_anisotropy,
+                    out_=sh.transmission_roughness,
+                )
+
+                sh // ""
+                sh // "Transmission BSDF (dielectric transmission)"
+                sh.transmission_bsdf = sh.BSDF()
+                sh.transmission_bsdf.response = [0.0, 0.0, 0.0]
+                sh.transmission_bsdf.throughput = [1.0, 1.0, 1.0]
+                sh.mx_dielectric_bsdf(
+                    closureData=sh.closureData,
+                    weight=1.0,
+                    tint=sh.transmission_color,
+                    ior=sh.specular_IOR,
+                    roughness=sh.transmission_roughness,
+                    retroreflective=False,
+                    thinfilm_thickness=0.0,
+                    thinfilm_ior=1.5,
+                    normal=sh.normal,
+                    tangent=sh.tangent,
+                    distribution=self._DISTRIBUTION_GGX,
+                    scatter_mode=self._SCATTER_T,
+                    bsdf=sh.transmission_bsdf,
+                )
+
+                sh // ""
+                sh // "Transmission mix"
+                sh.one_minus_transmission = sh.Float(1) - sh.transmission
+                sh.bsdf.response = (
+                    sh.transmission_bsdf.response * sh.transmission
+                    + sh.bsdf.response * sh.one_minus_transmission
+                )
+                sh.bsdf.throughput = (
+                    sh.transmission_bsdf.throughput * sh.transmission
+                    + sh.bsdf.throughput * sh.one_minus_transmission
+                )
+
             test_ctx.add_node_impl(
                 func_name=self._FUNC_NAME,
                 mx_doc_string=(
                     "Metashade Standard Surface BSDF "
-                    "(diffuse + specular + conductor)"
+                    "(diffuse + specular + conductor + transmission)"
                 ),
             )
