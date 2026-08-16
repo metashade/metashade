@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <materialx version="1.39">
-  <nodedef name="ND_metashade_standard_surface_bsdf" node="metashade_standard_surface_bsdf" doc="Metashade Standard Surface BSDF (diffuse + specular + conductor)">
+  <nodedef name="ND_metashade_standard_surface_bsdf" node="metashade_standard_surface_bsdf" doc="Metashade Standard Surface BSDF (diffuse + specular + conductor + transmission)">
     <input name="base" type="float" doc="Input parameter base" />
     <input name="base_color" type="color3" doc="Input parameter base_color" />
     <input name="diffuse_roughness" type="float" doc="Input parameter diffuse_roughness" />
@@ -10,6 +10,9 @@
     <input name="specular_roughness" type="float" doc="Input parameter specular_roughness" />
     <input name="specular_IOR" type="float" doc="Input parameter specular_IOR" />
     <input name="specular_anisotropy" type="float" doc="Input parameter specular_anisotropy" />
+    <input name="transmission" type="float" doc="Input parameter transmission" />
+    <input name="transmission_color" type="color3" doc="Input parameter transmission_color" />
+    <input name="transmission_extra_roughness" type="float" doc="Input parameter transmission_extra_roughness" />
     <input name="thin_film_thickness" type="float" doc="Input parameter thin_film_thickness" />
     <input name="thin_film_IOR" type="float" doc="Input parameter thin_film_IOR" />
     <input name="normal" type="vector3" doc="Input parameter normal" />
