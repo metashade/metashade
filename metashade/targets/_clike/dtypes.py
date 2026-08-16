@@ -216,6 +216,11 @@ class _ScalarComparisons:
     """
 
     def _comparison_operator(self, rhs, op):
+        if isinstance(rhs, bool):
+            raise TypeError(
+                f"'{op}' not supported between "
+                f"'{type(self).__name__}' and 'bool'"
+            )
         rhs_ref = self.__class__._get_value_ref(rhs)
         if rhs_ref is None:
             return NotImplemented

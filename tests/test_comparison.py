@@ -168,6 +168,22 @@ class TestComparisonTypeRejection:
             sh.uniform('g_x', sh.Float)
             assert (sh.g_x == "hello") is False
 
+    @ctx_cls_hg
+    def test_gt_rejects_bool(self, ctx_cls):
+        """Comparison with a Python bool raises TypeError."""
+        with ctx_cls(no_file=True) as sh:
+            sh.uniform('g_x', sh.Float)
+            with pytest.raises(TypeError):
+                sh.g_x > True
+
+    @ctx_cls_hg
+    def test_eq_rejects_bool(self, ctx_cls):
+        """Equality with a Python bool raises TypeError."""
+        with ctx_cls(no_file=True) as sh:
+            sh.uniform('g_x', sh.Float)
+            with pytest.raises(TypeError):
+                sh.g_x == True
+
 
 class TestComparisonHashability:
     """Float and Int remain hashable after adding __eq__."""
@@ -177,7 +193,11 @@ class TestComparisonHashability:
         """Instances can be used in sets and as dict keys."""
         with ctx_cls(no_file=True) as sh:
             sh.uniform('g_x', sh.Float)
-            hash(sh.g_x)
+            sh.uniform('g_y', sh.Float)
+            s = {sh.g_x, sh.g_y}
+            assert sh.g_x in s
+            d = {sh.g_x: 'a'}
+            assert d[sh.g_x] == 'a'
 
 
 class TestVectorComparisonAbsent:
