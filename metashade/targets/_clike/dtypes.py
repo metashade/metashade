@@ -223,7 +223,10 @@ class _ScalarComparisons:
             )
         rhs_ref = self.__class__._get_value_ref(rhs)
         if rhs_ref is None:
-            return NotImplemented
+            raise TypeError(
+                f"'{op}' not supported between "
+                f"'{type(self).__name__}' and '{type(rhs).__name__}'"
+            )
 
         return self._sh._instantiate_dtype(
             Bool,

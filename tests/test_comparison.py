@@ -163,10 +163,19 @@ class TestComparisonTypeRejection:
 
     @ctx_cls_hg
     def test_eq_rejects_string(self, ctx_cls):
-        """Equality with a string falls back to identity (False)."""
+        """Equality with a string raises TypeError."""
         with ctx_cls(no_file=True) as sh:
             sh.uniform('g_x', sh.Float)
-            assert (sh.g_x == "hello") is False
+            with pytest.raises(TypeError):
+                sh.g_x == "hello"
+
+    @ctx_cls_hg
+    def test_ne_rejects_string(self, ctx_cls):
+        """Not-equal with a string raises TypeError."""
+        with ctx_cls(no_file=True) as sh:
+            sh.uniform('g_x', sh.Float)
+            with pytest.raises(TypeError):
+                sh.g_x != "hello"
 
     @ctx_cls_hg
     def test_gt_rejects_bool(self, ctx_cls):
