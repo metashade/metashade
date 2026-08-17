@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from metashade.util.testing import ctx_cls_hg, HlslTestContext
+from metashade.util.testing import ctx_cls_hg, HlslTestContext, GlslTestContext
 import _auto_float_intrinsics, _auto_numeric_intrinsics
 
 class TestIntrinsics:
@@ -40,3 +40,51 @@ class TestIntrinsics:
 
     def test_numeric_intrinsics(self):
         self._test(_auto_numeric_intrinsics)
+
+
+class TestLerpReturnType:
+    """lerp must return the type of the interpolated values, not the weight."""
+
+    @ctx_cls_hg
+    def test_scalar_lerp_scalar(self, ctx_cls):
+        """float.lerp(float, float) returns float."""
+        with ctx_cls(no_file=True) as sh:
+            sh.uniform('g_t', sh.Float)
+            sh.uniform('g_a', sh.Float)
+            sh.uniform('g_b', sh.Float)
+            result = sh.g_t.lerp(sh.g_a, sh.g_b)
+            assert isinstance(result, sh.Float._get_dtype())
+
+    @ctx_cls_hg
+    def test_scalar_lerp_vec3(self, ctx_cls):
+        """float.lerp(Float3, Float3) returns Float3, not Float."""
+        with ctx_cls(no_file=True) as sh:
+            sh.uniform('g_t', sh.Float)
+            sh.uniform('g_a', sh.Float3)
+            sh.uniform('g_b', sh.Float3)
+            result = sh.g_t.lerp(sh.g_a, sh.g_b)
+            assert isinstance(result, sh.Float3._get_dtype())
+
+    @ctx_cls_hg
+    def test_scalar_lerp_vec4(self, ctx_cls):
+        """float.lerp(Float4, Float4) returns Float4."""
+        with ctx_cls(no_file=True) as sh:
+            sh.uniform('g_t', sh.Float)
+            sh.uniform('g_a', sh.Float4)
+            sh.uniform('g_b', sh.Float4)
+            result = sh.g_t.lerp(sh.g_a, sh.g_b)
+            assert isinstance(result, sh.Float4._get_dtype())
+
+    @ctx_cls_hg
+    def test_lerp_expression_string(self, ctx_cls):
+        """lerp emits the correct intrinsic call."""
+        with ctx_cls(no_file=True) as sh:
+            sh.uniform('g_t', sh.Float)
+            sh.uniform('g_a', sh.Float3)
+            sh.uniform('g_b', sh.Float3)
+            result = sh.g_t.lerp(sh.g_a, sh.g_b)
+            result_str = str(result)
+            if isinstance(ctx_cls(), HlslTestContext):
+                assert result_str == 'lerp(g_a, g_b, g_t)'
+            else:
+                assert result_str == 'mix(g_a, g_b, g_t)'
