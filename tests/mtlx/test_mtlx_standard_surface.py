@@ -312,14 +312,11 @@ class TestStandardSurfaceDefault:
 
                 sh // ""
                 sh // "Transmission mix: blend transmission with sheen layer"
-                sh.one_minus_transmission = sh.Float(1) - sh.transmission
-                sh.bsdf.response = (
-                    sh.transmission_bsdf.response * sh.transmission
-                    + sh.bsdf.response * sh.one_minus_transmission
+                sh.bsdf.response = sh.transmission.lerp(
+                    sh.bsdf.response, sh.transmission_bsdf.response
                 )
-                sh.bsdf.throughput = (
-                    sh.transmission_bsdf.throughput * sh.transmission
-                    + sh.bsdf.throughput * sh.one_minus_transmission
+                sh.bsdf.throughput = sh.transmission.lerp(
+                    sh.bsdf.throughput, sh.transmission_bsdf.throughput
                 )
 
                 sh // ""

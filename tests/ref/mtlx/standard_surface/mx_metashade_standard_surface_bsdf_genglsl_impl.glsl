@@ -50,9 +50,8 @@ void mx_metashade_standard_surface_bsdf(ClosureData closureData, float base, vec
 	mx_dielectric_bsdf(closureData, 1.0, transmission_color, specular_IOR, transmission_roughness, false, 0.0, 1.5, normal, main_tangent, 0, 1, transmission_bsdf);
 	// 
 	// Transmission mix: blend transmission with sheen layer
-	float one_minus_transmission = 1 - transmission;
-	bsdf.response = (transmission_bsdf.response * transmission) + (bsdf.response * one_minus_transmission);
-	bsdf.throughput = (transmission_bsdf.throughput * transmission) + (bsdf.throughput * one_minus_transmission);
+	bsdf.response = mix(bsdf.response, transmission_bsdf.response, transmission);
+	bsdf.throughput = mix(bsdf.throughput, transmission_bsdf.throughput, transmission);
 	// 
 	// Specular BSDF (dielectric reflection)
 	BSDF specular_bsdf;
