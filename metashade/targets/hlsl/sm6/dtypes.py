@@ -21,6 +21,9 @@ class _AnyLayoutMixin(
     _auto_float_intrinsics.AnyLayoutMixin,
     _auto_numeric_intrinsics.AnyLayoutMixin
 ):
+    def lerp(self, a, b):
+        return self._sh._instantiate_dtype(a.__class__, f'lerp({a}, {b}, {self})')
+
     def _checkDdxDdy(self, name):
         if not self._sh.__class__._is_pixel_shader:
             raise RuntimeError(f'"{name}" is only supported in pixel shaders')
