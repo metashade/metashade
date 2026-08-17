@@ -136,6 +136,7 @@ _BSDF_INPUTS = frozenset({
     "metalness",
     "specular", "specular_color", "specular_roughness",
     "specular_IOR", "specular_anisotropy", "specular_rotation",
+    "sheen", "sheen_color", "sheen_roughness",
     "transmission", "transmission_color", "transmission_extra_roughness",
     "thin_film_thickness", "thin_film_IOR",
     "normal", "tangent",
@@ -189,6 +190,7 @@ class TestStandardSurfaceDefault:
         "roughness_anisotropy",
         "rotate3d_vector3",
         "oren_nayar_diffuse_bsdf",
+        "sheen_bsdf",
         "dielectric_bsdf",
         "conductor_bsdf",
         "artistic_ior",
@@ -250,6 +252,31 @@ class TestStandardSurfaceDefault:
                 )
 
                 sh // ""
+                sh // "Sheen BSDF"
+                sh.sheen_bsdf_out = sh.BSDF()
+                sh.sheen_bsdf_out.response = [0.0, 0.0, 0.0]
+                sh.sheen_bsdf_out.throughput = [1.0, 1.0, 1.0]
+                sh.mx_sheen_bsdf(
+                    closureData=sh.closureData,
+                    weight=sh.sheen,
+                    color=sh.sheen_color,
+                    roughness=sh.sheen_roughness,
+                    normal=sh.normal,
+                    mode=0,
+                    bsdf=sh.sheen_bsdf_out,
+                )
+
+                sh // ""
+                sh // "Sheen layer: sheen over diffuse"
+                sh.bsdf.response = (
+                    sh.sheen_bsdf_out.response
+                    + sh.diffuse_bsdf.response * sh.sheen_bsdf_out.throughput
+                )
+                sh.bsdf.throughput = (
+                    sh.sheen_bsdf_out.throughput * sh.diffuse_bsdf.throughput
+                )
+
+                sh // ""
                 sh // "Transmission roughness"
                 sh.transmission_roughness_scalar = (
                     (sh.specular_roughness + sh.transmission_extra_roughness)
@@ -284,15 +311,15 @@ class TestStandardSurfaceDefault:
                 )
 
                 sh // ""
-                sh // "Transmission mix: blend transmission with diffuse"
+                sh // "Transmission mix: blend transmission with sheen layer"
                 sh.one_minus_transmission = sh.Float(1) - sh.transmission
                 sh.bsdf.response = (
                     sh.transmission_bsdf.response * sh.transmission
-                    + sh.diffuse_bsdf.response * sh.one_minus_transmission
+                    + sh.bsdf.response * sh.one_minus_transmission
                 )
                 sh.bsdf.throughput = (
                     sh.transmission_bsdf.throughput * sh.transmission
-                    + sh.diffuse_bsdf.throughput * sh.one_minus_transmission
+                    + sh.bsdf.throughput * sh.one_minus_transmission
                 )
 
                 sh // ""
@@ -377,6 +404,6 @@ class TestStandardSurfaceDefault:
                 func_name=self._FUNC_NAME,
                 mx_doc_string=(
                     "Metashade Standard Surface BSDF "
-                    "(diffuse + specular + conductor + transmission)"
+                    "(diffuse + sheen + specular + conductor + transmission)"
                 ),
             )
