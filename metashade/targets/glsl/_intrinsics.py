@@ -38,6 +38,13 @@ class FloatIntrinsicsMixin:
             f'pow({self}, {y})'
         )
 
+    def lerp(self, a, b):
+        """Linear interpolation: mix(a, b, self)."""
+        return self._sh._instantiate_dtype(
+            a.__class__,
+            f'mix({a}, {b}, {self})'
+        )
+
     def saturate(self):
         """Clamp value to range [0, 1]. GLSL polyfill using clamp."""
         return self.clamp(0.0, 1.0)
