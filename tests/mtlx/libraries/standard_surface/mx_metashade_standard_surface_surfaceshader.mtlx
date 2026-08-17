@@ -5,7 +5,7 @@
     Wires the Metashade-generated metashade_standard_surface_bsdf node
     and standard-library emission and opacity nodes to the stock surface
     constructor.  Only the inputs consumed by existing nodes are forwarded;
-    unused SS inputs (coat, subsurface, etc.) are left unconnected.
+    unused SS inputs (subsurface, etc.) are left unconnected.
   -->
   <nodegraph name="NG_metashade_standard_surface" nodedef="ND_standard_surface_surfaceshader">
 
@@ -23,6 +23,15 @@
       <input name="sheen" type="float" interfacename="sheen" />
       <input name="sheen_color" type="color3" interfacename="sheen_color" />
       <input name="sheen_roughness" type="float" interfacename="sheen_roughness" />
+      <input name="coat" type="float" interfacename="coat" />
+      <input name="coat_color" type="color3" interfacename="coat_color" />
+      <input name="coat_roughness" type="float" interfacename="coat_roughness" />
+      <input name="coat_anisotropy" type="float" interfacename="coat_anisotropy" />
+      <input name="coat_rotation" type="float" interfacename="coat_rotation" />
+      <input name="coat_IOR" type="float" interfacename="coat_IOR" />
+      <input name="coat_normal" type="vector3" interfacename="coat_normal" />
+      <input name="coat_affect_color" type="float" interfacename="coat_affect_color" />
+      <input name="coat_affect_roughness" type="float" interfacename="coat_affect_roughness" />
       <input name="transmission" type="float" interfacename="transmission" />
       <input name="transmission_color" type="color3" interfacename="transmission_color" />
       <input name="transmission_extra_roughness" type="float" interfacename="transmission_extra_roughness" />
