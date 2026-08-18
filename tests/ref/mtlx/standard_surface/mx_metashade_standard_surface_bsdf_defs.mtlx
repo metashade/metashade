@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <materialx version="1.39">
-  <nodedef name="ND_metashade_standard_surface_bsdf" node="metashade_standard_surface_bsdf" doc="Metashade Standard Surface BSDF (diffuse + sheen + specular + conductor + transmission)">
+  <nodedef name="ND_metashade_standard_surface_bsdf" node="metashade_standard_surface_bsdf" doc="Metashade Standard Surface BSDF">
     <input name="base" type="float" doc="Input parameter base" />
     <input name="base_color" type="color3" doc="Input parameter base_color" />
     <input name="diffuse_roughness" type="float" doc="Input parameter diffuse_roughness" />
@@ -17,6 +17,15 @@
     <input name="sheen" type="float" doc="Input parameter sheen" />
     <input name="sheen_color" type="color3" doc="Input parameter sheen_color" />
     <input name="sheen_roughness" type="float" doc="Input parameter sheen_roughness" />
+    <input name="coat" type="float" doc="Input parameter coat" />
+    <input name="coat_color" type="color3" doc="Input parameter coat_color" />
+    <input name="coat_roughness" type="float" doc="Input parameter coat_roughness" />
+    <input name="coat_anisotropy" type="float" doc="Input parameter coat_anisotropy" />
+    <input name="coat_rotation" type="float" doc="Input parameter coat_rotation" />
+    <input name="coat_IOR" type="float" doc="Input parameter coat_IOR" />
+    <input name="coat_normal" type="vector3" doc="Input parameter coat_normal" />
+    <input name="coat_affect_color" type="float" doc="Input parameter coat_affect_color" />
+    <input name="coat_affect_roughness" type="float" doc="Input parameter coat_affect_roughness" />
     <input name="thin_film_thickness" type="float" doc="Input parameter thin_film_thickness" />
     <input name="thin_film_IOR" type="float" doc="Input parameter thin_film_IOR" />
     <input name="normal" type="vector3" doc="Input parameter normal" />
