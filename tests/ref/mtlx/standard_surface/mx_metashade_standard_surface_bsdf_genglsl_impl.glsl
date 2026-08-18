@@ -37,7 +37,7 @@ void mx_metashade_standard_surface_bsdf(ClosureData closureData, float base, vec
 	}
 	// 
 	// Coat affect color: darken diffuse under the coat
-	float coat_gamma = (clamp(coat, 0.0, 1.0) * coat_affect_color) + 1.0;
+	vec3 coat_gamma = vec3((clamp(coat, 0.0, 1.0) * coat_affect_color) + 1.0);
 	vec3 coat_affected_diffuse_color = pow(clamp(base_color, 0.0, 1.0), coat_gamma);
 	// 
 	// Diffuse BSDF (Oren-Nayar)

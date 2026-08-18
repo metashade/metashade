@@ -265,7 +265,9 @@ class TestStandardSurfaceDefault:
 
                 sh // ""
                 sh // "Coat affect color: darken diffuse under the coat"
-                sh.coat_gamma = sh.coat.clamp(0.0, 1.0) * sh.coat_affect_color + 1.0
+                sh.coat_gamma = sh.RgbF(
+                    sh.coat.clamp(0.0, 1.0) * sh.coat_affect_color + 1.0
+                )
                 sh.coat_affected_diffuse_color = (
                     sh.base_color.clamp(0.0, 1.0).pow(sh.coat_gamma)
                 )
