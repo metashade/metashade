@@ -265,6 +265,7 @@ class TestStandardSurfaceDefault:
 
                 sh // ""
                 sh // "Coat affect color: darken diffuse under the coat"
+                # RgbF workaround: exponent is unitless, not a color (#224)
                 sh.coat_gamma = sh.RgbF(
                     sh.coat.clamp(0.0, 1.0) * sh.coat_affect_color + 1.0
                 )
