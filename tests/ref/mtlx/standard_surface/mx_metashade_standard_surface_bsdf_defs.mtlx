@@ -14,6 +14,11 @@
     <input name="transmission" type="float" doc="Input parameter transmission" />
     <input name="transmission_color" type="color3" doc="Input parameter transmission_color" />
     <input name="transmission_extra_roughness" type="float" doc="Input parameter transmission_extra_roughness" />
+    <input name="subsurface" type="float" doc="Input parameter subsurface" />
+    <input name="subsurface_color" type="color3" doc="Input parameter subsurface_color" />
+    <input name="subsurface_radius" type="color3" doc="Input parameter subsurface_radius" />
+    <input name="subsurface_scale" type="float" doc="Input parameter subsurface_scale" />
+    <input name="subsurface_anisotropy" type="float" doc="Input parameter subsurface_anisotropy" />
     <input name="sheen" type="float" doc="Input parameter sheen" />
     <input name="sheen_color" type="color3" doc="Input parameter sheen_color" />
     <input name="sheen_roughness" type="float" doc="Input parameter sheen_roughness" />
@@ -28,6 +33,7 @@
     <input name="coat_affect_roughness" type="float" doc="Input parameter coat_affect_roughness" />
     <input name="thin_film_thickness" type="float" doc="Input parameter thin_film_thickness" />
     <input name="thin_film_IOR" type="float" doc="Input parameter thin_film_IOR" />
+    <input name="thin_walled" type="boolean" doc="Input parameter thin_walled" />
     <input name="normal" type="vector3" doc="Input parameter normal" />
     <input name="tangent" type="vector3" doc="Input parameter tangent" />
     <output name="bsdf" type="BSDF" doc="Output parameter bsdf" />

@@ -140,6 +140,9 @@ _BSDF_INPUTS = frozenset({
     "coat", "coat_color", "coat_roughness", "coat_anisotropy",
     "coat_rotation", "coat_IOR", "coat_normal",
     "coat_affect_color", "coat_affect_roughness",
+    "subsurface", "subsurface_color", "subsurface_radius",
+    "subsurface_scale", "subsurface_anisotropy",
+    "thin_walled",
     "transmission", "transmission_color", "transmission_extra_roughness",
     "thin_film_thickness", "thin_film_IOR",
     "normal", "tangent",
@@ -193,6 +196,8 @@ class TestStandardSurfaceDefault:
         "roughness_anisotropy",
         "rotate3d_vector3",
         "oren_nayar_diffuse_bsdf",
+        "translucent_bsdf",
+        "subsurface_bsdf",
         "sheen_bsdf",
         "dielectric_bsdf",
         "conductor_bsdf",
@@ -274,6 +279,13 @@ class TestStandardSurfaceDefault:
                 )
 
                 sh // ""
+                sh // "Coat affect subsurface color"
+                # RgbF workaround: exponent is unitless, not a color (#224)
+                sh.coat_affected_subsurface_color = (
+                    sh.subsurface_color.clamp(0.0, 1.0).pow(sh.coat_gamma)
+                )
+
+                sh // ""
                 sh // "Diffuse BSDF (Oren-Nayar)"
                 sh.diffuse_bsdf = sh.BSDF()
                 sh.diffuse_bsdf.response = [0.0, 0.0, 0.0]
@@ -286,6 +298,41 @@ class TestStandardSurfaceDefault:
                     normal=sh.normal,
                     energy_compensation=True,
                     bsdf=sh.diffuse_bsdf,
+                )
+
+                sh // ""
+                sh // "Subsurface scattering"
+                sh.subsurface_radius_scaled = sh.subsurface_radius * sh.subsurface_scale
+                sh.sss_bsdf = sh.BSDF()
+                sh.sss_bsdf.response = [0.0, 0.0, 0.0]
+                sh.sss_bsdf.throughput = [1.0, 1.0, 1.0]
+                with sh.if_(sh.thin_walled):
+                    sh.mx_translucent_bsdf(
+                        closureData=sh.closureData,
+                        weight=1.0,
+                        color=sh.coat_affected_subsurface_color,
+                        normal=sh.normal,
+                        bsdf=sh.sss_bsdf,
+                    )
+                with sh.else_():
+                    sh.mx_subsurface_bsdf(
+                        closureData=sh.closureData,
+                        weight=1.0,
+                        color=sh.coat_affected_subsurface_color,
+                        radius=sh.subsurface_radius_scaled,
+                        anisotropy=sh.subsurface_anisotropy,
+                        normal=sh.normal,
+                        bsdf=sh.sss_bsdf,
+                    )
+
+                sh // ""
+                sh // "Subsurface mix: blend SSS with diffuse"
+                sh.subsurface_mix = sh.BSDF()
+                sh.subsurface_mix.response = sh.subsurface.lerp(
+                    sh.diffuse_bsdf.response, sh.sss_bsdf.response
+                )
+                sh.subsurface_mix.throughput = sh.subsurface.lerp(
+                    sh.diffuse_bsdf.throughput, sh.sss_bsdf.throughput
                 )
 
                 sh // ""
@@ -304,13 +351,13 @@ class TestStandardSurfaceDefault:
                 )
 
                 sh // ""
-                sh // "Sheen layer: sheen over diffuse"
+                sh // "Sheen layer: sheen over subsurface mix"
                 sh.bsdf.response = (
                     sh.sheen_bsdf_out.response
-                    + sh.diffuse_bsdf.response * sh.sheen_bsdf_out.throughput
+                    + sh.subsurface_mix.response * sh.sheen_bsdf_out.throughput
                 )
                 sh.bsdf.throughput = (
-                    sh.sheen_bsdf_out.throughput * sh.diffuse_bsdf.throughput
+                    sh.sheen_bsdf_out.throughput * sh.subsurface_mix.throughput
                 )
 
                 sh // ""
