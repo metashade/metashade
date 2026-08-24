@@ -46,10 +46,12 @@ void mx_metashade_standard_surface_bsdf(ClosureData closureData, float base, vec
 	vec3 coat_affected_subsurface_color = pow(clamp(subsurface_color, 0.0, 1.0), coat_gamma);
 	// 
 	// Diffuse BSDF (Oren-Nayar)
+	// `energy_compensation=false` to match the Standard Surface spec, 
+	// instead of the more physically-correct `true` in OpenPBR
 	BSDF diffuse_bsdf;
 	diffuse_bsdf.response = vec3(0.0, 0.0, 0.0);
 	diffuse_bsdf.throughput = vec3(1.0, 1.0, 1.0);
-	mx_oren_nayar_diffuse_bsdf(closureData, base, coat_affected_diffuse_color, diffuse_roughness, normal, true, diffuse_bsdf);
+	mx_oren_nayar_diffuse_bsdf(closureData, base, coat_affected_diffuse_color, diffuse_roughness, normal, false, diffuse_bsdf);
 	// 
 	// Subsurface scattering
 	vec3 subsurface_radius_scaled = subsurface_radius * subsurface_scale;
