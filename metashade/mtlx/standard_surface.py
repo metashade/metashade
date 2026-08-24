@@ -221,6 +221,8 @@ def generate(ctx: GlslGeneratorContext, stdlib_doc: mx.Document):
 
         sh // ""
         sh // "Diffuse BSDF (Oren-Nayar)"
+        sh // "`energy_compensation=false` to match the Standard Surface spec, "
+        sh // "instead of the more physically-correct `true` in OpenPBR"
         sh.diffuse_bsdf = sh.BSDF()
         sh.diffuse_bsdf.response = [0.0, 0.0, 0.0]
         sh.diffuse_bsdf.throughput = [1.0, 1.0, 1.0]
@@ -230,7 +232,7 @@ def generate(ctx: GlslGeneratorContext, stdlib_doc: mx.Document):
             color=sh.coat_affected_diffuse_color,
             roughness=sh.diffuse_roughness,
             normal=sh.normal,
-            energy_compensation=True,
+            energy_compensation=False,
             bsdf=sh.diffuse_bsdf,
         )
 
