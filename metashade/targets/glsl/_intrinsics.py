@@ -55,3 +55,18 @@ class FloatIntrinsicsMixin:
             self.__class__,
             f'sqrt({self})'
         )
+
+    def sin(self):
+        return self._sh._instantiate_dtype(
+            self.__class__, f'sin({self})'
+        )
+
+    def cos(self):
+        return self._sh._instantiate_dtype(
+            self.__class__, f'cos({self})'
+        )
+
+    def radians(self):
+        return self._sh._instantiate_dtype(
+            self.__class__, f'radians({self})'
+        )
