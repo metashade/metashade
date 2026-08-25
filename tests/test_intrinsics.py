@@ -42,6 +42,51 @@ class TestIntrinsics:
         self._test(_auto_numeric_intrinsics)
 
 
+class TestFloatIntrinsics:
+    """Tests for float intrinsics across HLSL and GLSL.
+
+    Each test validates return type and expression string for scalar
+    and vector types.  New intrinsics should be added as additional
+    test methods following the same pattern.
+    """
+
+    def _check(self, sh, uniform_name, dtype, intrinsic, expected_expr):
+        sh.uniform(uniform_name, dtype)
+        result = intrinsic(getattr(sh, uniform_name))
+        assert isinstance(result, dtype._get_dtype())
+        assert str(result) == expected_expr
+
+    @ctx_cls_hg
+    def test_sin_scalar(self, ctx_cls):
+        with ctx_cls(no_file=True) as sh:
+            self._check(sh, 'g_f', sh.Float, lambda v: v.sin(), 'sin(g_f)')
+
+    @ctx_cls_hg
+    def test_sin_vec3(self, ctx_cls):
+        with ctx_cls(no_file=True) as sh:
+            self._check(sh, 'g_v', sh.Float3, lambda v: v.sin(), 'sin(g_v)')
+
+    @ctx_cls_hg
+    def test_cos_scalar(self, ctx_cls):
+        with ctx_cls(no_file=True) as sh:
+            self._check(sh, 'g_f', sh.Float, lambda v: v.cos(), 'cos(g_f)')
+
+    @ctx_cls_hg
+    def test_cos_vec3(self, ctx_cls):
+        with ctx_cls(no_file=True) as sh:
+            self._check(sh, 'g_v', sh.Float3, lambda v: v.cos(), 'cos(g_v)')
+
+    @ctx_cls_hg
+    def test_radians_scalar(self, ctx_cls):
+        with ctx_cls(no_file=True) as sh:
+            self._check(sh, 'g_f', sh.Float, lambda v: v.radians(), 'radians(g_f)')
+
+    @ctx_cls_hg
+    def test_radians_vec3(self, ctx_cls):
+        with ctx_cls(no_file=True) as sh:
+            self._check(sh, 'g_v', sh.Float3, lambda v: v.radians(), 'radians(g_v)')
+
+
 class TestLerpReturnType:
     """lerp must return the type of the interpolated values, not the weight."""
 
