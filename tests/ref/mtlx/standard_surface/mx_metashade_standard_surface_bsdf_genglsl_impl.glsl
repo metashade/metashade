@@ -1,5 +1,4 @@
 #include "mx_roughness_anisotropy.glsl"
-#include "mx_rotate_vector3.glsl"
 #include "mx_oren_nayar_diffuse_bsdf.glsl"
 #include "mx_translucent_bsdf.glsl"
 #include "mx_subsurface_bsdf.glsl"
@@ -7,6 +6,23 @@
 #include "mx_dielectric_bsdf.glsl"
 #include "mx_conductor_bsdf.glsl"
 #include "mx_artistic_ior.glsl"
+// Rodrigues' rotation formula.
+// 
+// Private copy of the stdlib rotate3d helper.  Avoids
+// duplicate-definition errors when the material's own nodegraph
+// also uses rotate3d nodes, which would cause the generator to
+// emit mx_rotate_vector3 a second time
+// (see https://github.com/metashade/metashade/issues/230).
+//
+void _mx_metashade_rotate_vector3(vec3 in_, float amount, vec3 axis, out vec3 result)
+{
+	vec3 axis_n = normalize(axis);
+	float rad = radians(amount);
+	float s = sin(rad);
+	float c = cos(rad);
+	result = ((in_ * c) + (cross(in_, axis_n) * s)) + ((axis_n * dot(axis_n, in_)) * (1 - c));
+}
+
 void mx_metashade_standard_surface_bsdf(ClosureData closureData, float base, vec3 base_color, float diffuse_roughness, float metalness, float specular, vec3 specular_color, float specular_roughness, float specular_IOR, float specular_anisotropy, float specular_rotation, float transmission, vec3 transmission_color, float transmission_extra_roughness, float subsurface, vec3 subsurface_color, vec3 subsurface_radius, float subsurface_scale, float subsurface_anisotropy, float sheen, vec3 sheen_color, float sheen_roughness, float coat, vec3 coat_color, float coat_roughness, float coat_anisotropy, float coat_rotation, float coat_IOR, vec3 coat_normal, float coat_affect_color, float coat_affect_roughness, float thin_film_thickness, float thin_film_IOR, bool thin_walled, vec3 normal, vec3 tangent, inout BSDF bsdf)
 {
 	// 
@@ -24,7 +40,7 @@ void mx_metashade_standard_surface_bsdf(ClosureData closureData, float base, vec
 	{
 		float tangent_rotate_degree = specular_rotation * 360.0;
 		vec3 tangent_rotated;
-		mx_rotate_vector3(tangent, tangent_rotate_degree, normal, tangent_rotated);
+		_mx_metashade_rotate_vector3(tangent, tangent_rotate_degree, normal, tangent_rotated);
 		main_tangent = normalize(tangent_rotated);
 	}
 	// 
@@ -34,7 +50,7 @@ void mx_metashade_standard_surface_bsdf(ClosureData closureData, float base, vec
 	{
 		float coat_tangent_rotate_degree = coat_rotation * 360.0;
 		vec3 coat_tangent_rotated;
-		mx_rotate_vector3(tangent, coat_tangent_rotate_degree, coat_normal, coat_tangent_rotated);
+		_mx_metashade_rotate_vector3(tangent, coat_tangent_rotate_degree, coat_normal, coat_tangent_rotated);
 		coat_tangent = normalize(coat_tangent_rotated);
 	}
 	// 

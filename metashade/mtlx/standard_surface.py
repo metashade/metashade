@@ -54,7 +54,6 @@ _DISTRIBUTION_GGX = 0
 
 _STDLIB_IMPORTS = (
     "roughness_anisotropy",
-    "rotate3d_vector3",
     "oren_nayar_diffuse_bsdf",
     "translucent_bsdf",
     "subsurface_bsdf",
@@ -134,6 +133,29 @@ def _build_bsdf_params(sh, surfaceshader_nodedef):
     return params
 
 
+def _mx_metashade_rotate_vector3(
+    sh, in_: Float3, amount: Float, axis: Float3,
+    result: Out[Float3],
+):
+    """Rodrigues' rotation formula.
+
+    Private copy of the stdlib rotate3d helper.  Avoids
+    duplicate-definition errors when the material's own nodegraph
+    also uses rotate3d nodes, which would cause the generator to
+    emit mx_rotate_vector3 a second time
+    (see https://github.com/metashade/metashade/issues/230).
+    """
+    sh.axis_n = axis.normalize()
+    sh.rad = amount.radians()
+    sh.s = sh.rad.sin()
+    sh.c = sh.rad.cos()
+    result._ = (
+        in_ * sh.c
+        + in_.cross(sh.axis_n) * sh.s
+        + sh.axis_n * sh.axis_n.dot(in_) * (sh.Float(1) - sh.c)
+    )
+
+
 def generate(ctx: GlslGeneratorContext, stdlib_doc: mx.Document):
     """Generate the Standard Surface BSDF source-code node.
 
@@ -147,6 +169,7 @@ def generate(ctx: GlslGeneratorContext, stdlib_doc: mx.Document):
 
     register_mtlx_closure_structs(sh)
     _acquire_stdlib_sourcecode_nodes(sh, stdlib_doc, _STDLIB_IMPORTS)
+    sh.instantiate(_mx_metashade_rotate_vector3)
 
     surfaceshader_nodedef = stdlib_doc.getNodeDef(_SURFACESHADER_NODEDEF)
     assert surfaceshader_nodedef is not None, (
@@ -180,11 +203,11 @@ def generate(ctx: GlslGeneratorContext, stdlib_doc: mx.Document):
         with sh.if_(sh.specular_anisotropy > 0.0):
             sh.tangent_rotate_degree = sh.specular_rotation * 360.0
             sh.tangent_rotated = sh.Float3()
-            sh.mx_rotate_vector3(
+            sh._mx_metashade_rotate_vector3(
                 in_=sh.tangent,
                 amount=sh.tangent_rotate_degree,
                 axis=sh.normal,
-                out_=sh.tangent_rotated,
+                result=sh.tangent_rotated,
             )
             sh.main_tangent = sh.tangent_rotated.normalize()
 
@@ -194,11 +217,11 @@ def generate(ctx: GlslGeneratorContext, stdlib_doc: mx.Document):
         with sh.if_(sh.coat_anisotropy > 0.0):
             sh.coat_tangent_rotate_degree = sh.coat_rotation * 360.0
             sh.coat_tangent_rotated = sh.Float3()
-            sh.mx_rotate_vector3(
+            sh._mx_metashade_rotate_vector3(
                 in_=sh.tangent,
                 amount=sh.coat_tangent_rotate_degree,
                 axis=sh.coat_normal,
-                out_=sh.coat_tangent_rotated,
+                result=sh.coat_tangent_rotated,
             )
             sh.coat_tangent = sh.coat_tangent_rotated.normalize()
 
