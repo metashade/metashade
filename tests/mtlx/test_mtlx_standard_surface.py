@@ -122,3 +122,127 @@ class TestStandardSurfaceDefault:
             subdir=standard_surface.SUBDIR,
         ) as mtlx_ctx:
             mtlx_ctx.write(ng_doc)
+
+
+class TestStandardSurfaceSubsurface0:
+    """Pruned SS variant with subsurface disabled."""
+
+    _PERM = standard_surface.Permutation(subsurface=False)
+
+    def test_generate_bsdf(self, stdlib_doc):
+        """Generate pruned SS BSDF without subsurface lobe."""
+        base_name = (standard_surface._FUNC_NAME_BASE
+                     + self._PERM.variant_suffix
+                     + standard_surface._FUNC_NAME_TYPE)
+        subdir = standard_surface.SUBDIR + self._PERM.variant_suffix
+
+        with GlslTestContext(
+            base_name=base_name,
+            impl_only=False,
+            subdir=subdir,
+        ) as glsl_ctx:
+            standard_surface.generate(glsl_ctx, stdlib_doc, perm=self._PERM)
+
+
+class TestPermutation:
+    """Tests for the lobe-pruning Permutation data model."""
+
+    def test_all_lobes_enabled(self):
+        """Full permutation has all lobes on and an empty suffix."""
+        perm = standard_surface.Permutation()
+        assert perm.subsurface is True
+        assert perm.coat is True
+        assert perm.sheen is True
+        assert perm.transmission is True
+        assert perm.metalness is True
+        assert perm.thin_film is True
+        assert perm.emission is True
+        assert perm.variant_suffix == ""
+
+    def test_all_is_full_permutation(self):
+        """Permutation.ALL is the full permutation."""
+        assert standard_surface.Permutation.ALL == standard_surface.Permutation()
+        assert standard_surface.Permutation.ALL.variant_suffix == ""
+
+    def test_single_lobe_disabled(self):
+        """Disabling one lobe produces a subtractive suffix."""
+        perm = standard_surface.Permutation(subsurface=False)
+        assert perm.variant_suffix == "_subsurface0"
+
+    def test_multiple_lobes_disabled(self):
+        """Disabled lobes are sorted alphabetically in the suffix."""
+        perm = standard_surface.Permutation(
+            coat=False, subsurface=False,
+        )
+        assert perm.variant_suffix == "_coat0_subsurface0"
+
+    def test_all_lobes_disabled(self):
+        """Baseline (diffuse+specular only) lists all lobes as disabled."""
+        perm = standard_surface.Permutation(
+            subsurface=False, coat=False, sheen=False,
+            transmission=False, metalness=False,
+            thin_film=False, emission=False,
+        )
+        suffix = perm.variant_suffix
+        for lobe in standard_surface.LOBES:
+            assert f"{lobe.name}0" in suffix
+
+    def test_permutation_is_hashable(self):
+        """Permutations can be used as dict keys (for caching)."""
+        p1 = standard_surface.Permutation(subsurface=False)
+        p2 = standard_surface.Permutation(subsurface=False)
+        cache = {p1: "variant_dir"}
+        assert p2 in cache
+
+    def test_from_material_greysphere(self, stdlib_doc):
+        """Greysphere has only diffuse+specular; all optional lobes inactive."""
+        doc = mx.createDocument()
+        mx.readFromXmlString(
+            doc,
+            """<?xml version="1.0"?>
+            <materialx version="1.39">
+              <standard_surface name="SR_greysphere" type="surfaceshader">
+                <input name="base_color" type="color3"
+                       value="0.18, 0.18, 0.18" />
+                <input name="specular_roughness" type="float" value="0.7" />
+              </standard_surface>
+            </materialx>""",
+        )
+
+        ss_node = doc.getNode("SR_greysphere")
+        assert ss_node is not None
+
+        nodedef = stdlib_doc.getNodeDef("ND_standard_surface_surfaceshader")
+        assert nodedef is not None
+
+        perm = standard_surface.Permutation.from_material(ss_node, nodedef)
+        assert perm.subsurface is False
+        assert perm.coat is False
+        assert perm.sheen is False
+        assert perm.transmission is False
+        assert perm.metalness is False
+        assert perm.thin_film is False
+        assert perm.emission is False
+
+    def test_from_material_with_coat(self, stdlib_doc):
+        """A material with coat=1 should have coat active."""
+        doc = mx.createDocument()
+        mx.readFromXmlString(
+            doc,
+            """<?xml version="1.0"?>
+            <materialx version="1.39">
+              <standard_surface name="SR_copper" type="surfaceshader">
+                <input name="metalness" type="float" value="1.0" />
+                <input name="coat" type="float" value="1.0" />
+              </standard_surface>
+            </materialx>""",
+        )
+
+        ss_node = doc.getNode("SR_copper")
+        nodedef = stdlib_doc.getNodeDef("ND_standard_surface_surfaceshader")
+        perm = standard_surface.Permutation.from_material(ss_node, nodedef)
+        assert perm.coat is True
+        assert perm.metalness is True
+        assert perm.subsurface is False
+        assert perm.sheen is False
+        assert perm.transmission is False
