@@ -106,8 +106,8 @@ class FunctionDecl:
             else:
                 self._sh._emit(', ')
 
-            # Create a temporary instance using the dtype factory
-            param_instance = param.dtype_factory()
+            # Create an uninitialized instance (None suppresses defaults)
+            param_instance = param.dtype_factory(None)
             param_instance._define(
                 self._sh,
                 name,
@@ -194,7 +194,7 @@ class FunctionDef:
         # Create parameter instances from dtype factories
         self._parameters = {}
         for param_name, param_def in param_defs.items():
-            param_instance = param_def.dtype_factory()
+            param_instance = param_def.dtype_factory(None)
             # Bind the parameter instance to its name and generator
             param_instance._bind(sh, param_name, allow_init=False)
             self._parameters[param_name] = param_instance

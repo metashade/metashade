@@ -13,8 +13,10 @@ struct BSDF
 
 BSDF testConstructorInit(vec3 a, vec3 b)
 {
-	// Constructor-style initialization with scalar broadcast
+	// Default construction uses member defaults
 	BSDF result = BSDF(vec3(0), vec3(1));
+	// Explicit kwargs override defaults
+	BSDF custom = BSDF(vec3(0.5), vec3(0.25));
 	// With lvalue members
 	BSDF from_args = BSDF(a, b);
 	// Overwrite a member after construction

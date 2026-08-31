@@ -80,7 +80,7 @@ void mx_metashade_standard_surface_bsdf(ClosureData closureData, float base, vec
 	}
 	// 
 	// Subsurface mix: blend SSS with diffuse
-	BSDF subsurface_mix;
+	BSDF subsurface_mix = BSDF(vec3(0), vec3(1));
 	subsurface_mix.response = mix(diffuse_bsdf.response, sss_bsdf.response, subsurface);
 	subsurface_mix.throughput = mix(diffuse_bsdf.throughput, sss_bsdf.throughput, subsurface);
 	// 
