@@ -73,28 +73,6 @@ LOBES: tuple[Lobe, ...] = (
                     "subsurface_scale", "subsurface_anisotropy",
                     "thin_walled"}),
          ("translucent_bsdf", "subsurface_bsdf")),
-    Lobe("coat", "coat",
-         frozenset({"coat", "coat_color", "coat_roughness", "coat_anisotropy",
-                    "coat_rotation", "coat_IOR", "coat_normal",
-                    "coat_affect_color", "coat_affect_roughness"}),
-         ()),
-    Lobe("sheen", "sheen",
-         frozenset({"sheen", "sheen_color", "sheen_roughness"}),
-         ("sheen_bsdf",)),
-    Lobe("transmission", "transmission",
-         frozenset({"transmission", "transmission_color",
-                    "transmission_extra_roughness"}),
-         ()),
-    Lobe("metalness", "metalness",
-         frozenset({"metalness"}),
-         ("conductor_bsdf", "artistic_ior")),
-    Lobe("thin_film", "thin_film_thickness",
-         frozenset({"thin_film_thickness", "thin_film_IOR"}),
-         ()),
-    Lobe("emission", "emission",
-         frozenset(),
-         (),
-         ("emission", "emission_color")),
 )
 
 _LOBES_BY_NAME: dict[str, Lobe] = {lobe.name: lobe for lobe in LOBES}
@@ -114,12 +92,6 @@ class Permutation:
     existing ``_subsurface0`` variants.
     """
     subsurface: bool = True
-    coat: bool = True
-    sheen: bool = True
-    transmission: bool = True
-    metalness: bool = True
-    thin_film: bool = True
-    emission: bool = True
 
     @property
     def variant_suffix(self) -> str:
