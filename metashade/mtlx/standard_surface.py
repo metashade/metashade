@@ -498,3 +498,82 @@ def generate(ctx: GlslGeneratorContext, stdlib_doc: mx.Document):
         func_name=FUNC_NAME,
         mx_doc_string="Metashade Standard Surface BSDF",
     )
+
+
+# ---------------------------------------------------------------------------
+# Surfaceshader nodegraph generation
+# ---------------------------------------------------------------------------
+
+_NODEGRAPH_NAME = "NG_metashade_standard_surface"
+_BSDF_NODE_CATEGORY = FUNC_NAME.removeprefix("mx_")
+
+
+def generate_surfaceshader_nodegraph(
+    ss_nodedef: mx.NodeDef,
+    bsdf_category: str = _BSDF_NODE_CATEGORY,
+    nodegraph_name: str = _NODEGRAPH_NAME,
+    target_nodedef_name: str = _SURFACESHADER_NODEDEF,
+) -> mx.Document:
+    """Build the surfaceshader nodegraph that wires the BSDF to a surface.
+
+    Produces a nodegraph structurally identical to the hand-written
+    ``mx_metashade_standard_surface_surfaceshader.mtlx``: the BSDF
+    source-code node, emission, opacity, and the ``surface`` constructor.
+
+    The *bsdf_category* / *nodegraph_name* / *target_nodedef_name*
+    parameters are overridable so that variant permutations can reuse
+    the same builder with different names.
+
+    Returns a :class:`mx.Document` ready to be written with
+    :func:`mx.writeToXmlFile`.
+    """
+    doc = mx.createDocument()
+
+    ng = doc.addNodeGraph(nodegraph_name)
+    ng.setNodeDefString(target_nodedef_name)
+
+    # --- BSDF node ---
+    bsdf_node = ng.addNode(bsdf_category, "ss_bsdf", "BSDF")
+    for inp in ss_nodedef.getActiveInputs():
+        name = inp.getName()
+        if name not in _BSDF_INPUTS:
+            continue
+        bsdf_inp = bsdf_node.addInput(name, inp.getType())
+        bsdf_inp.setInterfaceName(name)
+
+    # --- Emission chain ---
+    emission_weight = ng.addNode("multiply", "emission_weight", "color3")
+    ew_in1 = emission_weight.addInput("in1", "color3")
+    ew_in1.setInterfaceName("emission_color")
+    ew_in2 = emission_weight.addInput("in2", "float")
+    ew_in2.setInterfaceName("emission")
+
+    emission_edf = ng.addNode("uniform_edf", "emission_edf", "EDF")
+    edf_color = emission_edf.addInput("color", "color3")
+    edf_color.setNodeName("emission_weight")
+
+    # --- Opacity chain ---
+    opacity_lum = ng.addNode("luminance", "opacity_luminance", "color3")
+    ol_in = opacity_lum.addInput("in", "color3")
+    ol_in.setInterfaceName("opacity")
+
+    opacity_float = ng.addNode("extract", "opacity_luminance_float", "float")
+    of_in = opacity_float.addInput("in", "color3")
+    of_in.setNodeName("opacity_luminance")
+    of_idx = opacity_float.addInput("index", "integer")
+    of_idx.setValueString("0")
+
+    # --- Surface constructor ---
+    surface = ng.addNode("surface", "surface_ctor", "surfaceshader")
+    s_bsdf = surface.addInput("bsdf", "BSDF")
+    s_bsdf.setNodeName("ss_bsdf")
+    s_edf = surface.addInput("edf", "EDF")
+    s_edf.setNodeName("emission_edf")
+    s_opacity = surface.addInput("opacity", "float")
+    s_opacity.setNodeName("opacity_luminance_float")
+
+    # --- Output ---
+    out = ng.addOutput("out", "surfaceshader")
+    out.setNodeName("surface_ctor")
+
+    return doc
