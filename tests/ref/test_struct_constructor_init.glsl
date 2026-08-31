@@ -10,8 +10,8 @@ struct BSDF { vec3 response; vec3 throughput; };
 
 BSDF testConstructorInit(vec3 a, vec3 b)
 {
-	// Constructor-style initialization
-	BSDF result = BSDF(vec3(0.0, 0.0, 0.0), vec3(1.0, 1.0, 1.0));
+	// Constructor-style initialization with scalar broadcast
+	BSDF result = BSDF(vec3(0), vec3(1));
 	// With lvalue members
 	BSDF from_args = BSDF(a, b);
 	// Overwrite a member after construction
