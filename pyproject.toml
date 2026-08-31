@@ -48,9 +48,6 @@ test = [
 include = ["metashade*"]
 exclude = ["tests*", "examples*"]
 
-[tool.setuptools.package-data]
-"metashade" = ["mtlx/libraries/**/*.mtlx"]
-
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]

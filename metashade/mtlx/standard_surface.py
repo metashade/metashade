@@ -516,9 +516,8 @@ def generate_surfaceshader_nodegraph(
 ) -> mx.Document:
     """Build the surfaceshader nodegraph that wires the BSDF to a surface.
 
-    Produces a nodegraph structurally identical to the hand-written
-    ``mx_metashade_standard_surface_surfaceshader.mtlx``: the BSDF
-    source-code node, emission, opacity, and the ``surface`` constructor.
+    Produces a nodegraph wiring the BSDF source-code node, emission,
+    opacity, and the ``surface`` constructor.
 
     The *bsdf_category* / *nodegraph_name* / *target_nodedef_name*
     parameters are overridable so that variant permutations can reuse
