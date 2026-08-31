@@ -13,8 +13,10 @@ struct BSDF
 
 BSDF testConstructorInit(float3 a, float3 b)
 {
-	// Constructor-style initialization with scalar broadcast
+	// Default construction uses member defaults
 	BSDF result = {0.xxx, 1.xxx};
+	// Explicit kwargs override defaults
+	BSDF custom = {0.5.xxx, 0.25.xxx};
 	// With lvalue members
 	BSDF from_args = {a, b};
 	// Overwrite a member after construction

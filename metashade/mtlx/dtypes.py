@@ -117,7 +117,7 @@ def register_mtlx_closure_structs(sh):
     )
     
     sh.struct('BSDF', emit=False)(
-        response=sh.Float3,
-        throughput=sh.Float3
+        response=(sh.Float3, 0),
+        throughput=(sh.Float3, 1)
     )
 

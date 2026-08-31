@@ -14,10 +14,14 @@
 
 from metashade.targets._clike.dtypes import BaseType
 
+_NO_DEFAULT = object()
+_NO_EXPRESSION = object()
+
 class StructMemberDef:
-    def __init__(self, dtype, semantic = None):
+    def __init__(self, dtype, semantic=None, default=_NO_DEFAULT):
         self.dtype = dtype
         self.semantic = semantic
+        self.default = default
 
 class StructBase:
     def __init__(self, expression : str = None):
@@ -49,16 +53,30 @@ class StructBase:
         return True
 
 class Struct(BaseType, StructBase):
-    def __init__(self, expression : str = None, **kwargs):
-        if kwargs:
+    @classmethod
+    def _has_all_defaults(cls):
+        return all(
+            m.default is not _NO_DEFAULT
+            for m in cls._member_defs.values()
+        )
+
+    def __init__(self, expression=_NO_EXPRESSION, **kwargs):
+        use_ctor = kwargs or (
+            expression is _NO_EXPRESSION and self.__class__._has_all_defaults()
+        )
+
+        if use_ctor:
             type_name = self.__class__._get_target_type_name()
             member_refs = []
             for member_name, member_def in self.__class__._member_defs.items():
-                if member_name not in kwargs:
+                if member_name in kwargs:
+                    value = kwargs[member_name]
+                elif member_def.default is not _NO_DEFAULT:
+                    value = member_def.default
+                else:
                     raise TypeError(
                         f"{type_name}(): missing member '{member_name}'"
                     )
-                value = kwargs[member_name]
                 ref = member_def.dtype._get_value_ref(value)
                 if ref is None:
                     ref = member_def.dtype(value)
@@ -75,8 +93,9 @@ class Struct(BaseType, StructBase):
             BaseType.__init__(self, ctor_expr)
             StructBase.__init__(self, None)
         else:
-            BaseType.__init__(self, expression)
-            StructBase.__init__(self, expression)
+            expr = None if expression is _NO_EXPRESSION else expression
+            BaseType.__init__(self, expr)
+            StructBase.__init__(self, expr)
 
         self._sh = self.__class__._sh
         for member_name, member in vars(self).items():
@@ -127,13 +146,14 @@ class StructDef:
         self._emit = emit
 
     def __call__(self, **kwargs):
-        define_struct(
-            self._sh,
-            self._name,
-            {
-                name : StructMemberDef(dtype_factory._get_dtype())
-                for name, dtype_factory in kwargs.items()
-            },
-            emit=self._emit
-        )
+        member_defs = {}
+        for name, spec in kwargs.items():
+            if isinstance(spec, tuple):
+                dtype_factory, default = spec
+                member_defs[name] = StructMemberDef(
+                    dtype_factory._get_dtype(), default=default
+                )
+            else:
+                member_defs[name] = StructMemberDef(spec._get_dtype())
+        define_struct(self._sh, self._name, member_defs, emit=self._emit)
 

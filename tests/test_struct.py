@@ -122,23 +122,26 @@ class TestStructDefinition:
 
     @ctx_cls_hg
     def test_struct_constructor_init(self, ctx_cls):
-        """Test one-line struct initialization via kwargs."""
+        """Test one-line struct initialization via kwargs and defaults."""
         ctx = ctx_cls(dummy_entry_point = False)
         with ctx as sh:
             self._generate_test_uniforms(sh)
 
             sh.struct('BSDF')(
-                response = sh.Float3,
-                throughput = sh.Float3
+                response = (sh.Float3, 0),
+                throughput = (sh.Float3, 1)
             )
 
             with sh.function('testConstructorInit', sh.BSDF)(
                 a = sh.Float3, b = sh.Float3
             ):
-                sh // 'Constructor-style initialization with scalar broadcast'
-                sh.result = sh.BSDF(
-                    response = sh.Float3(0),
-                    throughput = sh.Float3(1)
+                sh // 'Default construction uses member defaults'
+                sh.result = sh.BSDF()
+
+                sh // 'Explicit kwargs override defaults'
+                sh.custom = sh.BSDF(
+                    response = sh.Float3(0.5),
+                    throughput = sh.Float3(0.25)
                 )
 
                 sh // 'With lvalue members'
