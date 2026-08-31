@@ -141,10 +141,10 @@ class TestStructDefinition:
             with sh.function('testConstructorInit', sh.BSDF)(
                 a = sh.Float3, b = sh.Float3
             ):
-                sh // 'Constructor-style initialization'
+                sh // 'Constructor-style initialization with scalar broadcast'
                 sh.result = sh.BSDF(
-                    response = [0.0, 0.0, 0.0],
-                    throughput = [1.0, 1.0, 1.0]
+                    response = sh.Float3(0),
+                    throughput = sh.Float3(1)
                 )
 
                 sh // 'With lvalue members'

@@ -247,7 +247,7 @@ def generate(ctx: GlslGeneratorContext, stdlib_doc: mx.Document):
         sh // "`energy_compensation=false` to match the Standard Surface spec, "
         sh // "instead of the more physically-correct `true` in OpenPBR"
         sh.diffuse_bsdf = sh.BSDF(
-            response = [0.0, 0.0, 0.0], throughput = [1.0, 1.0, 1.0]
+            response = sh.Float3(0), throughput = sh.Float3(1)
         )
         sh.mx_oren_nayar_diffuse_bsdf(
             closureData=sh.closureData,
@@ -263,7 +263,7 @@ def generate(ctx: GlslGeneratorContext, stdlib_doc: mx.Document):
         sh // "Subsurface scattering"
         sh.subsurface_radius_scaled = sh.subsurface_radius * sh.subsurface_scale
         sh.sss_bsdf = sh.BSDF(
-            response = [0.0, 0.0, 0.0], throughput = [1.0, 1.0, 1.0]
+            response = sh.Float3(0), throughput = sh.Float3(1)
         )
         with sh.if_(sh.thin_walled):
             sh.mx_translucent_bsdf(
@@ -297,7 +297,7 @@ def generate(ctx: GlslGeneratorContext, stdlib_doc: mx.Document):
         sh // ""
         sh // "Sheen BSDF"
         sh.sheen_bsdf_out = sh.BSDF(
-            response = [0.0, 0.0, 0.0], throughput = [1.0, 1.0, 1.0]
+            response = sh.Float3(0), throughput = sh.Float3(1)
         )
         sh.mx_sheen_bsdf(
             closureData=sh.closureData,
@@ -340,7 +340,7 @@ def generate(ctx: GlslGeneratorContext, stdlib_doc: mx.Document):
         sh // ""
         sh // "Transmission BSDF (dielectric transmission)"
         sh.transmission_bsdf = sh.BSDF(
-            response = [0.0, 0.0, 0.0], throughput = [1.0, 1.0, 1.0]
+            response = sh.Float3(0), throughput = sh.Float3(1)
         )
         sh.mx_dielectric_bsdf(
             closureData=sh.closureData,
@@ -370,7 +370,7 @@ def generate(ctx: GlslGeneratorContext, stdlib_doc: mx.Document):
         sh // ""
         sh // "Specular BSDF (dielectric reflection)"
         sh.specular_bsdf = sh.BSDF(
-            response = [0.0, 0.0, 0.0], throughput = [1.0, 1.0, 1.0]
+            response = sh.Float3(0), throughput = sh.Float3(1)
         )
         sh.mx_dielectric_bsdf(
             closureData=sh.closureData,
@@ -414,7 +414,7 @@ def generate(ctx: GlslGeneratorContext, stdlib_doc: mx.Document):
         sh // ""
         sh // "Conductor BSDF (metal reflection)"
         sh.metal_bsdf = sh.BSDF(
-            response = [0.0, 0.0, 0.0], throughput = [1.0, 1.0, 1.0]
+            response = sh.Float3(0), throughput = sh.Float3(1)
         )
         sh.mx_conductor_bsdf(
             closureData=sh.closureData,
@@ -466,7 +466,7 @@ def generate(ctx: GlslGeneratorContext, stdlib_doc: mx.Document):
         sh // ""
         sh // "Coat BSDF (dielectric reflection)"
         sh.coat_bsdf = sh.BSDF(
-            response = [0.0, 0.0, 0.0], throughput = [1.0, 1.0, 1.0]
+            response = sh.Float3(0), throughput = sh.Float3(1)
         )
         sh.mx_dielectric_bsdf(
             closureData=sh.closureData,
