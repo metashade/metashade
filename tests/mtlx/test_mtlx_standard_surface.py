@@ -15,17 +15,12 @@
 """
 Tests for the Metashade Standard Surface implementation.
 
-``TestStandardSurfaceDefault`` is a thin wrapper around
-:func:`metashade.mtlx.standard_surface.generate` that runs the BSDF
-codegen through the test context (baseline diffing).
+``TestStandardSurfaceDefault`` generates the BSDF source-code node and
+the surfaceshader nodegraph through the test context (baseline diffing
+via RefDiffer).
 
 ``TestStandardSurfacePink`` is a separate diagnostic override that
 validates the surfaceshader override pipeline without any BSDF logic.
-
-``TestSurfaceshaderNodegraph`` verifies that
-:func:`metashade.mtlx.standard_surface.generate_surfaceshader_nodegraph`
-produces a nodegraph structurally identical to the hand-written library
-file.
 """
 
 from __future__ import annotations
@@ -35,6 +30,7 @@ import pytest
 
 mx = pytest.importorskip("MaterialX")
 
+from metashade.util.testing import RefDiffer
 from metashade.mtlx.mtlx_reflection import _build_params
 from metashade.mtlx.dtypes import register_mtlx_closure_structs
 from metashade.mtlx.util.testing import GlslTestContext
@@ -101,10 +97,13 @@ class TestStandardSurfacePink:
 
 
 class TestStandardSurfaceDefault:
-    """Metashade reimplementation of the Standard Surface BSDF.
+    """Metashade reimplementation of the Standard Surface.
 
-    Thin wrapper that delegates to
-    :func:`metashade.mtlx.standard_surface.generate`.
+    Generates both the BSDF source-code node (via
+    :func:`~metashade.mtlx.standard_surface.generate`) and the
+    surfaceshader nodegraph (via
+    :func:`~metashade.mtlx.standard_surface.generate_surfaceshader_nodegraph`).
+    Output goes to the ref directory; RefDiffer catches regressions in CI.
     """
 
     def test_generate_bsdf(self, stdlib_doc):
@@ -118,23 +117,8 @@ class TestStandardSurfaceDefault:
         with ctx as test_ctx:
             standard_surface.generate(test_ctx, stdlib_doc)
 
-
-class TestSurfaceshaderNodegraph:
-    """Verify programmatic surfaceshader nodegraph generation.
-
-    Generates the nodegraph with PyMaterialX and writes it to the ref
-    directory.  The test then loads the hand-written library file and
-    compares the two documents node-by-node.
-    """
-
-    _REF_PATH = (
-        standard_surface.MTLX_LIBRARIES_DIR
-        / "standard_surface"
-        / "mx_metashade_standard_surface_surfaceshader.mtlx"
-    )
-
-    def test_generate_matches_handwritten(self, stdlib_doc):
-        """Generated nodegraph matches the hand-written library file."""
+    def test_generate_surfaceshader_nodegraph(self, stdlib_doc):
+        """Generate the surfaceshader nodegraph that wires BSDF to surface."""
         ss_nodedef = stdlib_doc.getNodeDef(
             standard_surface._SURFACESHADER_NODEDEF
         )
@@ -145,69 +129,8 @@ class TestSurfaceshaderNodegraph:
         out_path = out_dir / "mx_metashade_standard_surface_nodegraph.mtlx"
         mx.writeToXmlFile(doc, str(out_path))
 
-        ref_doc = mx.createDocument()
-        mx.readFromXmlFile(ref_doc, str(self._REF_PATH))
-
-        gen_ng = doc.getNodeGraph(standard_surface._NODEGRAPH_NAME)
-        ref_ng = ref_doc.getNodeGraph(standard_surface._NODEGRAPH_NAME)
-        assert gen_ng is not None, "Generated nodegraph missing"
-        assert ref_ng is not None, "Reference nodegraph missing"
-
-        assert (
-            gen_ng.getNodeDefString() == ref_ng.getNodeDefString()
-        ), "Nodegraph nodedef mismatch"
-
-        gen_children = {c.getName(): c for c in gen_ng.getChildren()}
-        ref_children = {c.getName(): c for c in ref_ng.getChildren()}
-        assert gen_children.keys() == ref_children.keys(), (
-            f"Child name mismatch.\n"
-            f"  Generated: {sorted(gen_children.keys())}\n"
-            f"  Reference: {sorted(ref_children.keys())}"
-        )
-
-        for name in ref_children:
-            gen_child = gen_children[name]
-            ref_child = ref_children[name]
-            assert gen_child.getCategory() == ref_child.getCategory(), (
-                f"Category mismatch for '{name}': "
-                f"{gen_child.getCategory()} != {ref_child.getCategory()}"
+        if GlslTestContext._ref_dir_root is not None:
+            ref_dir = (
+                GlslTestContext._ref_dir_root / standard_surface.SUBDIR
             )
-
-            if not hasattr(ref_child, "getActiveInputs"):
-                assert gen_child.getType() == ref_child.getType(), (
-                    f"Output type mismatch for '{name}'"
-                )
-                assert (
-                    gen_child.getNodeName() == ref_child.getNodeName()
-                ), f"Output node connection mismatch for '{name}'"
-                continue
-
-            gen_inputs = {
-                i.getName(): i for i in gen_child.getActiveInputs()
-            }
-            ref_inputs = {
-                i.getName(): i for i in ref_child.getActiveInputs()
-            }
-            assert gen_inputs.keys() == ref_inputs.keys(), (
-                f"Input name mismatch for '{name}'.\n"
-                f"  Generated: {sorted(gen_inputs.keys())}\n"
-                f"  Reference: {sorted(ref_inputs.keys())}"
-            )
-
-            for inp_name in ref_inputs:
-                gen_inp = gen_inputs[inp_name]
-                ref_inp = ref_inputs[inp_name]
-                assert gen_inp.getType() == ref_inp.getType(), (
-                    f"Type mismatch: {name}/{inp_name}"
-                )
-                assert (
-                    gen_inp.getInterfaceName()
-                    == ref_inp.getInterfaceName()
-                ), f"Interface mismatch: {name}/{inp_name}"
-                assert (
-                    gen_inp.getNodeName() == ref_inp.getNodeName()
-                ), f"Node connection mismatch: {name}/{inp_name}"
-                assert (
-                    gen_inp.getValueString()
-                    == ref_inp.getValueString()
-                ), f"Value mismatch: {name}/{inp_name}"
+            RefDiffer(ref_dir)(out_path)
