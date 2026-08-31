@@ -112,11 +112,11 @@ class TestStandardSurfaceDefault:
         with ctx as test_ctx:
             standard_surface.generate(test_ctx, stdlib_doc)
 
-            ss_nodedef = stdlib_doc.getNodeDef(
+            surfaceshader_nodedef = stdlib_doc.getNodeDef(
                 standard_surface._SURFACESHADER_NODEDEF
             )
             ng_doc = standard_surface.generate_surfaceshader_nodegraph(
-                ss_nodedef
+                surfaceshader_nodedef
             )
             test_ctx.add_mtlx_doc(
                 ng_doc,
