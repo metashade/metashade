@@ -49,9 +49,34 @@ class StructBase:
         return True
 
 class Struct(BaseType, StructBase):
-    def __init__(self, expression : str = None):
-        BaseType.__init__(self, expression)
-        StructBase.__init__(self, expression)
+    def __init__(self, expression : str = None, **kwargs):
+        if kwargs:
+            type_name = self.__class__._get_target_type_name()
+            member_refs = []
+            for member_name, member_def in self.__class__._member_defs.items():
+                if member_name not in kwargs:
+                    raise TypeError(
+                        f"{type_name}(): missing member '{member_name}'"
+                    )
+                value = kwargs[member_name]
+                ref = member_def.dtype._get_value_ref(value)
+                if ref is None:
+                    ref = member_def.dtype(value)
+                member_refs.append(str(ref))
+
+            unknown = sorted(set(kwargs) - set(self.__class__._member_defs))
+            if unknown:
+                raise TypeError(
+                    f"{type_name}(): unknown members: {unknown}"
+                )
+
+            sh = self.__class__._sh
+            ctor_expr = sh._format_struct_ctor(type_name, member_refs)
+            BaseType.__init__(self, ctor_expr)
+            StructBase.__init__(self, None)
+        else:
+            BaseType.__init__(self, expression)
+            StructBase.__init__(self, expression)
 
         self._sh = self.__class__._sh
         for member_name, member in vars(self).items():

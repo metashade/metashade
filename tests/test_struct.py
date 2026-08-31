@@ -121,6 +121,58 @@ class TestStructDefinition:
                     sh.out_f4Color = sh.final_color
 
     @ctx_cls_hg
+    def test_struct_constructor_init(self, ctx_cls):
+        """Test one-line struct initialization via kwargs."""
+        ctx = ctx_cls(dummy_entry_point = False)
+        with ctx as sh:
+            self._generate_test_uniforms(sh)
+
+            sh // 'The struct defined in the target language'
+            if isinstance(ctx, HlslTestContext):
+                sh._emit('struct BSDF { float3 response; float3 throughput; };\n\n')
+            else:
+                sh._emit('struct BSDF { vec3 response; vec3 throughput; };\n\n')
+
+            sh.struct('BSDF', emit = False)(
+                response = sh.Float3,
+                throughput = sh.Float3
+            )
+
+            with sh.function('testConstructorInit', sh.BSDF)(
+                a = sh.Float3, b = sh.Float3
+            ):
+                sh // 'Constructor-style initialization'
+                sh.result = sh.BSDF(
+                    response = [0.0, 0.0, 0.0],
+                    throughput = [1.0, 1.0, 1.0]
+                )
+
+                sh // 'With lvalue members'
+                sh.from_args = sh.BSDF(response = sh.a, throughput = sh.b)
+
+                sh // 'Overwrite a member after construction'
+                sh.result.response = sh.from_args.response
+
+                sh.return_(sh.result)
+
+            with self._generate_ps_main_decl(sh, ctx, sh.Float4):
+                sh.bsdf = sh.testConstructorInit(
+                    a = sh.g_f3A, b = sh.g_f3B
+                )
+
+                sh.final = sh.Float4(
+                    xyz = sh.bsdf.response + sh.bsdf.throughput,
+                    w = 1.0
+                )
+
+                if isinstance(ctx, HlslTestContext):
+                    sh.out_struct = sh.PsOut()
+                    sh.out_struct.color = sh.final
+                    sh.return_(sh.out_struct)
+                else:
+                    sh.out_f4Color = sh.final
+
+    @ctx_cls_hg
     def test_struct_emit_false_in_function(self, ctx_cls):
         """Test that acquired struct can be used as function return type."""
         ctx = ctx_cls(dummy_entry_point = False)

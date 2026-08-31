@@ -69,6 +69,10 @@ class _UniqueRegisterChecker(rtsl.UniqueKeyChecker):
 class Generator(rtsl.Generator, vk.GeneratorMixin):
     _is_pixel_shader = False
 
+    def _format_struct_ctor(self, type_name, member_strs):
+        members = ', '.join(member_strs)
+        return '{' + members + '}'
+
     def __init__(self, file_, matrix_post_multiplication = False):
         super().__init__(file_)
         vk.GeneratorMixin.__init__(self)

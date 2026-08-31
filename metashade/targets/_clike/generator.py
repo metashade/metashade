@@ -19,6 +19,14 @@ import metashade.targets._base.generator as base
 from . import arrays, context, struct
 
 class Generator(base.Generator):
+    def _format_struct_ctor(self, type_name, member_strs):
+        """Format a struct constructor expression.
+
+        GLSL uses constructor syntax: ``TypeName(val1, val2)``.
+        HLSL overrides this to use aggregate initialization.
+        """
+        return f"{type_name}({', '.join(member_strs)})"
+
     def function(self, name : str, return_type = None):
         return context.FunctionDecl(self, name, return_type)
 
