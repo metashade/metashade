@@ -83,5 +83,7 @@ class GlslTestContext(GlslGeneratorContext):
                 ref_differ(self._nodedef_doc_path)
             ref_differ(self._impl_doc_path)
             ref_differ(self._src_path)
+            for _, path in self._extra_docs:
+                ref_differ(path)
             
         return success

@@ -24,13 +24,11 @@ validates the surfaceshader override pipeline without any BSDF logic.
 """
 
 from __future__ import annotations
-import os
 
 import pytest
 
 mx = pytest.importorskip("MaterialX")
 
-from metashade.util.testing import RefDiffer
 from metashade.mtlx.mtlx_reflection import _build_params
 from metashade.mtlx.dtypes import register_mtlx_closure_structs
 from metashade.mtlx.util.testing import GlslTestContext
@@ -99,15 +97,12 @@ class TestStandardSurfacePink:
 class TestStandardSurfaceDefault:
     """Metashade reimplementation of the Standard Surface.
 
-    Generates both the BSDF source-code node (via
-    :func:`~metashade.mtlx.standard_surface.generate`) and the
-    surfaceshader nodegraph (via
-    :func:`~metashade.mtlx.standard_surface.generate_surfaceshader_nodegraph`).
-    Output goes to the ref directory; RefDiffer catches regressions in CI.
+    Generates the BSDF source-code node and the surfaceshader nodegraph
+    together.  Both are written through the context and RefDiffer'd in CI.
     """
 
-    def test_generate_bsdf(self, stdlib_doc):
-        """Generate the Standard Surface BSDF source-code node."""
+    def test_generate(self, stdlib_doc):
+        """Generate the Standard Surface BSDF + surfaceshader nodegraph."""
         ctx = GlslTestContext(
             base_name=standard_surface.FUNC_NAME,
             impl_only=False,
@@ -117,20 +112,13 @@ class TestStandardSurfaceDefault:
         with ctx as test_ctx:
             standard_surface.generate(test_ctx, stdlib_doc)
 
-    def test_generate_surfaceshader_nodegraph(self, stdlib_doc):
-        """Generate the surfaceshader nodegraph that wires BSDF to surface."""
-        ss_nodedef = stdlib_doc.getNodeDef(
-            standard_surface._SURFACESHADER_NODEDEF
-        )
-        doc = standard_surface.generate_surfaceshader_nodegraph(ss_nodedef)
-
-        out_dir = GlslTestContext._out_dir_root / standard_surface.SUBDIR
-        os.makedirs(out_dir, exist_ok=True)
-        out_path = out_dir / "mx_metashade_standard_surface_nodegraph.mtlx"
-        mx.writeToXmlFile(doc, str(out_path))
-
-        if GlslTestContext._ref_dir_root is not None:
-            ref_dir = (
-                GlslTestContext._ref_dir_root / standard_surface.SUBDIR
+            ss_nodedef = stdlib_doc.getNodeDef(
+                standard_surface._SURFACESHADER_NODEDEF
             )
-            RefDiffer(ref_dir)(out_path)
+            ng_doc = standard_surface.generate_surfaceshader_nodegraph(
+                ss_nodedef
+            )
+            test_ctx.add_mtlx_doc(
+                ng_doc,
+                "mx_metashade_standard_surface_nodegraph.mtlx",
+            )
