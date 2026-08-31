@@ -64,7 +64,7 @@ class Struct(BaseType, StructBase):
                     ref = member_def.dtype(value)
                 member_refs.append(str(ref))
 
-            unknown = set(kwargs) - set(self.__class__._member_defs)
+            unknown = sorted(set(kwargs) - set(self.__class__._member_defs))
             if unknown:
                 raise TypeError(
                     f"{type_name}(): unknown members: {unknown}"
