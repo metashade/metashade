@@ -127,13 +127,7 @@ class TestStructDefinition:
         with ctx as sh:
             self._generate_test_uniforms(sh)
 
-            sh // 'The struct defined in the target language'
-            if isinstance(ctx, HlslTestContext):
-                sh._emit('struct BSDF { float3 response; float3 throughput; };\n\n')
-            else:
-                sh._emit('struct BSDF { vec3 response; vec3 throughput; };\n\n')
-
-            sh.struct('BSDF', emit = False)(
+            sh.struct('BSDF')(
                 response = sh.Float3,
                 throughput = sh.Float3
             )

@@ -5,8 +5,11 @@ cbuffer cb : register(b0)
 	float3 g_f3B;
 };
 
-// The struct defined in the target language
-struct BSDF { float3 response; float3 throughput; };
+struct BSDF
+{
+	float3 response;
+	float3 throughput;
+};
 
 BSDF testConstructorInit(float3 a, float3 b)
 {

@@ -5,8 +5,11 @@ layout (set = 0, binding = 0) uniform cb
 	vec3 g_f3B;
 };
 
-// The struct defined in the target language
-struct BSDF { vec3 response; vec3 throughput; };
+struct BSDF
+{
+	vec3 response;
+	vec3 throughput;
+};
 
 BSDF testConstructorInit(vec3 a, vec3 b)
 {
