@@ -533,42 +533,31 @@ def generate_surfaceshader_nodegraph(
         name = inp.getName()
         if name not in _BSDF_INPUTS:
             continue
-        bsdf_inp = bsdf_node.addInput(name, inp.getType())
-        bsdf_inp.setInterfaceName(name)
+        bsdf_node.addInput(name, inp.getType()).setInterfaceName(name)
 
     # --- Emission chain ---
     emission_weight = ng.addNode("multiply", "emission_weight", "color3")
-    ew_in1 = emission_weight.addInput("in1", "color3")
-    ew_in1.setInterfaceName("emission_color")
-    ew_in2 = emission_weight.addInput("in2", "float")
-    ew_in2.setInterfaceName("emission")
+    emission_weight.addInput("in1", "color3").setInterfaceName("emission_color")
+    emission_weight.addInput("in2", "float").setInterfaceName("emission")
 
     emission_edf = ng.addNode("uniform_edf", "emission_edf", "EDF")
-    edf_color = emission_edf.addInput("color", "color3")
-    edf_color.setNodeName("emission_weight")
+    emission_edf.addInput("color", "color3").setNodeName("emission_weight")
 
     # --- Opacity chain ---
     opacity_lum = ng.addNode("luminance", "opacity_luminance", "color3")
-    ol_in = opacity_lum.addInput("in", "color3")
-    ol_in.setInterfaceName("opacity")
+    opacity_lum.addInput("in", "color3").setInterfaceName("opacity")
 
     opacity_float = ng.addNode("extract", "opacity_luminance_float", "float")
-    of_in = opacity_float.addInput("in", "color3")
-    of_in.setNodeName("opacity_luminance")
-    of_idx = opacity_float.addInput("index", "integer")
-    of_idx.setValueString("0")
+    opacity_float.addInput("in", "color3").setNodeName("opacity_luminance")
+    opacity_float.addInput("index", "integer").setValueString("0")
 
     # --- Surface constructor ---
     surface = ng.addNode("surface", "surface_ctor", "surfaceshader")
-    s_bsdf = surface.addInput("bsdf", "BSDF")
-    s_bsdf.setNodeName("std_surface")
-    s_edf = surface.addInput("edf", "EDF")
-    s_edf.setNodeName("emission_edf")
-    s_opacity = surface.addInput("opacity", "float")
-    s_opacity.setNodeName("opacity_luminance_float")
+    surface.addInput("bsdf", "BSDF").setNodeName("std_surface")
+    surface.addInput("edf", "EDF").setNodeName("emission_edf")
+    surface.addInput("opacity", "float").setNodeName("opacity_luminance_float")
 
     # --- Output ---
-    out = ng.addOutput("out", "surfaceshader")
-    out.setNodeName("surface_ctor")
+    ng.addOutput("out", "surfaceshader").setNodeName("surface_ctor")
 
     return doc
