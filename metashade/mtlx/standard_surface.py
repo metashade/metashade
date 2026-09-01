@@ -505,7 +505,7 @@ _BSDF_NODE_CATEGORY = FUNC_NAME.removeprefix("mx_")
 
 
 def generate_surfaceshader_nodegraph(
-    surfaceshader_nodedef: mx.NodeDef,
+    stock_nodedef: mx.NodeDef,
     bsdf_category: str = _BSDF_NODE_CATEGORY,
     nodegraph_name: str = _NODEGRAPH_NAME,
     target_nodedef_name: str = _SURFACESHADER_NODEDEF,
@@ -529,7 +529,7 @@ def generate_surfaceshader_nodegraph(
 
     # --- BSDF node ---
     bsdf_node = ng.addNode(bsdf_category, "std_surface", "BSDF")
-    for inp in surfaceshader_nodedef.getActiveInputs():
+    for inp in stock_nodedef.getActiveInputs():
         name = inp.getName()
         if name not in _BSDF_INPUTS:
             continue
