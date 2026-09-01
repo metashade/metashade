@@ -68,11 +68,16 @@ class Lobe:
 
 
 LOBES: tuple[Lobe, ...] = (
-    Lobe("subsurface", "subsurface",
-         frozenset({"subsurface", "subsurface_color", "subsurface_radius",
-                    "subsurface_scale", "subsurface_anisotropy",
-                    "thin_walled"}),
-         ("translucent_bsdf", "subsurface_bsdf")),
+    Lobe(
+        name="subsurface",
+        gate_input="subsurface",
+        params=frozenset({
+            "subsurface", "subsurface_color", "subsurface_radius",
+            "subsurface_scale", "subsurface_anisotropy",
+            "thin_walled",
+        }),
+        stdlib_imports=("translucent_bsdf", "subsurface_bsdf"),
+    ),
 )
 
 _LOBES_BY_NAME: dict[str, Lobe] = {lobe.name: lobe for lobe in LOBES}
@@ -109,12 +114,12 @@ class Permutation:
 
     @staticmethod
     def from_material(
-        ss_node: mx.Node,
-        nodedef: mx.NodeDef,
+        std_surface_node: mx.Node,
+        std_surface_nodedef: mx.NodeDef,
     ) -> Permutation:
         """Determine the permutation for a ``standard_surface`` node.
 
-        Inspects each lobe's gate input on *ss_node*:
+        Inspects each lobe's gate input on *std_surface_node*:
 
         - Not set on the node → use the nodedef default (0 = inactive).
         - Connected (has ``nodename``, ``nodegraph``, or
@@ -123,17 +128,17 @@ class Permutation:
         """
         kwargs: dict[str, bool] = {}
         for lobe in LOBES:
-            inp = ss_node.getInput(lobe.gate_input)
-            if inp is None:
-                nd_inp = nodedef.getActiveInput(lobe.gate_input)
-                active = float(nd_inp.getValueString()) != 0.0
-            elif (inp.getNodeName()
-                  or inp.getNodeGraphString()
-                  or inp.getInterfaceName()):
+            node_input = std_surface_node.getInput(lobe.gate_input)
+            if node_input is None:
+                nodedef_input = std_surface_nodedef.getActiveInput(lobe.gate_input)
+                active = float(nodedef_input.getValueString()) != 0.0
+            elif (node_input.getNodeName()
+                  or node_input.getNodeGraphString()
+                  or node_input.getInterfaceName()):
                 active = True
             else:
                 try:
-                    active = float(inp.getValueString()) != 0.0
+                    active = float(node_input.getValueString()) != 0.0
                 except (ValueError, TypeError):
                     active = True
             kwargs[lobe.name] = active
