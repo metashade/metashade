@@ -129,8 +129,8 @@ class TestStandardSurfaceSubsurface0:
 
     _PERM = standard_surface.Permutation(subsurface=False)
 
-    def test_generate_bsdf(self, stdlib_doc):
-        """Generate pruned SS BSDF without subsurface lobe."""
+    def test_generate(self, stdlib_doc):
+        """Generate pruned SS BSDF + surfaceshader nodegraph."""
         base_name = (standard_surface._FUNC_NAME_BASE
                      + self._PERM.variant_suffix
                      + standard_surface._FUNC_NAME_TYPE)
@@ -142,6 +142,24 @@ class TestStandardSurfaceSubsurface0:
             subdir=subdir,
         ) as glsl_ctx:
             standard_surface.generate(glsl_ctx, stdlib_doc, perm=self._PERM)
+
+        bsdf_category = base_name.removeprefix("mx_")
+        stock_nodedef = stdlib_doc.getNodeDef(
+            standard_surface._SURFACESHADER_NODEDEF
+        )
+        ng_doc = standard_surface.generate_surfaceshader_nodegraph(
+            stock_nodedef,
+            bsdf_category=bsdf_category,
+            nodegraph_name=(
+                standard_surface._NODEGRAPH_NAME + self._PERM.variant_suffix
+            ),
+        )
+
+        with MtlxTestContext(
+            f"mx_{bsdf_category}_nodegraph.mtlx",
+            subdir=subdir,
+        ) as mtlx_ctx:
+            mtlx_ctx.write(ng_doc)
 
 
 class TestPermutation:
