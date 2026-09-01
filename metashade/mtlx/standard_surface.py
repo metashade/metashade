@@ -29,8 +29,6 @@ Two-layer architecture:
 
 from __future__ import annotations
 
-from pathlib import Path
-
 import MaterialX as mx
 
 from metashade.mtlx.generate import GlslGeneratorContext
@@ -42,8 +40,6 @@ from metashade.mtlx.dtypes import (
 
 FUNC_NAME = "mx_metashade_standard_surface_bsdf"
 SUBDIR = "standard_surface"
-
-MTLX_LIBRARIES_DIR = Path(__file__).parent / "libraries"
 
 _SURFACESHADER_NODEDEF = "ND_standard_surface_surfaceshader"
 
