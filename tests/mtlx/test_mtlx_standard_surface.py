@@ -31,7 +31,7 @@ mx = pytest.importorskip("MaterialX")
 
 from metashade.mtlx.mtlx_reflection import _build_params
 from metashade.mtlx.dtypes import register_mtlx_closure_structs
-from metashade.mtlx.util.testing import GlslTestContext
+from metashade.mtlx.util.testing import GlslTestContext, MtlxTestContext
 from metashade.mtlx import standard_surface
 
 
@@ -103,22 +103,22 @@ class TestStandardSurfaceDefault:
 
     def test_generate(self, stdlib_doc):
         """Generate the Standard Surface BSDF + surfaceshader nodegraph."""
-        ctx = GlslTestContext(
+        with GlslTestContext(
             base_name=standard_surface.FUNC_NAME,
             impl_only=False,
             subdir=standard_surface.SUBDIR,
+        ) as glsl_ctx:
+            standard_surface.generate(glsl_ctx, stdlib_doc)
+
+        stock_nodedef = stdlib_doc.getNodeDef(
+            standard_surface._SURFACESHADER_NODEDEF
+        )
+        ng_doc = standard_surface.generate_surfaceshader_nodegraph(
+            stock_nodedef
         )
 
-        with ctx as test_ctx:
-            standard_surface.generate(test_ctx, stdlib_doc)
-
-            stock_nodedef = stdlib_doc.getNodeDef(
-                standard_surface._SURFACESHADER_NODEDEF
-            )
-            ng_doc = standard_surface.generate_surfaceshader_nodegraph(
-                stock_nodedef
-            )
-            test_ctx.add_mtlx_doc(
-                ng_doc,
-                "mx_metashade_standard_surface_nodegraph.mtlx",
-            )
+        with MtlxTestContext(
+            "mx_metashade_standard_surface_nodegraph.mtlx",
+            subdir=standard_surface.SUBDIR,
+        ) as mtlx_ctx:
+            mtlx_ctx.write(ng_doc)

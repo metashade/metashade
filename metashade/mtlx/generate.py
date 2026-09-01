@@ -34,7 +34,6 @@ class GeneratorContext:
         """
         base_impl_name = f'{base_name}_{self._mx_target_name}_impl'
 
-        self._out_dir = out_dir
         self._src_file_name = f'{base_impl_name}.{self._src_extension}'
         self._src_path = out_dir / self._src_file_name
 
@@ -44,19 +43,10 @@ class GeneratorContext:
     def __enter__(self):
         self._nodedef_doc = None if self._nodedef_doc_path is None else mx.createDocument()
         self._impl_doc = mx.createDocument()
-        self._extra_docs: list[tuple[object, str]] = []
         self._src_file = open(self._src_path, 'w')
         self._sh = self._create_generator()
         return self
-
-    def add_mtlx_doc(self, doc: mx.Document, file_name: str):
-        """Register an extra .mtlx document to write alongside the main files.
-
-        The document is written to the output directory on context exit
-        and included in RefDiffer checks (in CI mode).
-        """
-        self._extra_docs.append((doc, self._out_dir / file_name))
-
+    
     def __exit__(self, exc_type, exc_value, traceback):
         self._src_file.close()
         
@@ -72,16 +62,11 @@ class GeneratorContext:
             mx.writeToXmlFile(self._nodedef_doc, str(self._nodedef_doc_path))
         mx.writeToXmlFile(self._impl_doc, str(self._impl_doc_path))
 
-        for doc, path in self._extra_docs:
-            mx.writeToXmlFile(doc, str(path))
-
         print(f"Generated files:")
         if self._nodedef_doc_path is not None:
             print(f"  - {self._nodedef_doc_path}")
         print(f"  - {self._impl_doc_path}")
         print(f"  - {self._src_path}")
-        for _, path in self._extra_docs:
-            print(f"  - {path}")
         return True
     
     @abc.abstractmethod
