@@ -21,7 +21,7 @@ from metashade.mtlx.util import testing
 
 # Set up test context with this directory
 test_dir = Path(__file__).parent
-testing.GlslTestContext.setup_class(test_dir)
+testing.TestContextBase.setup_class(test_dir)
 
 
 @pytest.fixture
