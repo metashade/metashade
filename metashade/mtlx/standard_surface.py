@@ -588,26 +588,32 @@ _BSDF_INPUTS = frozenset({
 })
 
 
-def _find_genglsl_impl(stdlib_doc, node_name):
-    """Find the genglsl source-code implementation for a node."""
-    for impl in stdlib_doc.getImplementations():
-        if (
-            impl.getNodeDefString().endswith(node_name)
-            and impl.getTarget() == "genglsl"
-        ):
-            return impl
-    return None
-
-
 def _acquire_stdlib_sourcecode_nodes(sh, stdlib_doc, node_names):
-    """Resolve, include, and acquire stdlib sourcecode nodes."""
+    """Resolve, include, and acquire stdlib sourcecode nodes.
+
+    Nodes are grouped by header file.  Both the ``#include`` directives
+    and the function acquisitions within each header are emitted in
+    sorted order for deterministic output.
+    """
+    all_impls = stdlib_doc.getImplementations()
+    by_file: dict[str, list[tuple[str, object]]] = {}
     for name in node_names:
-        impl = _find_genglsl_impl(stdlib_doc, name)
+        impl = next(
+            (i for i in all_impls
+             if i.getNodeDefString().endswith(name)
+             and i.getTarget() == "genglsl"),
+            None,
+        )
         assert impl is not None, (
             f"Could not find genglsl impl for {name}"
         )
-        sh.include(impl.getAttribute("file"))
-        acquire_function(sh, impl)
+        file_path = impl.getAttribute("file")
+        by_file.setdefault(file_path, []).append((name, impl))
+
+    for file_path in sorted(by_file):
+        sh.include(file_path)
+        for _, impl in sorted(by_file[file_path]):
+            acquire_function(sh, impl)
 
 
 def _build_bsdf_params(sh, surfaceshader_nodedef):
