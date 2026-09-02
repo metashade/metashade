@@ -94,31 +94,50 @@ class TestStandardSurfacePink:
             )
 
 
-class TestStandardSurfaceDefault:
-    """Metashade reimplementation of the Standard Surface.
+class TestStandardSurface:
+    """Metashade Standard Surface code generation.
 
-    Generates the BSDF source-code node and the surfaceshader nodegraph
-    together.  Both are written through the context and RefDiffer'd in CI.
+    Parameterized over permutations: generates the BSDF source-code node
+    and the surfaceshader nodegraph for each variant.  Both are written
+    through the context and RefDiffer'd in CI.
     """
 
-    def test_generate(self, stdlib_doc):
-        """Generate the Standard Surface BSDF + surfaceshader nodegraph."""
-        with GlslTestContext(
-            base_name=standard_surface.FUNC_NAME,
-            impl_only=False,
-            subdir=standard_surface.SUBDIR,
-        ) as glsl_ctx:
-            standard_surface.generate(glsl_ctx, stdlib_doc)
+    @pytest.mark.parametrize("perm", [
+        pytest.param(standard_surface.Permutation(), id="full"),
+        pytest.param(
+            standard_surface.Permutation(subsurface=False), id="subsurface0",
+        ),
+    ])
+    def test_generate(self, stdlib_doc, perm):
+        """Generate the Standard Surface BSDF + surfaceshader."""
+        base_name = (standard_surface._FUNC_NAME_BASE
+                     + perm.variant_suffix
+                     + standard_surface._FUNC_NAME_TYPE)
+        subdir = (standard_surface.SUBDIR if perm == standard_surface.Permutation.ALL
+                  else standard_surface.PRUNED_SUBDIR)
 
+        with GlslTestContext(
+            base_name=base_name,
+            impl_only=False,
+            subdir=subdir,
+        ) as glsl_ctx:
+            standard_surface.generate(glsl_ctx, stdlib_doc, perm=perm)
+
+        bsdf_category = base_name.removeprefix("mx_")
         stock_nodedef = stdlib_doc.getNodeDef(
             standard_surface._SURFACESHADER_NODEDEF
         )
         ng_doc = standard_surface.generate_surfaceshader_nodegraph(
-            stock_nodedef
+            stock_nodedef,
+            bsdf_category=bsdf_category,
+            nodegraph_name=(
+                standard_surface._NODEGRAPH_NAME + perm.variant_suffix
+            ),
         )
 
-        with MtlxTestContext(
-            "mx_metashade_standard_surface_nodegraph.mtlx",
-            subdir=standard_surface.SUBDIR,
-        ) as mtlx_ctx:
+        ss_filename = (
+            f"{standard_surface._FUNC_NAME_BASE}"
+            f"{perm.variant_suffix}_surfaceshader.mtlx"
+        )
+        with MtlxTestContext(ss_filename, subdir=subdir) as mtlx_ctx:
             mtlx_ctx.write(ng_doc)

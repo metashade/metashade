@@ -29,6 +29,8 @@ Two-layer architecture:
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 import MaterialX as mx
 
 from metashade.mtlx.generate import GlslGeneratorContext
@@ -38,10 +40,85 @@ from metashade.mtlx.dtypes import (
     register_mtlx_closure_structs,
 )
 
-FUNC_NAME = "mx_metashade_standard_surface_bsdf"
+_FUNC_NAME_BASE = "mx_metashade_standard_surface"
+_FUNC_NAME_TYPE = "_bsdf"
+FUNC_NAME = _FUNC_NAME_BASE + _FUNC_NAME_TYPE
 SUBDIR = "standard_surface"
+PRUNED_SUBDIR = "standard_surface_pruned"
 
 _SURFACESHADER_NODEDEF = "ND_standard_surface_surfaceshader"
+
+
+# ---------------------------------------------------------------------------
+# Lobe pruning data model (issue #233)
+# ---------------------------------------------------------------------------
+
+@dataclass(frozen=True)
+class Lobe:
+    """A prunable Standard Surface feature bundle.
+
+    Each lobe groups the gate input that enables it, the BSDF function
+    parameters it owns, the stdlib ``#include`` s it requires, and any
+    nodegraph-only inputs (e.g. emission).
+    """
+    name: str
+    gate_input: str
+    params: frozenset[str]
+    stdlib_imports: tuple[str, ...]
+    nodegraph_inputs: tuple[str, ...] = ()
+
+
+LOBES: tuple[Lobe, ...] = (
+    Lobe(
+        name="subsurface",
+        gate_input="subsurface",
+        params=frozenset({
+            "subsurface", "subsurface_color", "subsurface_radius",
+            "subsurface_scale", "subsurface_anisotropy",
+            "thin_walled",
+        }),
+        stdlib_imports=("translucent_bsdf", "subsurface_bsdf"),
+    ),
+)
+
+_LOBES_BY_NAME: dict[str, Lobe] = {lobe.name: lobe for lobe in LOBES}
+
+
+@dataclass(frozen=True)
+class Permutation:
+    """Identifies a specific Standard Surface specialization.
+
+    Each boolean field corresponds to a :class:`Lobe`.  ``True`` means the
+    lobe is emitted; ``False`` means it is pruned.  All default to ``True``
+    (full SS, backward compatible).
+
+    Naming is *subtractive*: :attr:`variant_suffix` lists disabled lobes
+    with a ``0`` suffix (e.g. ``_subsurface0``).  This is stable under
+    progressive development — adding coat pruning later does not rename
+    existing ``_subsurface0`` variants.
+    """
+    subsurface: bool = True
+
+    @property
+    def variant_suffix(self) -> str:
+        """Subtractive suffix for file/node naming, e.g. ``_subsurface0``.
+
+        Returns an empty string for the full permutation (all lobes on).
+        """
+        disabled = sorted(
+            lobe.name for lobe in LOBES
+            if not getattr(self, lobe.name)
+        )
+        if not disabled:
+            return ""
+        return "_" + "_".join(f"{d}0" for d in disabled)
+
+Permutation.ALL = Permutation()
+
+
+# ---------------------------------------------------------------------------
+# Codegen constants
+# ---------------------------------------------------------------------------
 
 # MaterialX GLSL enum constants (from mx_closure_type.glsl / pbrlib)
 _SCATTER_R = 0
@@ -152,7 +229,11 @@ def _mx_metashade_rotate_vector3(
     )
 
 
-def generate(ctx: GlslGeneratorContext, stdlib_doc: mx.Document):
+def generate(
+    ctx: GlslGeneratorContext,
+    stdlib_doc: mx.Document,
+    perm: Permutation = Permutation.ALL,
+):
     """Generate the Standard Surface BSDF source-code node.
 
     Args:
@@ -160,7 +241,12 @@ def generate(ctx: GlslGeneratorContext, stdlib_doc: mx.Document):
              ``GlslTestContext``).  Only the ``_sh`` generator and
              ``add_node_impl`` method are used.
         stdlib_doc: A MaterialX document with the standard library loaded.
+        perm: Which lobes to emit.  ``Permutation.ALL`` (default) generates
+              the full BSDF.  Disabled lobes are pruned at code-generation
+              time (design-time ``if``, not runtime).
     """
+    func_name = _FUNC_NAME_BASE + perm.variant_suffix + _FUNC_NAME_TYPE
+
     sh = ctx._sh
 
     register_mtlx_closure_structs(sh)
@@ -173,7 +259,7 @@ def generate(ctx: GlslGeneratorContext, stdlib_doc: mx.Document):
     )
     params = _build_bsdf_params(sh, surfaceshader_nodedef)
 
-    with sh.function(FUNC_NAME)(**params):
+    with sh.function(func_name)(**params):
         sh // ""
         sh // "Coat affect roughness: blend specular roughness toward 1.0"
         sh.coat_roughness_factor = (
@@ -231,12 +317,13 @@ def generate(ctx: GlslGeneratorContext, stdlib_doc: mx.Document):
             sh.base_color.clamp(0.0, 1.0).pow(sh.coat_gamma)
         )
 
-        sh // ""
-        sh // "Coat affect subsurface color"
-        # RgbF workaround: exponent is unitless, not a color (#224)
-        sh.coat_affected_subsurface_color = (
-            sh.subsurface_color.clamp(0.0, 1.0).pow(sh.coat_gamma)
-        )
+        if perm.subsurface:
+            sh // ""
+            sh // "Coat affect subsurface color"
+            # RgbF workaround: exponent is unitless, not a color (#224)
+            sh.coat_affected_subsurface_color = (
+                sh.subsurface_color.clamp(0.0, 1.0).pow(sh.coat_gamma)
+            )
 
         sh // ""
         sh // "Diffuse BSDF (Oren-Nayar)"
@@ -255,40 +342,43 @@ def generate(ctx: GlslGeneratorContext, stdlib_doc: mx.Document):
             bsdf=sh.diffuse_bsdf,
         )
 
-        sh // ""
-        sh // "Subsurface scattering"
-        sh.subsurface_radius_scaled = sh.subsurface_radius * sh.subsurface_scale
-        sh.sss_bsdf = sh.BSDF(
-            response = sh.Float3(0), throughput = sh.Float3(1)
-        )
-        with sh.if_(sh.thin_walled):
-            sh.mx_translucent_bsdf(
-                closureData=sh.closureData,
-                weight=1.0,
-                color=sh.coat_affected_subsurface_color,
-                normal=sh.normal,
-                bsdf=sh.sss_bsdf,
+        if perm.subsurface:
+            sh // ""
+            sh // "Subsurface scattering"
+            sh.subsurface_radius_scaled = sh.subsurface_radius * sh.subsurface_scale
+            sh.sss_bsdf = sh.BSDF(
+                response = sh.Float3(0), throughput = sh.Float3(1)
             )
-        with sh.else_():
-            sh.mx_subsurface_bsdf(
-                closureData=sh.closureData,
-                weight=1.0,
-                color=sh.coat_affected_subsurface_color,
-                radius=sh.subsurface_radius_scaled,
-                anisotropy=sh.subsurface_anisotropy,
-                normal=sh.normal,
-                bsdf=sh.sss_bsdf,
-            )
+            with sh.if_(sh.thin_walled):
+                sh.mx_translucent_bsdf(
+                    closureData=sh.closureData,
+                    weight=1.0,
+                    color=sh.coat_affected_subsurface_color,
+                    normal=sh.normal,
+                    bsdf=sh.sss_bsdf,
+                )
+            with sh.else_():
+                sh.mx_subsurface_bsdf(
+                    closureData=sh.closureData,
+                    weight=1.0,
+                    color=sh.coat_affected_subsurface_color,
+                    radius=sh.subsurface_radius_scaled,
+                    anisotropy=sh.subsurface_anisotropy,
+                    normal=sh.normal,
+                    bsdf=sh.sss_bsdf,
+                )
 
-        sh // ""
-        sh // "Subsurface mix: blend SSS with diffuse"
-        sh.subsurface_mix = sh.BSDF()
-        sh.subsurface_mix.response = sh.subsurface.lerp(
-            sh.diffuse_bsdf.response, sh.sss_bsdf.response
-        )
-        sh.subsurface_mix.throughput = sh.subsurface.lerp(
-            sh.diffuse_bsdf.throughput, sh.sss_bsdf.throughput
-        )
+            sh // ""
+            sh // "Subsurface mix: blend SSS with diffuse"
+            sh.subsurface_mix = sh.BSDF()
+            sh.subsurface_mix.response = sh.subsurface.lerp(
+                sh.diffuse_bsdf.response, sh.sss_bsdf.response
+            )
+            sh.subsurface_mix.throughput = sh.subsurface.lerp(
+                sh.diffuse_bsdf.throughput, sh.sss_bsdf.throughput
+            )
+        else:
+            sh.subsurface_mix = sh.diffuse_bsdf
 
         sh // ""
         sh // "Sheen BSDF"
@@ -491,7 +581,7 @@ def generate(ctx: GlslGeneratorContext, stdlib_doc: mx.Document):
         )
 
     ctx.add_node_impl(
-        func_name=FUNC_NAME,
+        func_name=func_name,
         mx_doc_string="Metashade Standard Surface BSDF",
     )
 
