@@ -102,42 +102,31 @@ class TestStandardSurface:
     through the context and RefDiffer'd in CI.
     """
 
-    @pytest.mark.parametrize("perm", [
+    @pytest.mark.parametrize("permutation", [
         pytest.param(standard_surface.Permutation(), id="full"),
         pytest.param(
             standard_surface.Permutation(subsurface=False), id="subsurface0",
         ),
     ])
-    def test_generate(self, stdlib_doc, perm):
+    def test_generate(self, stdlib_doc, permutation):
         """Generate the Standard Surface BSDF + surfaceshader."""
-        base_name = (standard_surface._FUNC_NAME_BASE
-                     + perm.variant_suffix
-                     + standard_surface._FUNC_NAME_TYPE)
-        subdir = (standard_surface.SUBDIR if perm == standard_surface.Permutation.ALL
-                  else standard_surface.PRUNED_SUBDIR)
+        subdir = ("standard_surface"
+                  if permutation == standard_surface.Permutation.ALL
+                  else "standard_surface_pruned")
 
         with GlslTestContext(
-            base_name=base_name,
+            base_name=permutation.func_name,
             impl_only=False,
             subdir=subdir,
         ) as glsl_ctx:
-            standard_surface.generate(glsl_ctx, stdlib_doc, perm=perm)
+            permutation.generate_bsdf(glsl_ctx, stdlib_doc)
 
-        bsdf_category = base_name.removeprefix("mx_")
         stock_nodedef = stdlib_doc.getNodeDef(
             standard_surface._SURFACESHADER_NODEDEF
         )
-        ng_doc = standard_surface.generate_surfaceshader_nodegraph(
-            stock_nodedef,
-            bsdf_category=bsdf_category,
-            nodegraph_name=(
-                standard_surface._NODEGRAPH_NAME + perm.variant_suffix
-            ),
-        )
+        ng_doc = permutation.generate_surfaceshader_nodegraph(stock_nodedef)
 
-        ss_filename = (
-            f"{standard_surface._FUNC_NAME_BASE}"
-            f"{perm.variant_suffix}_surfaceshader.mtlx"
-        )
-        with MtlxTestContext(ss_filename, subdir=subdir) as mtlx_ctx:
+        with MtlxTestContext(
+            permutation.surfaceshader_filename, subdir=subdir,
+        ) as mtlx_ctx:
             mtlx_ctx.write(ng_doc)
