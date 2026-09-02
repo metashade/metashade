@@ -44,6 +44,7 @@ _FUNC_NAME_BASE = "mx_metashade_standard_surface"
 _FUNC_NAME_TYPE = "_bsdf"
 FUNC_NAME = _FUNC_NAME_BASE + _FUNC_NAME_TYPE
 SUBDIR = "standard_surface"
+PRUNED_SUBDIR = "standard_surface_pruned"
 
 _SURFACESHADER_NODEDEF = "ND_standard_surface_surfaceshader"
 

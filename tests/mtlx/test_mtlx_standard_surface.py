@@ -113,7 +113,8 @@ class TestStandardSurface:
         base_name = (standard_surface._FUNC_NAME_BASE
                      + perm.variant_suffix
                      + standard_surface._FUNC_NAME_TYPE)
-        subdir = standard_surface.SUBDIR + perm.variant_suffix
+        subdir = (standard_surface.SUBDIR if perm == standard_surface.Permutation.ALL
+                  else standard_surface.PRUNED_SUBDIR)
 
         with GlslTestContext(
             base_name=base_name,
