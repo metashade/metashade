@@ -113,39 +113,6 @@ class Permutation:
             return ""
         return "_" + "_".join(f"{d}0" for d in disabled)
 
-    @staticmethod
-    def from_material(
-        std_surface_node: mx.Node,
-        std_surface_nodedef: mx.NodeDef,
-    ) -> Permutation:
-        """Determine the permutation for a ``standard_surface`` node.
-
-        Inspects each lobe's gate input on *std_surface_node*:
-
-        - Not set on the node → use the nodedef default (0 = inactive).
-        - Connected (has ``nodename``, ``nodegraph``, or
-          ``interfacename``) → conservatively assume active.
-        - Literal value → active if non-zero.
-        """
-        kwargs: dict[str, bool] = {}
-        for lobe in LOBES:
-            node_input = std_surface_node.getInput(lobe.gate_input)
-            if node_input is None:
-                nodedef_input = std_surface_nodedef.getActiveInput(lobe.gate_input)
-                active = float(nodedef_input.getValueString()) != 0.0
-            elif (node_input.getNodeName()
-                  or node_input.getNodeGraphString()
-                  or node_input.getInterfaceName()):
-                active = True
-            else:
-                try:
-                    active = float(node_input.getValueString()) != 0.0
-                except (ValueError, TypeError):
-                    active = True
-            kwargs[lobe.name] = active
-        return Permutation(**kwargs)
-
-
 Permutation.ALL = Permutation()
 
 
