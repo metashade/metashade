@@ -148,7 +148,13 @@ class Permutation:
         sh = ctx._sh
 
         register_mtlx_closure_structs(sh)
-        _acquire_stdlib_sourcecode_nodes(sh, stdlib_doc, _STDLIB_IMPORTS)
+
+        stdlib_imports = _BASE_STDLIB_IMPORTS | frozenset().union(*(
+            lobe.stdlib_imports for lobe in LOBES
+            if getattr(self, lobe.name)
+        ))
+
+        _acquire_stdlib_sourcecode_nodes(sh, stdlib_doc, stdlib_imports)
         sh.instantiate(_mx_metashade_rotate_vector3)
 
         surfaceshader_nodedef = stdlib_doc.getNodeDef(_SURFACESHADER_NODEDEF)
@@ -555,16 +561,14 @@ _SCATTER_R = 0
 _SCATTER_T = 1
 _DISTRIBUTION_GGX = 0
 
-_STDLIB_IMPORTS = (
+_BASE_STDLIB_IMPORTS = frozenset({
     "roughness_anisotropy",
     "oren_nayar_diffuse_bsdf",
-    "translucent_bsdf",
-    "subsurface_bsdf",
     "sheen_bsdf",
     "dielectric_bsdf",
     "conductor_bsdf",
     "artistic_ior",
-)
+})
 
 _BSDF_INPUTS = frozenset({
     "base", "base_color", "diffuse_roughness",
@@ -584,32 +588,32 @@ _BSDF_INPUTS = frozenset({
 })
 
 
-def _find_genglsl_impl(stdlib_doc, node_name):
-    """Find the genglsl source-code implementation for a node."""
-    for impl in stdlib_doc.getImplementations():
-        if (
-            impl.getNodeDefString().endswith(node_name)
-            and impl.getTarget() == "genglsl"
-        ):
-            return impl
-    return None
-
-
 def _acquire_stdlib_sourcecode_nodes(sh, stdlib_doc, node_names):
     """Resolve, include, and acquire stdlib sourcecode nodes.
 
-    *node_names* is an ordered sequence of MaterialX source-code node
-    names whose genglsl implementations will be included and acquired.
-    Order matters: dependencies must come before dependents so that
-    ``#include`` directives are emitted in the right order.
+    Nodes are grouped by header file.  Both the ``#include`` directives
+    and the function acquisitions within each header are emitted in
+    sorted order for deterministic output.
     """
+    all_impls = stdlib_doc.getImplementations()
+    by_file: dict[str, list[tuple[str, object]]] = {}
     for name in node_names:
-        impl = _find_genglsl_impl(stdlib_doc, name)
+        impl = next(
+            (i for i in all_impls
+             if i.getNodeDefString().endswith(name)
+             and i.getTarget() == "genglsl"),
+            None,
+        )
         assert impl is not None, (
             f"Could not find genglsl impl for {name}"
         )
-        sh.include(impl.getAttribute("file"))
-        acquire_function(sh, impl)
+        file_path = impl.getAttribute("file")
+        by_file.setdefault(file_path, []).append((name, impl))
+
+    for file_path in sorted(by_file):
+        sh.include(file_path)
+        for _, impl in sorted(by_file[file_path]):
+            acquire_function(sh, impl)
 
 
 def _build_bsdf_params(sh, surfaceshader_nodedef):
