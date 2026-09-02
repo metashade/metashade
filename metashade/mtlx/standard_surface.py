@@ -148,7 +148,13 @@ class Permutation:
         sh = ctx._sh
 
         register_mtlx_closure_structs(sh)
-        _acquire_stdlib_sourcecode_nodes(sh, stdlib_doc, _STDLIB_IMPORTS)
+
+        stdlib_imports = _BASE_STDLIB_IMPORTS | frozenset().union(*(
+            lobe.stdlib_imports for lobe in LOBES
+            if getattr(self, lobe.name)
+        ))
+
+        _acquire_stdlib_sourcecode_nodes(sh, stdlib_doc, stdlib_imports)
         sh.instantiate(_mx_metashade_rotate_vector3)
 
         surfaceshader_nodedef = stdlib_doc.getNodeDef(_SURFACESHADER_NODEDEF)
@@ -555,16 +561,14 @@ _SCATTER_R = 0
 _SCATTER_T = 1
 _DISTRIBUTION_GGX = 0
 
-_STDLIB_IMPORTS = (
+_BASE_STDLIB_IMPORTS = frozenset({
     "roughness_anisotropy",
     "oren_nayar_diffuse_bsdf",
-    "translucent_bsdf",
-    "subsurface_bsdf",
     "sheen_bsdf",
     "dielectric_bsdf",
     "conductor_bsdf",
     "artistic_ior",
-)
+})
 
 _BSDF_INPUTS = frozenset({
     "base", "base_color", "diffuse_roughness",
@@ -596,13 +600,7 @@ def _find_genglsl_impl(stdlib_doc, node_name):
 
 
 def _acquire_stdlib_sourcecode_nodes(sh, stdlib_doc, node_names):
-    """Resolve, include, and acquire stdlib sourcecode nodes.
-
-    *node_names* is an ordered sequence of MaterialX source-code node
-    names whose genglsl implementations will be included and acquired.
-    Order matters: dependencies must come before dependents so that
-    ``#include`` directives are emitted in the right order.
-    """
+    """Resolve, include, and acquire stdlib sourcecode nodes."""
     for name in node_names:
         impl = _find_genglsl_impl(stdlib_doc, name)
         assert impl is not None, (
