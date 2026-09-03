@@ -157,11 +157,7 @@ class Permutation:
         _acquire_stdlib_sourcecode_nodes(sh, stdlib_doc, stdlib_imports)
         sh.instantiate(_mx_metashade_rotate_vector3)
 
-        surfaceshader_nodedef = stdlib_doc.getNodeDef(_SURFACESHADER_NODEDEF)
-        assert surfaceshader_nodedef is not None, (
-            f"Could not find {_SURFACESHADER_NODEDEF}"
-        )
-        params = _build_bsdf_params(sh, surfaceshader_nodedef)
+        params = _build_bsdf_params(sh)
 
         with sh.function(self.func_name)(**params):
             sh // ""
@@ -494,10 +490,7 @@ class Permutation:
             mx_doc_string="Metashade Standard Surface BSDF",
         )
 
-    def generate_surfaceshader_nodegraph(
-        self,
-        stock_nodedef: mx.NodeDef,
-    ) -> mx.Document:
+    def generate_surfaceshader_nodegraph(self) -> mx.Document:
         """Build the surfaceshader nodegraph that wires the BSDF to a surface.
 
         Produces a nodegraph wiring the BSDF source-code node, emission,
@@ -512,11 +505,8 @@ class Permutation:
         ng.setNodeDefString(_SURFACESHADER_NODEDEF)
 
         bsdf_node = ng.addNode(self.bsdf_category, "std_surface", "BSDF")
-        for inp in stock_nodedef.getActiveInputs():
-            name = inp.getName()
-            if name not in _BSDF_INPUTS:
-                continue
-            bsdf_node.addInput(name, inp.getType()).setInterfaceName(name)
+        for name, mtlx_type in _BSDF_INPUTS.items():
+            bsdf_node.addInput(name, mtlx_type).setInterfaceName(name)
 
         emission_weight = ng.addNode("multiply", "emission_weight", "color3")
         emission_weight.addInput("in1", "color3").setInterfaceName(
@@ -570,22 +560,27 @@ _BASE_STDLIB_IMPORTS = frozenset({
     "artistic_ior",
 })
 
-_BSDF_INPUTS = frozenset({
-    "base", "base_color", "diffuse_roughness",
-    "metalness",
-    "specular", "specular_color", "specular_roughness",
-    "specular_IOR", "specular_anisotropy", "specular_rotation",
-    "sheen", "sheen_color", "sheen_roughness",
-    "coat", "coat_color", "coat_roughness", "coat_anisotropy",
-    "coat_rotation", "coat_IOR", "coat_normal",
-    "coat_affect_color", "coat_affect_roughness",
-    "subsurface", "subsurface_color", "subsurface_radius",
-    "subsurface_scale", "subsurface_anisotropy",
-    "thin_walled",
-    "transmission", "transmission_color", "transmission_extra_roughness",
-    "thin_film_thickness", "thin_film_IOR",
-    "normal", "tangent",
-})
+_BSDF_INPUTS: dict[str, str] = {
+    "base": "float", "base_color": "color3", "diffuse_roughness": "float",
+    "metalness": "float",
+    "specular": "float", "specular_color": "color3",
+    "specular_roughness": "float",
+    "specular_IOR": "float", "specular_anisotropy": "float",
+    "specular_rotation": "float",
+    "sheen": "float", "sheen_color": "color3", "sheen_roughness": "float",
+    "coat": "float", "coat_color": "color3", "coat_roughness": "float",
+    "coat_anisotropy": "float",
+    "coat_rotation": "float", "coat_IOR": "float", "coat_normal": "vector3",
+    "coat_affect_color": "float", "coat_affect_roughness": "float",
+    "subsurface": "float", "subsurface_color": "color3",
+    "subsurface_radius": "color3",
+    "subsurface_scale": "float", "subsurface_anisotropy": "float",
+    "thin_walled": "boolean",
+    "transmission": "float", "transmission_color": "color3",
+    "transmission_extra_roughness": "float",
+    "thin_film_thickness": "float", "thin_film_IOR": "float",
+    "normal": "vector3", "tangent": "vector3",
+}
 
 
 def _acquire_stdlib_sourcecode_nodes(sh, stdlib_doc, node_names):
@@ -616,23 +611,19 @@ def _acquire_stdlib_sourcecode_nodes(sh, stdlib_doc, node_names):
             acquire_function(sh, impl)
 
 
-def _build_bsdf_params(sh, surfaceshader_nodedef):
-    """Build BSDF node params from a subset of the surfaceshader nodedef inputs.
+def _build_bsdf_params(sh):
+    """Build BSDF node params from the hardcoded input type map.
 
-    Types are derived from the surfaceshader nodedef so that
-    ``color3`` vs ``vector3`` distinctions are preserved in the
-    generated BSDF nodedef.  ``closureData`` is placed first (skipped
-    from the nodedef by ``add_node_impl``) and the BSDF output is last.
+    Types come from :data:`_BSDF_INPUTS` so that ``color3`` vs
+    ``vector3`` distinctions match the stock surfaceshader nodedef.
+    ``closureData`` is placed first and the BSDF output is last.
     """
     params = {"closureData": sh.ClosureData}
 
-    for inp in surfaceshader_nodedef.getActiveInputs():
-        name = inp.getName()
-        if name not in _BSDF_INPUTS:
-            continue
-        dtype = mtlx_to_metashade_dtype(inp.getType(), sh)
+    for name, mtlx_type in _BSDF_INPUTS.items():
+        dtype = mtlx_to_metashade_dtype(mtlx_type, sh)
         assert dtype is not None, (
-            f"Unmappable type for {name}: {inp.getType()}"
+            f"Unmappable type for {name}: {mtlx_type}"
         )
         params[name] = dtype
 

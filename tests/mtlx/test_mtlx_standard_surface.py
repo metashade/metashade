@@ -121,10 +121,7 @@ class TestStandardSurface:
         ) as glsl_ctx:
             permutation.generate_bsdf(glsl_ctx, stdlib_doc)
 
-        stock_nodedef = stdlib_doc.getNodeDef(
-            standard_surface._SURFACESHADER_NODEDEF
-        )
-        ng_doc = permutation.generate_surfaceshader_nodegraph(stock_nodedef)
+        ng_doc = permutation.generate_surfaceshader_nodegraph()
 
         with MtlxTestContext(
             permutation.surfaceshader_filename, subdir=subdir,
