@@ -88,7 +88,7 @@ class GeneratorContext:
         func_name: str,
         mx_doc_string: str,
         nodedef_name: str = None,
-        param_docs: dict[str, str] | None = None,
+        input_metadata: dict | None = None,
     ):
         """
         Add a node implementation.
@@ -98,9 +98,9 @@ class GeneratorContext:
             mx_doc_string: Documentation string
             nodedef_name: If provided, reference this existing MaterialX nodedef
                           instead of creating a new one. Used for overrides.
-            param_docs: Optional mapping of parameter names to doc strings.
-                        When provided, these override the generic
-                        ``"Input parameter {name}"`` default.
+            input_metadata: Mapping of parameter names to
+                            ``InputMetadata``.  The ``.doc`` field overrides
+                            the generic ``"Input parameter {name}"`` default.
         """
         # Get the function from the generator to access reflection data
         func = getattr(self._sh, func_name)
@@ -132,7 +132,8 @@ class GeneratorContext:
                     output_param.setDocString(f'Output parameter {param_name}')
                 else:
                     input_param = nodedef.addInput(param_name, param_type)
-                    doc = (param_docs or {}).get(param_name)
+                    metadata = (input_metadata or {}).get(param_name)
+                    doc = metadata.doc if metadata is not None else None
                     if not doc:
                         doc = f'Input parameter {param_name}'
                     input_param.setDocString(doc)

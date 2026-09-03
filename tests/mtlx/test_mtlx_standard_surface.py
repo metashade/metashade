@@ -102,16 +102,15 @@ class TestStandardSurface:
     through the context and RefDiffer'd in CI.
     """
 
-    @pytest.mark.parametrize("permutation", [
-        pytest.param(standard_surface.Permutation(), id="full"),
-        pytest.param(
-            standard_surface.Permutation(subsurface=False), id="subsurface0",
-        ),
+    @pytest.mark.parametrize("kwargs", [
+        pytest.param({}, id="full"),
+        pytest.param({"subsurface": False}, id="subsurface0"),
     ])
-    def test_generate(self, stdlib_doc, permutation):
+    def test_generate(self, stdlib_doc, kwargs):
         """Generate the Standard Surface BSDF + surfaceshader."""
+        permutation = standard_surface.Permutation(stdlib_doc, **kwargs)
         subdir = ("standard_surface"
-                  if permutation == standard_surface.Permutation.ALL
+                  if not permutation.variant_suffix
                   else "standard_surface_pruned")
 
         with GlslTestContext(
@@ -121,7 +120,7 @@ class TestStandardSurface:
         ) as glsl_ctx:
             permutation.generate_bsdf(glsl_ctx, stdlib_doc)
 
-        ng_doc = permutation.generate_surfaceshader_nodegraph(stdlib_doc)
+        ng_doc = permutation.generate_surfaceshader_nodegraph()
 
         with MtlxTestContext(
             permutation.surfaceshader_filename, subdir=subdir,

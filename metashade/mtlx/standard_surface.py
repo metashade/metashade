@@ -30,7 +30,6 @@ Two-layer architecture:
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import ClassVar
 
 import MaterialX as mx
 
@@ -68,6 +67,13 @@ class Lobe:
     nodegraph_inputs: tuple[str, ...] = ()
 
 
+@dataclass(frozen=True)
+class InputMetadata:
+    """MaterialX type and doc string for a BSDF input."""
+    mtlx_type: str
+    doc: str
+
+
 LOBES: tuple[Lobe, ...] = (
     Lobe(
         name="subsurface",
@@ -84,7 +90,6 @@ LOBES: tuple[Lobe, ...] = (
 _LOBES_BY_NAME: dict[str, Lobe] = {lobe.name: lobe for lobe in LOBES}
 
 
-@dataclass(frozen=True)
 class Permutation:
     """Identifies a specific Standard Surface specialization.
 
@@ -97,33 +102,21 @@ class Permutation:
     progressive development — adding coat pruning later does not rename
     existing ``_subsurface0`` variants.
     """
-    subsurface: bool = True
 
-    _input_meta: ClassVar[dict[str, tuple[str, str]] | None] = None
-
-    @classmethod
-    def _resolve_input_meta(
-        cls, stdlib_doc: mx.Document,
-    ) -> dict[str, tuple[str, str]]:
-        """Resolve BSDF input metadata from the stock surfaceshader nodedef.
-
-        Returns a dict ``{name: (mtlx_type, doc_string)}`` in nodedef
-        declaration order.  The result is cached at class level so the
-        nodedef is loaded only once regardless of how many permutations
-        or generation methods are called.
-        """
-        if cls._input_meta is None:
-            nodedef = stdlib_doc.getNodeDef(_SURFACESHADER_NODEDEF)
-            assert nodedef is not None, (
-                f"Could not find {_SURFACESHADER_NODEDEF}"
-            )
-            meta: dict[str, tuple[str, str]] = {}
-            for inp in nodedef.getActiveInputs():
-                name = inp.getName()
-                if name in _BSDF_INPUTS:
-                    meta[name] = (inp.getType(), inp.getDocString())
-            cls._input_meta = meta
-        return cls._input_meta
+    def __init__(self, stdlib_doc: mx.Document, *,
+                 subsurface: bool = True):
+        self.subsurface = subsurface
+        nodedef = stdlib_doc.getNodeDef(_SURFACESHADER_NODEDEF)
+        assert nodedef is not None, (
+            f"Could not find {_SURFACESHADER_NODEDEF}"
+        )
+        self._input_metadata: dict[str, InputMetadata] = {}
+        for inp in nodedef.getActiveInputs():
+            name = inp.getName()
+            if name in _BSDF_INPUTS:
+                self._input_metadata[name] = InputMetadata(
+                    mtlx_type=inp.getType(), doc=inp.getDocString(),
+                )
 
     @property
     def variant_suffix(self) -> str:
@@ -159,6 +152,25 @@ class Permutation:
         """Output ``.mtlx`` filename for the surfaceshader nodegraph."""
         return f"{_FUNC_NAME_BASE}{self.variant_suffix}_surfaceshader.mtlx"
 
+    def _build_bsdf_params(self, sh):
+        """Build BSDF function params from resolved input metadata.
+
+        Types come from the stock surfaceshader nodedef so that
+        ``color3`` vs ``vector3`` distinctions are preserved.
+        ``closureData`` is placed first and the BSDF output is last.
+        """
+        params = {"closureData": sh.ClosureData}
+
+        for name, metadata in self._input_metadata.items():
+            dtype = mtlx_to_metashade_dtype(metadata.mtlx_type, sh)
+            assert dtype is not None, (
+                f"Unmappable type for {name}: {metadata.mtlx_type}"
+            )
+            params[name] = dtype
+
+        params["bsdf"] = sh.InOut(sh.BSDF)
+        return params
+
     def generate_bsdf(
         self,
         ctx: GlslGeneratorContext,
@@ -184,8 +196,7 @@ class Permutation:
         _acquire_stdlib_sourcecode_nodes(sh, stdlib_doc, stdlib_imports)
         sh.instantiate(_mx_metashade_rotate_vector3)
 
-        input_meta = self._resolve_input_meta(stdlib_doc)
-        params = _build_bsdf_params(sh, input_meta)
+        params = self._build_bsdf_params(sh)
 
         with sh.function(self.func_name)(**params):
             sh // ""
@@ -513,38 +524,29 @@ class Permutation:
                 sh.coat_bsdf.throughput * sh.bsdf.throughput
             )
 
-        param_docs = {name: doc for name, (_type, doc) in input_meta.items()}
         ctx.add_node_impl(
             func_name=self.func_name,
             mx_doc_string="Metashade Standard Surface BSDF",
-            param_docs=param_docs,
+            input_metadata=self._input_metadata,
         )
 
-    def generate_surfaceshader_nodegraph(
-        self,
-        stdlib_doc: mx.Document,
-    ) -> mx.Document:
+    def generate_surfaceshader_nodegraph(self) -> mx.Document:
         """Build the surfaceshader nodegraph that wires the BSDF to a surface.
 
         Produces a nodegraph wiring the BSDF source-code node, emission,
         opacity, and the ``surface`` constructor.
 
-        Args:
-            stdlib_doc: A MaterialX document with the standard library loaded.
-
         Returns a :class:`mx.Document` ready to be written with
         :func:`mx.writeToXmlFile`.
         """
-        input_meta = self._resolve_input_meta(stdlib_doc)
-
         doc = mx.createDocument()
 
         ng = doc.addNodeGraph(self.nodegraph_name)
         ng.setNodeDefString(_SURFACESHADER_NODEDEF)
 
         bsdf_node = ng.addNode(self.bsdf_category, "std_surface", "BSDF")
-        for name, (mtlx_type, _doc) in input_meta.items():
-            bsdf_node.addInput(name, mtlx_type).setInterfaceName(name)
+        for name, metadata in self._input_metadata.items():
+            bsdf_node.addInput(name, metadata.mtlx_type).setInterfaceName(name)
 
         emission_weight = ng.addNode("multiply", "emission_weight", "color3")
         emission_weight.addInput("in1", "color3").setInterfaceName(
@@ -577,8 +579,6 @@ class Permutation:
 
         return doc
 
-Permutation.ALL = Permutation()
-
 
 # ---------------------------------------------------------------------------
 # Codegen constants
@@ -603,15 +603,15 @@ _BSDF_INPUTS = frozenset({
     "metalness",
     "specular", "specular_color", "specular_roughness",
     "specular_IOR", "specular_anisotropy", "specular_rotation",
-    "transmission", "transmission_color", "transmission_extra_roughness",
-    "subsurface", "subsurface_color", "subsurface_radius",
-    "subsurface_scale", "subsurface_anisotropy",
     "sheen", "sheen_color", "sheen_roughness",
     "coat", "coat_color", "coat_roughness", "coat_anisotropy",
     "coat_rotation", "coat_IOR", "coat_normal",
     "coat_affect_color", "coat_affect_roughness",
-    "thin_film_thickness", "thin_film_IOR",
+    "subsurface", "subsurface_color", "subsurface_radius",
+    "subsurface_scale", "subsurface_anisotropy",
     "thin_walled",
+    "transmission", "transmission_color", "transmission_extra_roughness",
+    "thin_film_thickness", "thin_film_IOR",
     "normal", "tangent",
 })
 
@@ -643,26 +643,6 @@ def _acquire_stdlib_sourcecode_nodes(sh, stdlib_doc, node_names):
         for _, impl in sorted(by_file[file_path]):
             acquire_function(sh, impl)
 
-
-def _build_bsdf_params(sh, input_meta):
-    """Build BSDF function params from resolved input metadata.
-
-    Types come from the stock surfaceshader nodedef (via
-    :meth:`Permutation._resolve_input_meta`) so that ``color3`` vs
-    ``vector3`` distinctions are preserved.  ``closureData`` is placed
-    first and the BSDF output is last.
-    """
-    params = {"closureData": sh.ClosureData}
-
-    for name, (mtlx_type, _doc) in input_meta.items():
-        dtype = mtlx_to_metashade_dtype(mtlx_type, sh)
-        assert dtype is not None, (
-            f"Unmappable type for {name}: {mtlx_type}"
-        )
-        params[name] = dtype
-
-    params["bsdf"] = sh.InOut(sh.BSDF)
-    return params
 
 
 def _mx_metashade_rotate_vector3(
