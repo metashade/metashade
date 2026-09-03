@@ -30,6 +30,7 @@ Two-layer architecture:
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import ClassVar
 
 import MaterialX as mx
 
@@ -98,6 +99,32 @@ class Permutation:
     """
     subsurface: bool = True
 
+    _input_meta: ClassVar[dict[str, tuple[str, str]] | None] = None
+
+    @classmethod
+    def _resolve_input_meta(
+        cls, stdlib_doc: mx.Document,
+    ) -> dict[str, tuple[str, str]]:
+        """Resolve BSDF input metadata from the stock surfaceshader nodedef.
+
+        Returns a dict ``{name: (mtlx_type, doc_string)}`` in nodedef
+        declaration order.  The result is cached at class level so the
+        nodedef is loaded only once regardless of how many permutations
+        or generation methods are called.
+        """
+        if cls._input_meta is None:
+            nodedef = stdlib_doc.getNodeDef(_SURFACESHADER_NODEDEF)
+            assert nodedef is not None, (
+                f"Could not find {_SURFACESHADER_NODEDEF}"
+            )
+            meta: dict[str, tuple[str, str]] = {}
+            for inp in nodedef.getActiveInputs():
+                name = inp.getName()
+                if name in _BSDF_INPUTS:
+                    meta[name] = (inp.getType(), inp.getDocString())
+            cls._input_meta = meta
+        return cls._input_meta
+
     @property
     def variant_suffix(self) -> str:
         """Subtractive suffix for file/node naming, e.g. ``_subsurface0``.
@@ -157,7 +184,8 @@ class Permutation:
         _acquire_stdlib_sourcecode_nodes(sh, stdlib_doc, stdlib_imports)
         sh.instantiate(_mx_metashade_rotate_vector3)
 
-        params = _build_bsdf_params(sh)
+        input_meta = self._resolve_input_meta(stdlib_doc)
+        params = _build_bsdf_params(sh, input_meta)
 
         with sh.function(self.func_name)(**params):
             sh // ""
@@ -485,27 +513,37 @@ class Permutation:
                 sh.coat_bsdf.throughput * sh.bsdf.throughput
             )
 
+        param_docs = {name: doc for name, (_type, doc) in input_meta.items()}
         ctx.add_node_impl(
             func_name=self.func_name,
             mx_doc_string="Metashade Standard Surface BSDF",
+            param_docs=param_docs,
         )
 
-    def generate_surfaceshader_nodegraph(self) -> mx.Document:
+    def generate_surfaceshader_nodegraph(
+        self,
+        stdlib_doc: mx.Document,
+    ) -> mx.Document:
         """Build the surfaceshader nodegraph that wires the BSDF to a surface.
 
         Produces a nodegraph wiring the BSDF source-code node, emission,
         opacity, and the ``surface`` constructor.
 
+        Args:
+            stdlib_doc: A MaterialX document with the standard library loaded.
+
         Returns a :class:`mx.Document` ready to be written with
         :func:`mx.writeToXmlFile`.
         """
+        input_meta = self._resolve_input_meta(stdlib_doc)
+
         doc = mx.createDocument()
 
         ng = doc.addNodeGraph(self.nodegraph_name)
         ng.setNodeDefString(_SURFACESHADER_NODEDEF)
 
         bsdf_node = ng.addNode(self.bsdf_category, "std_surface", "BSDF")
-        for name, mtlx_type in _BSDF_INPUTS.items():
+        for name, (mtlx_type, _doc) in input_meta.items():
             bsdf_node.addInput(name, mtlx_type).setInterfaceName(name)
 
         emission_weight = ng.addNode("multiply", "emission_weight", "color3")
@@ -560,27 +598,22 @@ _BASE_STDLIB_IMPORTS = frozenset({
     "artistic_ior",
 })
 
-_BSDF_INPUTS: dict[str, str] = {
-    "base": "float", "base_color": "color3", "diffuse_roughness": "float",
-    "metalness": "float",
-    "specular": "float", "specular_color": "color3",
-    "specular_roughness": "float",
-    "specular_IOR": "float", "specular_anisotropy": "float",
-    "specular_rotation": "float",
-    "sheen": "float", "sheen_color": "color3", "sheen_roughness": "float",
-    "coat": "float", "coat_color": "color3", "coat_roughness": "float",
-    "coat_anisotropy": "float",
-    "coat_rotation": "float", "coat_IOR": "float", "coat_normal": "vector3",
-    "coat_affect_color": "float", "coat_affect_roughness": "float",
-    "subsurface": "float", "subsurface_color": "color3",
-    "subsurface_radius": "color3",
-    "subsurface_scale": "float", "subsurface_anisotropy": "float",
-    "thin_walled": "boolean",
-    "transmission": "float", "transmission_color": "color3",
-    "transmission_extra_roughness": "float",
-    "thin_film_thickness": "float", "thin_film_IOR": "float",
-    "normal": "vector3", "tangent": "vector3",
-}
+_BSDF_INPUTS = frozenset({
+    "base", "base_color", "diffuse_roughness",
+    "metalness",
+    "specular", "specular_color", "specular_roughness",
+    "specular_IOR", "specular_anisotropy", "specular_rotation",
+    "transmission", "transmission_color", "transmission_extra_roughness",
+    "subsurface", "subsurface_color", "subsurface_radius",
+    "subsurface_scale", "subsurface_anisotropy",
+    "sheen", "sheen_color", "sheen_roughness",
+    "coat", "coat_color", "coat_roughness", "coat_anisotropy",
+    "coat_rotation", "coat_IOR", "coat_normal",
+    "coat_affect_color", "coat_affect_roughness",
+    "thin_film_thickness", "thin_film_IOR",
+    "thin_walled",
+    "normal", "tangent",
+})
 
 
 def _acquire_stdlib_sourcecode_nodes(sh, stdlib_doc, node_names):
@@ -611,16 +644,17 @@ def _acquire_stdlib_sourcecode_nodes(sh, stdlib_doc, node_names):
             acquire_function(sh, impl)
 
 
-def _build_bsdf_params(sh):
-    """Build BSDF node params from the hardcoded input type map.
+def _build_bsdf_params(sh, input_meta):
+    """Build BSDF function params from resolved input metadata.
 
-    Types come from :data:`_BSDF_INPUTS` so that ``color3`` vs
-    ``vector3`` distinctions match the stock surfaceshader nodedef.
-    ``closureData`` is placed first and the BSDF output is last.
+    Types come from the stock surfaceshader nodedef (via
+    :meth:`Permutation._resolve_input_meta`) so that ``color3`` vs
+    ``vector3`` distinctions are preserved.  ``closureData`` is placed
+    first and the BSDF output is last.
     """
     params = {"closureData": sh.ClosureData}
 
-    for name, mtlx_type in _BSDF_INPUTS.items():
+    for name, (mtlx_type, _doc) in input_meta.items():
         dtype = mtlx_to_metashade_dtype(mtlx_type, sh)
         assert dtype is not None, (
             f"Unmappable type for {name}: {mtlx_type}"
