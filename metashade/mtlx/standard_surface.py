@@ -107,9 +107,10 @@ class Permutation:
                  subsurface: bool = True):
         self.subsurface = subsurface
         nodedef = stdlib_doc.getNodeDef(_SURFACESHADER_NODEDEF)
-        assert nodedef is not None, (
-            f"Could not find {_SURFACESHADER_NODEDEF}"
-        )
+        if nodedef is None:
+            raise RuntimeError(
+                f"Could not find {_SURFACESHADER_NODEDEF} in stdlib_doc"
+            )
         self._input_metadata: dict[str, InputMetadata] = {}
         for inp in nodedef.getActiveInputs():
             name = inp.getName()
