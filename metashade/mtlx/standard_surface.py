@@ -111,11 +111,13 @@ class Permutation:
             raise RuntimeError(
                 f"Could not find {_SURFACESHADER_NODEDEF} in stdlib_doc"
             )
+        self._stock_nodedef = nodedef
 
         pruned = frozenset().union(*(
             lobe.params for lobe in LOBES
             if not getattr(self, lobe.name)
         ))
+        self._pruned_params = pruned
 
         self._input_metadata: dict[str, InputMetadata] = {}
         for inp in nodedef.getActiveInputs():
@@ -129,6 +131,11 @@ class Permutation:
     def subsurface(self) -> bool:
         """Whether the subsurface lobe is enabled (read-only)."""
         return self._subsurface
+
+    @property
+    def pruned_params(self) -> frozenset[str]:
+        """Parameter names pruned from the BSDF signature (read-only)."""
+        return self._pruned_params
 
     @property
     def variant_suffix(self) -> str:
@@ -158,6 +165,16 @@ class Permutation:
     def nodegraph_name(self) -> str:
         """Nodegraph name for the surfaceshader wiring."""
         return _NODEGRAPH_NAME + self.variant_suffix
+
+    @property
+    def surfaceshader_category(self) -> str:
+        """MaterialX node category for the surfaceshader override."""
+        return _FUNC_NAME_BASE.removeprefix("mx_") + self.variant_suffix
+
+    @property
+    def surfaceshader_nodedef_name(self) -> str:
+        """NodeDef name for the surfaceshader override."""
+        return f"ND_{self.surfaceshader_category}_surfaceshader"
 
     @property
     def surfaceshader_filename(self) -> str:
@@ -543,18 +560,46 @@ class Permutation:
         )
 
     def generate_surfaceshader_nodegraph(self) -> mx.Document:
-        """Build the surfaceshader nodegraph that wires the BSDF to a surface.
+        """Build the surfaceshader nodegraph (and nodedef for pruned variants).
 
-        Produces a nodegraph wiring the BSDF source-code node, emission,
-        opacity, and the ``surface`` constructor.
+        For the full permutation, the nodegraph overrides the stock
+        ``ND_standard_surface_surfaceshader`` directly — no new nodedef
+        is needed.
+
+        Pruned permutations get their own ``surfaceshader`` nodedef
+        (mirroring the stock inputs minus pruned parameters) so that
+        multiple permutations can coexist in the same environment.
 
         Returns a :class:`mx.Document` ready to be written with
         :func:`mx.writeToXmlFile`.
         """
         doc = mx.createDocument()
+        pruned = self._pruned_params
+        is_pruned = bool(pruned)
+
+        if is_pruned:
+            nodedef = doc.addNodeDef(
+                self.surfaceshader_nodedef_name,
+                "surfaceshader",
+                self.surfaceshader_category,
+            )
+            for stock_input in self._stock_nodedef.getActiveInputs():
+                name = stock_input.getName()
+                if name in pruned:
+                    continue
+                nd_input = nodedef.addInput(name, stock_input.getType())
+                value = stock_input.getValueString()
+                if value:
+                    nd_input.setValueString(value)
+                doc_str = stock_input.getDocString()
+                if doc_str:
+                    nd_input.setDocString(doc_str)
 
         ng = doc.addNodeGraph(self.nodegraph_name)
-        ng.setNodeDefString(_SURFACESHADER_NODEDEF)
+        ng.setNodeDefString(
+            self.surfaceshader_nodedef_name if is_pruned
+            else _SURFACESHADER_NODEDEF
+        )
 
         bsdf_node = ng.addNode(self.bsdf_category, "std_surface", "BSDF")
         for name, metadata in self._input_metadata.items():
