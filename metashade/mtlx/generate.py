@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import annotations
+
 import sys
 import abc
 
@@ -87,7 +89,8 @@ class GeneratorContext:
         self,
         func_name: str,
         mx_doc_string: str,
-        nodedef_name: str = None
+        nodedef_name: str = None,
+        input_metadata: dict | None = None,
     ):
         """
         Add a node implementation.
@@ -97,6 +100,9 @@ class GeneratorContext:
             mx_doc_string: Documentation string
             nodedef_name: If provided, reference this existing MaterialX nodedef
                           instead of creating a new one. Used for overrides.
+            input_metadata: Mapping of parameter names to
+                            ``InputMetadata``.  The ``.doc`` field overrides
+                            the generic ``"Input parameter {name}"`` default.
         """
         # Get the function from the generator to access reflection data
         func = getattr(self._sh, func_name)
@@ -128,7 +134,11 @@ class GeneratorContext:
                     output_param.setDocString(f'Output parameter {param_name}')
                 else:
                     input_param = nodedef.addInput(param_name, param_type)
-                    input_param.setDocString(f'Input parameter {param_name}')
+                    metadata = (input_metadata or {}).get(param_name)
+                    doc = metadata.doc if metadata is not None else None
+                    if not doc:
+                        doc = f'Input parameter {param_name}'
+                    input_param.setDocString(doc)
 
         else:
             nodedef = None

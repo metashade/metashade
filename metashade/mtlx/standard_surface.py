@@ -67,6 +67,13 @@ class Lobe:
     nodegraph_inputs: tuple[str, ...] = ()
 
 
+@dataclass(frozen=True)
+class InputMetadata:
+    """MaterialX type and doc string for a BSDF input."""
+    mtlx_type: str
+    doc: str
+
+
 LOBES: tuple[Lobe, ...] = (
     Lobe(
         name="subsurface",
@@ -83,7 +90,6 @@ LOBES: tuple[Lobe, ...] = (
 _LOBES_BY_NAME: dict[str, Lobe] = {lobe.name: lobe for lobe in LOBES}
 
 
-@dataclass(frozen=True)
 class Permutation:
     """Identifies a specific Standard Surface specialization.
 
@@ -96,7 +102,33 @@ class Permutation:
     progressive development — adding coat pruning later does not rename
     existing ``_subsurface0`` variants.
     """
-    subsurface: bool = True
+
+    def __init__(self, stdlib_doc: mx.Document, *,
+                 subsurface: bool = True):
+        self._subsurface = subsurface
+        nodedef = stdlib_doc.getNodeDef(_SURFACESHADER_NODEDEF)
+        if nodedef is None:
+            raise RuntimeError(
+                f"Could not find {_SURFACESHADER_NODEDEF} in stdlib_doc"
+            )
+
+        pruned = frozenset().union(*(
+            lobe.params for lobe in LOBES
+            if not getattr(self, lobe.name)
+        ))
+
+        self._input_metadata: dict[str, InputMetadata] = {}
+        for inp in nodedef.getActiveInputs():
+            name = inp.getName()
+            if name in _BSDF_INPUTS and name not in pruned:
+                self._input_metadata[name] = InputMetadata(
+                    mtlx_type=inp.getType(), doc=inp.getDocString(),
+                )
+
+    @property
+    def subsurface(self) -> bool:
+        """Whether the subsurface lobe is enabled (read-only)."""
+        return self._subsurface
 
     @property
     def variant_suffix(self) -> str:
@@ -111,14 +143,6 @@ class Permutation:
         if not disabled:
             return ""
         return "_" + "_".join(f"{d}0" for d in disabled)
-
-    @property
-    def pruned_params(self) -> frozenset[str]:
-        """BSDF parameters removed from the signature for disabled lobes."""
-        return frozenset().union(*(
-            lobe.params for lobe in LOBES
-            if not getattr(self, lobe.name)
-        ))
 
     @property
     def func_name(self) -> str:
@@ -139,6 +163,25 @@ class Permutation:
     def surfaceshader_filename(self) -> str:
         """Output ``.mtlx`` filename for the surfaceshader nodegraph."""
         return f"{_FUNC_NAME_BASE}{self.variant_suffix}_surfaceshader.mtlx"
+
+    def _build_bsdf_params(self, sh):
+        """Build BSDF function params from resolved input metadata.
+
+        Types come from the stock surfaceshader nodedef so that
+        ``color3`` vs ``vector3`` distinctions are preserved.
+        ``closureData`` is placed first and the BSDF output is last.
+        """
+        params = {"closureData": sh.ClosureData}
+
+        for name, metadata in self._input_metadata.items():
+            dtype = mtlx_to_metashade_dtype(metadata.mtlx_type, sh)
+            assert dtype is not None, (
+                f"Unmappable type for {name}: {metadata.mtlx_type}"
+            )
+            params[name] = dtype
+
+        params["bsdf"] = sh.InOut(sh.BSDF)
+        return params
 
     def generate_bsdf(
         self,
@@ -165,11 +208,7 @@ class Permutation:
         _acquire_stdlib_sourcecode_nodes(sh, stdlib_doc, stdlib_imports)
         sh.instantiate(_mx_metashade_rotate_vector3)
 
-        surfaceshader_nodedef = stdlib_doc.getNodeDef(_SURFACESHADER_NODEDEF)
-        assert surfaceshader_nodedef is not None, (
-            f"Could not find {_SURFACESHADER_NODEDEF}"
-        )
-        params = _build_bsdf_params(sh, surfaceshader_nodedef, self.pruned_params)
+        params = self._build_bsdf_params(sh)
 
         with sh.function(self.func_name)(**params):
             sh // ""
@@ -229,7 +268,7 @@ class Permutation:
                 sh.base_color.clamp(0.0, 1.0).pow(sh.coat_gamma)
             )
 
-            if self.subsurface:
+            if self._subsurface:
                 sh // ""
                 sh // "Coat affect subsurface color"
                 sh.coat_affected_subsurface_color = (
@@ -254,7 +293,7 @@ class Permutation:
                 bsdf=sh.diffuse_bsdf,
             )
 
-            if self.subsurface:
+            if self._subsurface:
                 sh // ""
                 sh // "Subsurface scattering"
                 sh.subsurface_radius_scaled = (
@@ -500,12 +539,10 @@ class Permutation:
         ctx.add_node_impl(
             func_name=self.func_name,
             mx_doc_string="Metashade Standard Surface BSDF",
+            input_metadata=self._input_metadata,
         )
 
-    def generate_surfaceshader_nodegraph(
-        self,
-        stock_nodedef: mx.NodeDef,
-    ) -> mx.Document:
+    def generate_surfaceshader_nodegraph(self) -> mx.Document:
         """Build the surfaceshader nodegraph that wires the BSDF to a surface.
 
         Produces a nodegraph wiring the BSDF source-code node, emission,
@@ -519,13 +556,9 @@ class Permutation:
         ng = doc.addNodeGraph(self.nodegraph_name)
         ng.setNodeDefString(_SURFACESHADER_NODEDEF)
 
-        pruned = self.pruned_params
         bsdf_node = ng.addNode(self.bsdf_category, "std_surface", "BSDF")
-        for inp in stock_nodedef.getActiveInputs():
-            name = inp.getName()
-            if name not in _BSDF_INPUTS or name in pruned:
-                continue
-            bsdf_node.addInput(name, inp.getType()).setInterfaceName(name)
+        for name, metadata in self._input_metadata.items():
+            bsdf_node.addInput(name, metadata.mtlx_type).setInterfaceName(name)
 
         emission_weight = ng.addNode("multiply", "emission_weight", "color3")
         emission_weight.addInput("in1", "color3").setInterfaceName(
@@ -557,8 +590,6 @@ class Permutation:
         ng.addOutput("out", "surfaceshader").setNodeName("surface_ctor")
 
         return doc
-
-Permutation.ALL = Permutation()
 
 
 # ---------------------------------------------------------------------------
@@ -624,29 +655,6 @@ def _acquire_stdlib_sourcecode_nodes(sh, stdlib_doc, node_names):
         for _, impl in sorted(by_file[file_path]):
             acquire_function(sh, impl)
 
-
-def _build_bsdf_params(sh, surfaceshader_nodedef, pruned_params=frozenset()):
-    """Build BSDF node params from a subset of the surfaceshader nodedef inputs.
-
-    Types are derived from the surfaceshader nodedef so that
-    ``color3`` vs ``vector3`` distinctions are preserved in the
-    generated BSDF nodedef.  ``closureData`` is placed first (skipped
-    from the nodedef by ``add_node_impl``) and the BSDF output is last.
-    """
-    params = {"closureData": sh.ClosureData}
-
-    for inp in surfaceshader_nodedef.getActiveInputs():
-        name = inp.getName()
-        if name not in _BSDF_INPUTS or name in pruned_params:
-            continue
-        dtype = mtlx_to_metashade_dtype(inp.getType(), sh)
-        assert dtype is not None, (
-            f"Unmappable type for {name}: {inp.getType()}"
-        )
-        params[name] = dtype
-
-    params["bsdf"] = sh.InOut(sh.BSDF)
-    return params
 
 
 def _mx_metashade_rotate_vector3(
