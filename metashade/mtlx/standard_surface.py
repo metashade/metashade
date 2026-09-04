@@ -105,13 +105,18 @@ class Permutation:
 
     def __init__(self, stdlib_doc: mx.Document, *,
                  subsurface: bool = True):
-        self.subsurface = subsurface
+        self._subsurface = subsurface
         nodedef = stdlib_doc.getNodeDef(_SURFACESHADER_NODEDEF)
         if nodedef is None:
             raise RuntimeError(
                 f"Could not find {_SURFACESHADER_NODEDEF} in stdlib_doc"
             )
-        pruned = self.pruned_params
+
+        pruned = frozenset().union(*(
+            lobe.params for lobe in LOBES
+            if not getattr(self, lobe.name)
+        ))
+
         self._input_metadata: dict[str, InputMetadata] = {}
         for inp in nodedef.getActiveInputs():
             name = inp.getName()
@@ -119,6 +124,11 @@ class Permutation:
                 self._input_metadata[name] = InputMetadata(
                     mtlx_type=inp.getType(), doc=inp.getDocString(),
                 )
+
+    @property
+    def subsurface(self) -> bool:
+        """Whether the subsurface lobe is enabled (read-only)."""
+        return self._subsurface
 
     @property
     def variant_suffix(self) -> str:
@@ -133,14 +143,6 @@ class Permutation:
         if not disabled:
             return ""
         return "_" + "_".join(f"{d}0" for d in disabled)
-
-    @property
-    def pruned_params(self) -> frozenset[str]:
-        """BSDF parameters removed from the signature for disabled lobes."""
-        return frozenset().union(*(
-            lobe.params for lobe in LOBES
-            if not getattr(self, lobe.name)
-        ))
 
     @property
     def func_name(self) -> str:
@@ -266,7 +268,7 @@ class Permutation:
                 sh.base_color.clamp(0.0, 1.0).pow(sh.coat_gamma)
             )
 
-            if self.subsurface:
+            if self._subsurface:
                 sh // ""
                 sh // "Coat affect subsurface color"
                 sh.coat_affected_subsurface_color = (
@@ -291,7 +293,7 @@ class Permutation:
                 bsdf=sh.diffuse_bsdf,
             )
 
-            if self.subsurface:
+            if self._subsurface:
                 sh // ""
                 sh // "Subsurface scattering"
                 sh.subsurface_radius_scaled = (
@@ -554,7 +556,6 @@ class Permutation:
         ng = doc.addNodeGraph(self.nodegraph_name)
         ng.setNodeDefString(_SURFACESHADER_NODEDEF)
 
-        pruned = self.pruned_params
         bsdf_node = ng.addNode(self.bsdf_category, "std_surface", "BSDF")
         for name, metadata in self._input_metadata.items():
             bsdf_node.addInput(name, metadata.mtlx_type).setInterfaceName(name)
