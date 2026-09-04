@@ -14,11 +14,6 @@
     <input name="transmission" type="float" doc="Transmission of light through the surface for materials such as glass or water. The greater the value the more transparent the material." />
     <input name="transmission_color" type="color3" doc="Color tint on the transmitted light." />
     <input name="transmission_extra_roughness" type="float" doc="Additional roughness on top of specular roughness. Positive values blur refractions more than reflections, and negative values blur refractions less." />
-    <input name="subsurface" type="float" doc="The blend between diffuse reflection and subsurface scattering. A value of 1.0 indicates full subsurface scattering and a value 0 for diffuse reflection only." />
-    <input name="subsurface_color" type="color3" doc="The color of the subsurface scattering effect." />
-    <input name="subsurface_radius" type="color3" doc="The mean free path. The distance which light can travel before being scattered inside the surface." />
-    <input name="subsurface_scale" type="float" doc="Scalar weight for the subsurface radius value." />
-    <input name="subsurface_anisotropy" type="float" doc="The direction of subsurface scattering. 0 scatters light evenly, positive values scatter forward and negative values scatter backward." />
     <input name="sheen" type="float" doc="The weight of a sheen layer that can be used to approximate microfibers or fabrics such as velvet and satin." />
     <input name="sheen_color" type="color3" doc="The color of the sheen layer." />
     <input name="sheen_roughness" type="float" doc="The roughness of the sheen layer." />
@@ -33,7 +28,6 @@
     <input name="coat_affect_roughness" type="float" doc="Controls the roughness of the specular reflection in the layers below the clear-coat." />
     <input name="thin_film_thickness" type="float" doc="The thickness of the thin film layer on a surface. Use for materials such as multitone car paint or soap bubbles (in nanometers)." />
     <input name="thin_film_IOR" type="float" doc="The index of refraction of the medium surrounding the material." />
-    <input name="thin_walled" type="boolean" doc="If true the surface is double-sided and represents an infinitely thin shell. Suitable for thin objects such as tree leaves or paper." />
     <input name="normal" type="vector3" doc="Input geometric normal" />
     <input name="tangent" type="vector3" doc="Input geometric tangent" />
     <output name="bsdf" type="BSDF" doc="Output parameter bsdf" />
