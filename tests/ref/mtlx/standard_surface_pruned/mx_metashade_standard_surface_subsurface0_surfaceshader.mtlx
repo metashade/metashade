@@ -15,11 +15,6 @@
       <input name="transmission" type="float" interfacename="transmission" />
       <input name="transmission_color" type="color3" interfacename="transmission_color" />
       <input name="transmission_extra_roughness" type="float" interfacename="transmission_extra_roughness" />
-      <input name="subsurface" type="float" interfacename="subsurface" />
-      <input name="subsurface_color" type="color3" interfacename="subsurface_color" />
-      <input name="subsurface_radius" type="color3" interfacename="subsurface_radius" />
-      <input name="subsurface_scale" type="float" interfacename="subsurface_scale" />
-      <input name="subsurface_anisotropy" type="float" interfacename="subsurface_anisotropy" />
       <input name="sheen" type="float" interfacename="sheen" />
       <input name="sheen_color" type="color3" interfacename="sheen_color" />
       <input name="sheen_roughness" type="float" interfacename="sheen_roughness" />
@@ -34,7 +29,6 @@
       <input name="coat_affect_roughness" type="float" interfacename="coat_affect_roughness" />
       <input name="thin_film_thickness" type="float" interfacename="thin_film_thickness" />
       <input name="thin_film_IOR" type="float" interfacename="thin_film_IOR" />
-      <input name="thin_walled" type="boolean" interfacename="thin_walled" />
       <input name="normal" type="vector3" interfacename="normal" />
       <input name="tangent" type="vector3" interfacename="tangent" />
     </metashade_standard_surface_subsurface0_bsdf>

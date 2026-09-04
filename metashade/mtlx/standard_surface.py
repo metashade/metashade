@@ -113,6 +113,14 @@ class Permutation:
         return "_" + "_".join(f"{d}0" for d in disabled)
 
     @property
+    def pruned_params(self) -> frozenset[str]:
+        """BSDF parameters removed from the signature for disabled lobes."""
+        return frozenset().union(*(
+            lobe.params for lobe in LOBES
+            if not getattr(self, lobe.name)
+        ))
+
+    @property
     def func_name(self) -> str:
         """Full function name for the generated BSDF node."""
         return _FUNC_NAME_BASE + self.variant_suffix + _FUNC_NAME_TYPE
@@ -161,7 +169,7 @@ class Permutation:
         assert surfaceshader_nodedef is not None, (
             f"Could not find {_SURFACESHADER_NODEDEF}"
         )
-        params = _build_bsdf_params(sh, surfaceshader_nodedef)
+        params = _build_bsdf_params(sh, surfaceshader_nodedef, self.pruned_params)
 
         with sh.function(self.func_name)(**params):
             sh // ""
@@ -511,10 +519,11 @@ class Permutation:
         ng = doc.addNodeGraph(self.nodegraph_name)
         ng.setNodeDefString(_SURFACESHADER_NODEDEF)
 
+        pruned = self.pruned_params
         bsdf_node = ng.addNode(self.bsdf_category, "std_surface", "BSDF")
         for inp in stock_nodedef.getActiveInputs():
             name = inp.getName()
-            if name not in _BSDF_INPUTS:
+            if name not in _BSDF_INPUTS or name in pruned:
                 continue
             bsdf_node.addInput(name, inp.getType()).setInterfaceName(name)
 
@@ -616,7 +625,7 @@ def _acquire_stdlib_sourcecode_nodes(sh, stdlib_doc, node_names):
             acquire_function(sh, impl)
 
 
-def _build_bsdf_params(sh, surfaceshader_nodedef):
+def _build_bsdf_params(sh, surfaceshader_nodedef, pruned_params=frozenset()):
     """Build BSDF node params from a subset of the surfaceshader nodedef inputs.
 
     Types are derived from the surfaceshader nodedef so that
@@ -628,7 +637,7 @@ def _build_bsdf_params(sh, surfaceshader_nodedef):
 
     for inp in surfaceshader_nodedef.getActiveInputs():
         name = inp.getName()
-        if name not in _BSDF_INPUTS:
+        if name not in _BSDF_INPUTS or name in pruned_params:
             continue
         dtype = mtlx_to_metashade_dtype(inp.getType(), sh)
         assert dtype is not None, (
