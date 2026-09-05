@@ -1,6 +1,9 @@
 # metashade.mtlx
 
-This package prototypes extending [MaterialX](https://github.com/AcademySoftwareFoundation/MaterialX) shader code generation with Metashade.
+This package integrates Metashade with [MaterialX](https://github.com/AcademySoftwareFoundation/MaterialX). It aims to extend MaterialX's nodegraph-centric codegen and provide the following benefits:
+* a mechanism for implementing source control nodes for multiple diverse target languages from a single source;
+* flexible control flow, impossible or hard to express in node graphs;
+* metaprogramming, in particular enabling static specialization for optimization.
 
 ## Node Implementations as a Plugin Mechanism
 
