@@ -1,11 +1,13 @@
 # metashade.mtlx
 
 This package integrates Metashade with [MaterialX](https://github.com/AcademySoftwareFoundation/MaterialX). It aims to extend MaterialX's nodegraph-centric codegen and provide the following benefits:
-* a mechanism for implementing source control nodes for multiple diverse target languages from a single source;
+* a single-source mechanism for implementing source code nodes for multiple diverse target languages;
 * flexible control flow, impossible or hard to express in node graphs;
-* metaprogramming, in particular enabling static specialization for optimization.
+* metaprogramming, enabling optimization.
 
-## Node Implementations as a Plugin Mechanism
+## MaterialX architecture recap
+
+### Node Implementations as a Plugin Mechanism
 
 To understand how Metashade can extend MaterialX codegen, it is crucial to distinguish between MaterialX concepts of Node **Definitions** and Node **Implementations**.
 
@@ -16,7 +18,7 @@ Crucially, **Implementations reference NodeDefs, not the other way around.**
 
 This architecture allows Metashade to generate either new MaterialX node definitions complete with implementations, or new MaterialX node implementations for existing MaterialX nodes, without modifying the core MaterialX definitions.
 
-## MaterialX Node Implementation Code Generation mechanisms
+### MaterialX Node Implementation Code Generation mechanisms
 
 In order to understand how Metashade's codegen can integrate with MaterialX's, let's first discuss how MaterialX generates code for individual nodes.
 
