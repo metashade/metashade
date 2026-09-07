@@ -7,9 +7,13 @@ This package integrates Metashade with [MaterialX](https://github.com/AcademySof
 
 ## MaterialX architecture recap
 
-In MaterialX, **node deinitions**, implemented by the `NodeDef` C++ class and serialized as `<nodedef>` XML elements, define the interface of nodes of a given type from the perspective of node graphs and visual editors: node names, names and types on inputs and outputs etc.
+In MaterialX, **node definitions**, represented by the `NodeDef` C++ class and serialized as `<nodedef>` XML elements, define the interface of nodes of a given type from the perspective of node graphs and visual editors (category names, input/output port names, types, and default values).
 
-The actual codegen implementations for the node definitions is defined in separate **node implementation** objects - C++ classes derived from `ShaderNodeImpl` and serialized as either `<implementation>` or `<nodegraph>`. Crucially, **Implementations reference NodeDefs, not the other way around**, which makes it possible to override implementations without modifying node definitions.
+The actual code generation logic is defined in separate **node implementation** declarations:
+* In the **document model**, implementations are serialized as either `<implementation>` (C++ `Implementation`) or `<nodegraph>` (C++ `NodeGraph`).
+* In the **shader generator**, these declarations are bound to C++ classes derived from `ShaderNodeImpl` (such as `SourceCodeNode` for static files/inlines, `CompoundNode` for subgraphs, or custom C++ classes).
+
+Crucially, **Implementations reference NodeDefs, not the other way around**, which makes it possible to override implementations without modifying upstream node definitions.
 
 ### MaterialX Node Implementation Code Generation mechanisms
 
