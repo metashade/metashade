@@ -1,22 +1,15 @@
 # metashade.mtlx
 
 This package integrates Metashade with [MaterialX](https://github.com/AcademySoftwareFoundation/MaterialX). It aims to extend MaterialX's nodegraph-centric codegen and provide the following benefits:
-* a single-source mechanism for implementing source code nodes for multiple diverse target languages;
+* a single-source mechanism for implementing source code nodes for diverse target languages;
 * flexible control flow, impossible or hard to express in node graphs;
 * metaprogramming, enabling optimization.
 
 ## MaterialX architecture recap
 
-### Node Implementations as a Plugin Mechanism
+In MaterialX, **node deinitions**, implemented by the `NodeDef` C++ class and serialized as `<nodedef>` XML elements, define the interface of nodes of a given type from the perspective of node graphs and visual editors: node names, names and types on inputs and outputs etc.
 
-To understand how Metashade can extend MaterialX codegen, it is crucial to distinguish between MaterialX concepts of Node **Definitions** and Node **Implementations**.
-
-* **NodeDef (`<nodedef>`):** The interface. It defines inputs, outputs, and types (e.g., `ND_burley_diffuse_bsdf`).
-* **Implementation (`<implementation>`):** The logic. It points to source code or a nodegraph that implements the computations.
-
-Crucially, **Implementations reference NodeDefs, not the other way around.**
-
-This architecture allows Metashade to generate either new MaterialX node definitions complete with implementations, or new MaterialX node implementations for existing MaterialX nodes, without modifying the core MaterialX definitions.
+The actual codegen implementations for the node definitions is defined in separate **node implementation** objects - C++ classes derived from `ShaderNodeImpl` and serialized as either `<implementation>` or `<nodegraph>`. Crucially, **Implementations reference NodeDefs, not the other way around**, which makes it possible to override implementations without modifying node definitions.
 
 ### MaterialX Node Implementation Code Generation mechanisms
 
