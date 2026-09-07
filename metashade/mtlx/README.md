@@ -1,19 +1,21 @@
 # metashade.mtlx
 
-This package prototypes extending [MaterialX](https://github.com/AcademySoftwareFoundation/MaterialX) shader code generation with Metashade.
+This package integrates Metashade with [MaterialX](https://github.com/AcademySoftwareFoundation/MaterialX). It aims to extend MaterialX's nodegraph-centric codegen and provide the following benefits:
+* a single-source mechanism for implementing source code nodes for diverse target languages;
+* flexible control flow, impossible or hard to express in node graphs;
+* metaprogramming, enabling optimization.
 
-## Node Implementations as a Plugin Mechanism
+## MaterialX architecture recap
 
-To understand how Metashade can extend MaterialX codegen, it is crucial to distinguish between MaterialX concepts of Node **Definitions** and Node **Implementations**.
+In MaterialX, **node definitions**, represented by the `NodeDef` C++ class and serialized as `<nodedef>` XML elements, define the interface of nodes of a given type from the perspective of node graphs and visual editors (category names, input/output port names, types, and default values).
 
-* **NodeDef (`<nodedef>`):** The interface. It defines inputs, outputs, and types (e.g., `ND_burley_diffuse_bsdf`).
-* **Implementation (`<implementation>`):** The logic. It points to source code or a nodegraph that implements the computations.
+The actual code generation logic is defined in separate **node implementation** declarations:
+* In the **document model**, implementations are serialized as either `<implementation>` (C++ `Implementation`) or `<nodegraph>` (C++ `NodeGraph`).
+* In the **shader generator**, these declarations are bound to C++ classes derived from `ShaderNodeImpl` (such as `SourceCodeNode` for static files/inlines, `CompoundNode` for subgraphs, or custom C++ classes).
 
-Crucially, **Implementations reference NodeDefs, not the other way around.**
+Crucially, **Implementations reference NodeDefs, not the other way around**, which makes it possible to override implementations without modifying upstream node definitions.
 
-This architecture allows Metashade to generate either new MaterialX node definitions complete with implementations, or new MaterialX node implementations for existing MaterialX nodes, without modifying the core MaterialX definitions.
-
-## MaterialX Node Implementation Code Generation mechanisms
+### MaterialX Node Implementation Code Generation mechanisms
 
 In order to understand how Metashade's codegen can integrate with MaterialX's, let's first discuss how MaterialX generates code for individual nodes.
 
