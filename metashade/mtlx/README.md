@@ -43,13 +43,6 @@ classDiagram
     ShaderNodeImpl <|-- SourceCodeNode : "1. Inline + 2. Function"
     ShaderNodeImpl <|-- CompoundNode : "3. Nodegraph"
     ShaderNodeImpl <|-- CustomImpl : "4. Dynamic C++"
-    
-    note for SourceCodeNode "Reads .inline files or
-    function source (.osl, .glsl)"
-    note for CompoundNode "Wraps a nodegraph,
-    recursively emits nodes"
-    note for CustomImpl "User-defined subclass
-    for dynamic code emission"
 ```
 
 ### Composition of Node Implementation Types
@@ -82,11 +75,9 @@ classDiagram
 
 In stock MaterialX, the composition landscape is governed by clear roles:
 
-* **`CompoundNode` (`<nodegraph nodedef="...">`) — The Compositional Container:**
-  A compound node encapsulates an internal `ShaderGraph`. It can recursively contain and instantiate other `CompoundNode`s (forming nested compound hierarchies) as well as leaf `SourceCodeNode`s and `CustomImpl` nodes. During shader generation, MaterialX's `ShaderGraph` traverses this hierarchy, resolving port dependencies and ordering operations into a linear execution schedule.
+* `CompoundNode` (`<nodegraph nodedef="...">`) encapsulates an internal `ShaderGraph`. It can recursively contain and instantiate other `CompoundNode`s as well as leaf `SourceCodeNode`s and `CustomImpl` nodes.
 
-* **`SourceCodeNode` (`<implementation file="..." function="...">`) — The Leaf Execution Unit:**
-  A source code node emits a function call or inline code snippet directly into the shader output. In stock MaterialX, **source code nodes are strictly leaves in the shader DAG**: they have no internal `ShaderGraph` and cannot instantiate, wrap, or compose other nodes.
+* `SourceCodeNode` (`<implementation file="..." function="...">`) emits a function call or inline code snippet directly into the shader output. In stock MaterialX, **source code nodes are strictly leaves in the shader DAG**: they have no internal `ShaderGraph` and cannot wrap other nodes.
 
 ### Target Shading Languages and Code Generation Landscape
 
@@ -127,7 +118,7 @@ Rather than maintaining separate shading libraries for each real-time shading la
 * **GLSL (`genglsl`)**: The base hardware target implemented by `GlslShaderGenerator`. Standard libraries contain 131 `.glsl` source files.
 * **OpenGL ES (`essl`)**: Inherits from `genglsl` in XML target definitions (`<targetdef name="essl" inherit="genglsl" />`) and subclasses `GlslShaderGenerator` in C++, adjusting version directives and precision qualifiers.
 * **Vulkan GLSL (`VkShaderGenerator`)**: A C++ subclass of `GlslShaderGenerator` emitting `#version 450` Vulkan GLSL with explicit descriptor sets and binding locations.
-* **WGSL (`WgslShaderGenerator`)**: A 68-line C++ subclass of `VkShaderGenerator`. It does **not** emit WGSL syntax; it generates Vulkan GLSL 450 with split texture and sampler bindings (`texture2D name_texture, sampler name_sampler`), relying on downstream tools outside MaterialX (such as Naga, Tint, or SPIRV-Cross) to transpile the resulting shader to WGSL.
+* **WGSL (`WgslShaderGenerator`)**: A 68-line C++ subclass of `VkShaderGenerator`. It does **not** emit WGSL syntax; it generates Vulkan GLSL 450 with split texture and sampler bindings (`texture2D name_texture, sampler name_sampler`), relying on downstream tools outside MaterialX (such as Naga or Tint) to transpile the resulting shader to WGSL.
 * **Metal Shading Language (`genmsl`)**: Targets inherit from `genglsl` in XML and point directly to `.glsl` files. After emitting the shader stages, `MslShaderGenerator` runs `MetalizeGeneratedShader()`—a C++ post-processing pass that rewrites parameter references (`out/inout Type` to `thread Type &`) and performs string-token replacements (`vec*` to `float*`, `mat4` to `float4x4`, `sampler2D` to `MetalTexture`, `dFdx/dFdy` to `dfdx/dfdy`).
 * **Slang (`genslang`)**: Similarly inherits from `genglsl` in XML (`<targetdef name="genslang" inherit="genglsl" />`) and reuses standard `.glsl` files directly. After stage emission, `SlangShaderGenerator` runs `SlangSyntaxFromGlsl()`, a token-replacement pass converting GLSL intrinsics to Slang/HLSL syntax (`mix` to `lerp`, `fract` to `frac`, `vec*` to `float*`), along with ad-hoc workarounds for specific GLSL shaders (e.g. replacing `const float` with `static const float`).
 
