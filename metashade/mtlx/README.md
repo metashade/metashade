@@ -23,7 +23,7 @@ MaterialX uses [4 different codegen approaches](https://github.com/AcademySoftwa
 
 1. **Inline Expression** — The node implementation is specified as a simple inline expression directly in the node definition. This is used for straightforward operations that can be expressed in a single line (e.g., `{{in1}} + {{in2}}` for an add node). The expression uses the target shading language syntax with input ports wrapped in double curly brackets.
 
-2. **Shading Language Function** — The node is implemented as a function written in the target language (GLSL, OSL, etc.), with the source code stored in a separate file. The function signature matches the nodedef's interface of typed inputs and outputs.
+2. **Shading Language Function** — The node is implemented as a function written in the target language, with the source code stored in a separate file. The function signature matches the nodedef's interface of typed inputs and outputs.
 
 3. **Nodegraph Implementation** — The node is implemented as a compound nodegraph composed of other nodes.
 
@@ -54,7 +54,7 @@ classDiagram
 
 ### Composition of Node Implementation Types
 
-Beyond the class hierarchy, it is essential to understand how these implementations **compose** with one another in stock MaterialX during shader generation.
+The different MaterialX node implementation types can be composited in the following ways:
 
 ```mermaid
 classDiagram
@@ -75,11 +75,9 @@ classDiagram
     CompoundNode *-- CustomImpl : composes (dynamic C++ nodes)
 ```
 
-In stock MaterialX, the composition landscape is governed by clear roles:
-
 * `CompoundNode` (`<nodegraph nodedef="...">`) encapsulates an internal `ShaderGraph`. It can recursively contain and instantiate other `CompoundNode`s as well as leaf `SourceCodeNode`s and `CustomImpl` nodes.
 
-* `SourceCodeNode` (`<implementation file="..." function="...">`) emits a function call or inline code snippet directly into the shader output. In stock MaterialX, **source code nodes are strictly leaves in the shader DAG**: they have no internal `ShaderGraph` and cannot wrap other nodes.
+* `SourceCodeNode` (`<implementation file="..." function="...">`) instances are **strictly leaves in the shader DAG**: they have no internal `ShaderGraph` and cannot wrap other nodes.
 
 ### Target Shading Languages and Code Generation Landscape
 
