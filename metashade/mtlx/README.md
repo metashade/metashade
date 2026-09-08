@@ -9,9 +9,9 @@ This package integrates Metashade with [MaterialX](https://github.com/AcademySof
 
 In MaterialX, **node definitions**, represented by the `NodeDef` C++ class and serialized as `<nodedef>` XML elements, define the interface of nodes of a given type from the perspective of node graphs and visual editors (category names, input/output port names, types, and default values).
 
-The actual code generation logic is defined in separate **node implementation** declarations:
-* In the **document model**, implementations are serialized as either `<implementation>` (C++ `Implementation`) or `<nodegraph>` (C++ `NodeGraph`).
-* In the **shader generator**, these declarations are bound to C++ classes derived from `ShaderNodeImpl` (such as `SourceCodeNode` for static files/inlines, `CompoundNode` for subgraphs, or custom C++ classes).
+The actual codegen implementations for the node definitions are defined in separate **node implementation** objects:
+* in the document model, serialized as either `<implementation>` (class `Implementation`) or `<nodegraph>` (class `NodeGraph`).
+* in codegen, implemented by C++ classes derived from `ShaderNodeImpl`.
 
 Crucially, **Implementations reference NodeDefs, not the other way around**, which makes it possible to override implementations without modifying upstream node definitions.
 
@@ -25,9 +25,9 @@ MaterialX uses [4 different codegen approaches](https://github.com/AcademySoftwa
 
 2. **Shading Language Function** — The node is implemented as a function written in the target language (GLSL, OSL, etc.), with the source code stored in a separate file. The function signature matches the nodedef's interface of typed inputs and outputs.
 
-3. **Nodegraph Implementation** — The node is implemented as a compound nodegraph composed of other nodes. This is useful for creating reusable compound operations or compatibility graphs for unknown/proprietary nodes.
+3. **Nodegraph Implementation** — The node is implemented as a compound nodegraph composed of other nodes.
 
-4. **Dynamic Code Generation (C++)** — A C++ class derived from `ShaderNodeImpl` handles the implementation, emitting code programmatically during shader generation. This is used when static source code isn't sufficient — for example, when code needs to be customized based on node parameters, or when vertex streams and uniforms need to be created dynamically.
+4. **Dynamic Code Generation (C++)** — A C++ class derived from `ShaderNodeImpl` handles the implementation, emitting code programmatically during shader generation. Used when static source code isn't sufficient — for example, when code needs to be customized based on node parameters, or when vertex streams and uniforms need to be created dynamically.
 
 ### Key Implementation Classes
 
@@ -162,7 +162,7 @@ To integrate with existing pipelines, the generated BSDF implementation can over
 1. Metashade generates the leaf BSDF source code node (`metashade_standard_surface_bsdf`).
 2. A companion compound `<nodegraph>` (`NG_metashade_standard_surface`) exposes the `ND_standard_surface_surfaceshader` interface, instantiates the leaf BSDF node, and connects its output to `ND_surface`.
 
-Because MaterialX implementations reference NodeDefs, this cleanly overrides the stock implementation without modifying upstream definitions.
+Because MaterialX implementations reference NodeDefs, this cleanly overrides the stock implementation without modifying definitions.
 
 ### 4. Design-Time Permutations (Lobe Pruning)
 
