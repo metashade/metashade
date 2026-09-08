@@ -43,6 +43,13 @@ classDiagram
     ShaderNodeImpl <|-- SourceCodeNode : "1. Inline + 2. Function"
     ShaderNodeImpl <|-- CompoundNode : "3. Nodegraph"
     ShaderNodeImpl <|-- CustomImpl : "4. Dynamic C++"
+    
+    note for SourceCodeNode "Reads .inline files or
+    function source (.osl, .glsl)"
+    note for CompoundNode "Wraps a nodegraph,
+    recursively emits nodes"
+    note for CustomImpl "User-defined subclass
+    for dynamic code emission"
 ```
 
 ### Composition of Node Implementation Types
@@ -66,11 +73,6 @@ classDiagram
     CompoundNode *-- CompoundNode : nests (compound subgraphs)
     CompoundNode *-- SourceCodeNode : composes (leaf operations)
     CompoundNode *-- CustomImpl : composes (dynamic C++ nodes)
-
-    note for SourceCodeNode "Leaf execution unit: cannot compose
-    other nodes in stock MaterialX"
-    note for CompoundNode "Compositional container: wraps a nodegraph
-    composing leaves and nested subgraphs"
 ```
 
 In stock MaterialX, the composition landscape is governed by clear roles:
