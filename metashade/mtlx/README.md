@@ -81,7 +81,7 @@ classDiagram
 
 ### Target Shading Languages and Code Generation Landscape
 
-While `NodeDef`s define an abstract interface across the ecosystem, MaterialX does not have a unified, cross-language compiler for source code nodes. Instead, code generation targets are divided into a **GLSL-centric real-time cluster** and **isolated offline raytracing targets**:
+While MaterialX node graphs provide a cross-platform codegen mechanism for compositing nodes together, source code nodes are either written directly in the target language, or use ad-hoc, non-graph ways to convert one target language to another.
 
 ```mermaid
 graph TD
