@@ -72,6 +72,7 @@ class InputMetadata:
     mtlx_type: str
     doc: str
     default_value: str = ""
+    defaultgeomprop: str = ""
 
 
 LOBES: tuple[Lobe, ...] = (
@@ -126,6 +127,7 @@ class Permutation:
                     mtlx_type=inp.getType(),
                     doc=inp.getDocString(),
                     default_value=inp.getValueString(),
+                    defaultgeomprop=inp.getAttribute("defaultgeomprop"),
                 )
 
         self._surfaceshader_category = \
@@ -574,6 +576,10 @@ class Permutation:
                 nodedef_input = nodedef.addInput(name, meta.mtlx_type)
                 if meta.default_value:
                     nodedef_input.setValueString(meta.default_value)
+                if meta.defaultgeomprop:
+                    nodedef_input.setAttribute(
+                        "defaultgeomprop", meta.defaultgeomprop,
+                    )
                 if meta.doc:
                     nodedef_input.setDocString(meta.doc)
 
