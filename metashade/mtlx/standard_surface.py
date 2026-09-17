@@ -44,7 +44,7 @@ _FUNC_NAME_BASE = "mx_metashade_standard_surface"
 _FUNC_NAME_TYPE = "_bsdf"
 FUNC_NAME = _FUNC_NAME_BASE + _FUNC_NAME_TYPE
 
-_SURFACESHADER_NODEDEF = "ND_standard_surface_surfaceshader"
+_STDLIB_SURFACESHADER_NODEDEF = "ND_standard_surface_surfaceshader"
 _NODEGRAPH_NAME = "NG_metashade_standard_surface"
 
 
@@ -69,9 +69,9 @@ class Lobe:
 
 @dataclass(frozen=True)
 class InputMetadata:
-    """MaterialX type and doc string for a BSDF input."""
     mtlx_type: str
     doc: str
+    default_value: str = ""
 
 
 LOBES: tuple[Lobe, ...] = (
@@ -106,24 +106,35 @@ class Permutation:
     def __init__(self, stdlib_doc: mx.Document, *,
                  subsurface: bool = True):
         self._subsurface = subsurface
-        nodedef = stdlib_doc.getNodeDef(_SURFACESHADER_NODEDEF)
-        if nodedef is None:
+
+        stdlib_surfaceshader = stdlib_doc.getNodeDef(_STDLIB_SURFACESHADER_NODEDEF)
+        if stdlib_surfaceshader is None:
             raise RuntimeError(
-                f"Could not find {_SURFACESHADER_NODEDEF} in stdlib_doc"
+                f"Could not find {_STDLIB_SURFACESHADER_NODEDEF} in stdlib_doc"
             )
 
-        pruned = frozenset().union(*(
+        pruned_inputs = frozenset().union(*(
             lobe.params for lobe in LOBES
             if not getattr(self, lobe.name)
         ))
 
-        self._input_metadata: dict[str, InputMetadata] = {}
-        for inp in nodedef.getActiveInputs():
-            name = inp.getName()
-            if name in _BSDF_INPUTS and name not in pruned:
-                self._input_metadata[name] = InputMetadata(
-                    mtlx_type=inp.getType(), doc=inp.getDocString(),
+        self._inputs: dict[str, InputMetadata] = {}
+        for inp in stdlib_surfaceshader.getActiveInputs():
+            input_name = inp.getName()
+            if input_name not in pruned_inputs:
+                self._inputs[input_name] = InputMetadata(
+                    mtlx_type=inp.getType(),
+                    doc=inp.getDocString(),
+                    default_value=inp.getValueString(),
                 )
+
+        self._surfaceshader_category = \
+            _FUNC_NAME_BASE.removeprefix("mx_") + self.name_suffix
+        
+        self._surfaceshader_nodedef_name = (
+            f"ND_{self._surfaceshader_category}_surfaceshader"
+            if self.name_suffix else _STDLIB_SURFACESHADER_NODEDEF
+        )
 
     @property
     def subsurface(self) -> bool:
@@ -131,7 +142,7 @@ class Permutation:
         return self._subsurface
 
     @property
-    def variant_suffix(self) -> str:
+    def name_suffix(self) -> str:
         """Subtractive suffix for file/node naming, e.g. ``_subsurface0``.
 
         Returns an empty string for the full permutation (all lobes on).
@@ -147,7 +158,7 @@ class Permutation:
     @property
     def func_name(self) -> str:
         """Full function name for the generated BSDF node."""
-        return _FUNC_NAME_BASE + self.variant_suffix + _FUNC_NAME_TYPE
+        return _FUNC_NAME_BASE + self.name_suffix + _FUNC_NAME_TYPE
 
     @property
     def bsdf_category(self) -> str:
@@ -157,23 +168,20 @@ class Permutation:
     @property
     def nodegraph_name(self) -> str:
         """Nodegraph name for the surfaceshader wiring."""
-        return _NODEGRAPH_NAME + self.variant_suffix
+        return _NODEGRAPH_NAME + self.name_suffix
 
     @property
     def surfaceshader_filename(self) -> str:
         """Output ``.mtlx`` filename for the surfaceshader nodegraph."""
-        return f"{_FUNC_NAME_BASE}{self.variant_suffix}_surfaceshader.mtlx"
+        return f"{_FUNC_NAME_BASE}{self.name_suffix}_surfaceshader.mtlx"
 
-    def _build_bsdf_params(self, sh):
-        """Build BSDF function params from resolved input metadata.
-
-        Types come from the stock surfaceshader nodedef so that
-        ``color3`` vs ``vector3`` distinctions are preserved.
-        ``closureData`` is placed first and the BSDF output is last.
-        """
+    def _create_bsdf_function(self, sh):
         params = {"closureData": sh.ClosureData}
 
-        for name, metadata in self._input_metadata.items():
+        for name, metadata in self._inputs.items():
+            if name not in _BSDF_INPUTS:
+                continue
+
             dtype = mtlx_to_metashade_dtype(metadata.mtlx_type, sh)
             assert dtype is not None, (
                 f"Unmappable type for {name}: {metadata.mtlx_type}"
@@ -181,7 +189,7 @@ class Permutation:
             params[name] = dtype
 
         params["bsdf"] = sh.InOut(sh.BSDF)
-        return params
+        return sh.function(self.func_name)(**params)
 
     def generate_bsdf(
         self,
@@ -208,9 +216,7 @@ class Permutation:
         _acquire_stdlib_sourcecode_nodes(sh, stdlib_doc, stdlib_imports)
         sh.instantiate(_mx_metashade_rotate_vector3)
 
-        params = self._build_bsdf_params(sh)
-
-        with sh.function(self.func_name)(**params):
+        with self._create_bsdf_function(sh):
             sh // ""
             sh // "Coat affect roughness: blend specular roughness toward 1.0"
             sh.coat_roughness_factor = (
@@ -539,40 +545,61 @@ class Permutation:
         ctx.add_node_impl(
             func_name=self.func_name,
             mx_doc_string="Metashade Standard Surface BSDF",
-            input_metadata=self._input_metadata,
+            input_metadata=self._inputs,
         )
 
     def generate_surfaceshader_nodegraph(self) -> mx.Document:
-        """Build the surfaceshader nodegraph that wires the BSDF to a surface.
+        """Build the surfaceshader nodegraph (and nodedef for pruned variants).
 
-        Produces a nodegraph wiring the BSDF source-code node, emission,
-        opacity, and the ``surface`` constructor.
+        For the full permutation, the nodegraph overrides the stock
+        ``ND_standard_surface_surfaceshader`` directly — no new nodedef
+        is needed.
+
+        Pruned permutations get their own ``surfaceshader`` nodedef
+        (mirroring the stock inputs minus pruned parameters) so that
+        multiple permutations can coexist in the same environment.
 
         Returns a :class:`mx.Document` ready to be written with
         :func:`mx.writeToXmlFile`.
         """
         doc = mx.createDocument()
 
-        ng = doc.addNodeGraph(self.nodegraph_name)
-        ng.setNodeDefString(_SURFACESHADER_NODEDEF)
+        if bool(self.name_suffix):
+            nodedef = doc.addNodeDef(
+                self._surfaceshader_nodedef_name,
+                "surfaceshader",
+                self._surfaceshader_category,
+            )
+            for name, meta in self._inputs.items():
+                nodedef_input = nodedef.addInput(name, meta.mtlx_type)
+                if meta.default_value:
+                    nodedef_input.setValueString(meta.default_value)
+                if meta.doc:
+                    nodedef_input.setDocString(meta.doc)
 
-        bsdf_node = ng.addNode(self.bsdf_category, "std_surface", "BSDF")
-        for name, metadata in self._input_metadata.items():
-            bsdf_node.addInput(name, metadata.mtlx_type).setInterfaceName(name)
+        nodegraph = doc.addNodeGraph(self.nodegraph_name)
 
-        emission_weight = ng.addNode("multiply", "emission_weight", "color3")
+        # Point nodegraph (nodeimpl) to the nodedef
+        nodegraph.setNodeDefString(self._surfaceshader_nodedef_name)
+
+        bsdf_node = nodegraph.addNode(self.bsdf_category, "std_surface", "BSDF")
+        for name, metadata in self._inputs.items():
+            if name in _BSDF_INPUTS:
+                bsdf_node.addInput(name, metadata.mtlx_type).setInterfaceName(name)
+
+        emission_weight = nodegraph.addNode("multiply", "emission_weight", "color3")
         emission_weight.addInput("in1", "color3").setInterfaceName(
             "emission_color"
         )
         emission_weight.addInput("in2", "float").setInterfaceName("emission")
 
-        emission_edf = ng.addNode("uniform_edf", "emission_edf", "EDF")
+        emission_edf = nodegraph.addNode("uniform_edf", "emission_edf", "EDF")
         emission_edf.addInput("color", "color3").setNodeName("emission_weight")
 
-        opacity_lum = ng.addNode("luminance", "opacity_luminance", "color3")
+        opacity_lum = nodegraph.addNode("luminance", "opacity_luminance", "color3")
         opacity_lum.addInput("in", "color3").setInterfaceName("opacity")
 
-        opacity_float = ng.addNode(
+        opacity_float = nodegraph.addNode(
             "extract", "opacity_luminance_float", "float"
         )
         opacity_float.addInput("in", "color3").setNodeName(
@@ -580,14 +607,14 @@ class Permutation:
         )
         opacity_float.addInput("index", "integer").setValueString("0")
 
-        surface = ng.addNode("surface", "surface_ctor", "surfaceshader")
+        surface = nodegraph.addNode("surface", "surface_ctor", "surfaceshader")
         surface.addInput("bsdf", "BSDF").setNodeName("std_surface")
         surface.addInput("edf", "EDF").setNodeName("emission_edf")
         surface.addInput("opacity", "float").setNodeName(
             "opacity_luminance_float"
         )
 
-        ng.addOutput("out", "surfaceshader").setNodeName("surface_ctor")
+        nodegraph.addOutput("out", "surfaceshader").setNodeName("surface_ctor")
 
         return doc
 

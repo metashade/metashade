@@ -110,7 +110,7 @@ class TestStandardSurface:
         """Generate the Standard Surface BSDF + surfaceshader."""
         permutation = standard_surface.Permutation(stdlib_doc, **kwargs)
         subdir = ("standard_surface"
-                  if not permutation.variant_suffix
+                  if not permutation.name_suffix
                   else "standard_surface_pruned")
 
         with GlslTestContext(
