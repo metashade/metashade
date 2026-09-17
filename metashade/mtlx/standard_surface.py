@@ -72,6 +72,7 @@ class InputMetadata:
     mtlx_type: str
     doc: str
     default_value: str = ""
+    defaultgeomprop: str = ""
 
 
 LOBES: tuple[Lobe, ...] = (
@@ -126,6 +127,7 @@ class Permutation:
                     mtlx_type=inp.getType(),
                     doc=inp.getDocString(),
                     default_value=inp.getValueString(),
+                    defaultgeomprop=inp.getAttribute("defaultgeomprop"),
                 )
 
         self._surfaceshader_category = \
@@ -574,6 +576,10 @@ class Permutation:
                 nodedef_input = nodedef.addInput(name, meta.mtlx_type)
                 if meta.default_value:
                     nodedef_input.setValueString(meta.default_value)
+                if meta.defaultgeomprop:
+                    nodedef_input.setAttribute(
+                        "defaultgeomprop", meta.defaultgeomprop,
+                    )
                 if meta.doc:
                     nodedef_input.setDocString(meta.doc)
 
@@ -617,6 +623,37 @@ class Permutation:
         nodegraph.addOutput("out", "surfaceshader").setNodeName("surface_ctor")
 
         return doc
+
+    def prune_material(self, doc: mx.Document) -> mx.Document | None:
+        """Prune a material document to use this permutation.
+
+        Every top-level ``standard_surface`` node in *doc* is replaced
+        with the pruned surfaceshader category, and inputs belonging to
+        pruned lobes are removed.  The document is copied — the
+        original is not modified.
+
+        Returns ``None`` for the full permutation (no lobes disabled),
+        signalling that the caller can use the original material as-is.
+
+        .. note::
+           Only document-level nodes are rewritten.  Nodes nested inside
+           ``NodeGraph`` elements (e.g. Prism/Protein wrappers) are not
+           yet handled.
+        """
+        if not self.name_suffix:
+            return None
+
+        result = doc.copy()
+
+        for node in result.getNodes():
+            if node.getCategory() == "standard_surface":
+                node.setCategory(self._surfaceshader_category)
+
+                for inp in node.getActiveInputs():
+                    if inp.getName() not in self._inputs:
+                        node.removeInput(inp.getName())
+
+        return result
 
 
 # ---------------------------------------------------------------------------

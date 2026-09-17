@@ -28,7 +28,7 @@
     <input name="coat_anisotropy" type="float" value="0.0" doc="The amount of directional bias, or anisotropy, of the clear-coat layer." />
     <input name="coat_rotation" type="float" value="0.0" doc="The rotation of the anisotropic effect of the clear-coat layer." />
     <input name="coat_IOR" type="float" value="1.5" doc="The index of refraction of the clear-coat layer." />
-    <input name="coat_normal" type="vector3" doc="Input normal for clear-coat layer" />
+    <input name="coat_normal" type="vector3" defaultgeomprop="Nworld" doc="Input normal for clear-coat layer" />
     <input name="coat_affect_color" type="float" value="0" doc="Controls the saturation of diffuse reflection and subsurface scattering below the clear-coat." />
     <input name="coat_affect_roughness" type="float" value="0" doc="Controls the roughness of the specular reflection in the layers below the clear-coat." />
     <input name="thin_film_thickness" type="float" value="0" doc="The thickness of the thin film layer on a surface. Use for materials such as multitone car paint or soap bubbles (in nanometers)." />
@@ -36,8 +36,8 @@
     <input name="emission" type="float" value="0" doc="The amount of emitted incandescent light." />
     <input name="emission_color" type="color3" value="1, 1, 1" doc="The color of the emitted light." />
     <input name="opacity" type="color3" value="1, 1, 1" doc="The opacity of the entire material." />
-    <input name="normal" type="vector3" doc="Input geometric normal" />
-    <input name="tangent" type="vector3" doc="Input geometric tangent" />
+    <input name="normal" type="vector3" defaultgeomprop="Nworld" doc="Input geometric normal" />
+    <input name="tangent" type="vector3" defaultgeomprop="Tworld" doc="Input geometric tangent" />
   </nodedef>
   <nodegraph name="NG_metashade_standard_surface_subsurface0" nodedef="ND_metashade_standard_surface_subsurface0_surfaceshader">
     <metashade_standard_surface_subsurface0_bsdf name="std_surface" type="BSDF">
