@@ -627,13 +627,18 @@ class Permutation:
     def prune_material(self, doc: mx.Document) -> mx.Document | None:
         """Prune a material document to use this permutation.
 
-        Every ``standard_surface`` node in *doc* is replaced with the
-        pruned surfaceshader category, and inputs belonging to pruned
-        lobes are removed.  The document is copied — the original is
-        not modified.
+        Every top-level ``standard_surface`` node in *doc* is replaced
+        with the pruned surfaceshader category, and inputs belonging to
+        pruned lobes are removed.  The document is copied — the
+        original is not modified.
 
         Returns ``None`` for the full permutation (no lobes disabled),
         signalling that the caller can use the original material as-is.
+
+        .. note::
+           Only document-level nodes are rewritten.  Nodes nested inside
+           ``NodeGraph`` elements (e.g. Prism/Protein wrappers) are not
+           yet handled.
         """
         if not self.name_suffix:
             return None
