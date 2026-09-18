@@ -30,6 +30,7 @@ Two-layer architecture:
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import Flag, auto
 
 import MaterialX as mx
 
@@ -52,19 +53,26 @@ _NODEGRAPH_NAME = "NG_metashade_standard_surface"
 # Lobe pruning data model (issue #233)
 # ---------------------------------------------------------------------------
 
+class ActiveLobes(Flag):
+    """Bit flags identifying which Standard Surface lobes are active."""
+    SUBSURFACE = auto()
+
+    ALL = SUBSURFACE
+
+
 @dataclass(frozen=True)
 class Lobe:
     """A prunable Standard Surface feature bundle.
 
-    Each lobe groups the gate input that enables it, the BSDF function
-    parameters it owns, the stdlib ``#include`` s it requires, and any
-    nodegraph-only inputs (e.g. emission).
+    Each lobe groups the flag bit, the gate input that enables it, the
+    BSDF function parameters it owns, and the stdlib ``#include`` s it
+    requires.
     """
+    flag: ActiveLobes
     name: str
     gate_input: str
     params: frozenset[str]
     stdlib_imports: tuple[str, ...]
-    nodegraph_inputs: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -77,6 +85,7 @@ class InputMetadata:
 
 LOBES: tuple[Lobe, ...] = (
     Lobe(
+        flag=ActiveLobes.SUBSURFACE,
         name="subsurface",
         gate_input="subsurface",
         params=frozenset({
@@ -94,19 +103,18 @@ _LOBES_BY_NAME: dict[str, Lobe] = {lobe.name: lobe for lobe in LOBES}
 class Permutation:
     """Identifies a specific Standard Surface specialization.
 
-    Each boolean field corresponds to a :class:`Lobe`.  ``True`` means the
-    lobe is emitted; ``False`` means it is pruned.  All default to ``True``
-    (full SS, backward compatible).
+    Each :class:`ActiveLobes` flag indicates whether a lobe is emitted
+    or pruned.  All default to active (full SS, backward compatible).
 
-    Naming is *subtractive*: :attr:`variant_suffix` lists disabled lobes
+    Naming is *subtractive*: :attr:`name_suffix` lists disabled lobes
     with a ``0`` suffix (e.g. ``_subsurface0``).  This is stable under
     progressive development — adding coat pruning later does not rename
     existing ``_subsurface0`` variants.
     """
 
     def __init__(self, stdlib_doc: mx.Document, *,
-                 subsurface: bool = True):
-        self._subsurface = subsurface
+                 active_lobes: ActiveLobes = ActiveLobes.ALL):
+        self._active_lobes = active_lobes
 
         stdlib_surfaceshader = stdlib_doc.getNodeDef(_STDLIB_SURFACESHADER_NODEDEF)
         if stdlib_surfaceshader is None:
@@ -116,7 +124,7 @@ class Permutation:
 
         pruned_inputs = frozenset().union(*(
             lobe.params for lobe in LOBES
-            if not getattr(self, lobe.name)
+            if not (self._active_lobes & lobe.flag)
         ))
 
         self._inputs: dict[str, InputMetadata] = {}
@@ -139,9 +147,9 @@ class Permutation:
         )
 
     @property
-    def subsurface(self) -> bool:
-        """Whether the subsurface lobe is enabled (read-only)."""
-        return self._subsurface
+    def active_lobes(self) -> ActiveLobes:
+        """Which lobes are active (read-only)."""
+        return self._active_lobes
 
     @property
     def name_suffix(self) -> str:
@@ -151,7 +159,7 @@ class Permutation:
         """
         disabled = sorted(
             lobe.name for lobe in LOBES
-            if not getattr(self, lobe.name)
+            if not (self._active_lobes & lobe.flag)
         )
         if not disabled:
             return ""
@@ -212,7 +220,7 @@ class Permutation:
 
         stdlib_imports = _BASE_STDLIB_IMPORTS | frozenset().union(*(
             lobe.stdlib_imports for lobe in LOBES
-            if getattr(self, lobe.name)
+            if self._active_lobes & lobe.flag
         ))
 
         _acquire_stdlib_sourcecode_nodes(sh, stdlib_doc, stdlib_imports)
@@ -276,7 +284,7 @@ class Permutation:
                 sh.base_color.clamp(0.0, 1.0).pow(sh.coat_gamma)
             )
 
-            if self._subsurface:
+            if self._active_lobes & ActiveLobes.SUBSURFACE:
                 sh // ""
                 sh // "Coat affect subsurface color"
                 sh.coat_affected_subsurface_color = (
@@ -301,7 +309,7 @@ class Permutation:
                 bsdf=sh.diffuse_bsdf,
             )
 
-            if self._subsurface:
+            if self._active_lobes & ActiveLobes.SUBSURFACE:
                 sh // ""
                 sh // "Subsurface scattering"
                 sh.subsurface_radius_scaled = (
@@ -501,8 +509,8 @@ class Permutation:
             sh.coat_attenuation = sh.Float3(
                 sh.coat.lerp(sh.RgbF(1.0), sh.coat_color)
             )
-            sh.bsdf.response = sh.bsdf.response * sh.coat_attenuation
-            sh.bsdf.throughput = sh.bsdf.throughput * sh.coat_attenuation
+            sh.bsdf.response *= sh.coat_attenuation
+            sh.bsdf.throughput *= sh.coat_attenuation
 
             sh // ""
             sh // "Coat roughness"
@@ -648,21 +656,23 @@ def prune_material(stdlib_doc: mx.Document, material_doc: mx.Document) -> bool:
         if node.getCategory() != "standard_surface":
             continue
 
-        lobe_flags = {}
+        active = ActiveLobes(0)
         for lobe in LOBES:
             inp = node.getInput(lobe.gate_input)
             if inp is None:
-                lobe_flags[lobe.name] = False
+                continue
             elif inp.getNodeName() or inp.getNodeGraphString():
-                lobe_flags[lobe.name] = True
+                active |= lobe.flag
             else:
                 val = inp.getValueString()
                 try:
-                    lobe_flags[lobe.name] = float(val) != 0.0
+                    is_active = float(val) != 0.0
                 except (ValueError, TypeError):
-                    lobe_flags[lobe.name] = bool(val)
+                    is_active = bool(val)
+                if is_active:
+                    active |= lobe.flag
 
-        perm = Permutation(stdlib_doc, **lobe_flags)
+        perm = Permutation(stdlib_doc, active_lobes=active)
         if not perm.name_suffix:
             continue
 

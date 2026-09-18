@@ -102,13 +102,18 @@ class TestStandardSurface:
     through the context and RefDiffer'd in CI.
     """
 
-    @pytest.mark.parametrize("kwargs", [
-        pytest.param({}, id="full"),
-        pytest.param({"subsurface": False}, id="subsurface0"),
+    @pytest.mark.parametrize("active_lobes", [
+        pytest.param(standard_surface.ActiveLobes.ALL, id="full"),
+        pytest.param(
+            standard_surface.ActiveLobes.ALL & ~standard_surface.ActiveLobes.SUBSURFACE,
+            id="subsurface0",
+        ),
     ])
-    def test_generate(self, stdlib_doc, kwargs):
+    def test_generate(self, stdlib_doc, active_lobes):
         """Generate the Standard Surface BSDF + surfaceshader."""
-        permutation = standard_surface.Permutation(stdlib_doc, **kwargs)
+        permutation = standard_surface.Permutation(
+            stdlib_doc, active_lobes=active_lobes,
+        )
         subdir = ("standard_surface"
                   if not permutation.name_suffix
                   else "standard_surface_pruned")
