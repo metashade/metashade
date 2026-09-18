@@ -302,10 +302,8 @@ class Permutation:
                 if self._subsurface:
                     sh // ""
                     sh // "Coat affect subsurface color"
-                    sh.coat_affected_subsurface_color = (
-                        sh.subsurface_color.saturate().pow(
-                            sh.coat_gamma
-                        )
+                    sh.subsurface_color = (
+                        sh.subsurface_color.saturate().pow(sh.coat_gamma)
                     )
 
             sh // ""
@@ -336,13 +334,11 @@ class Permutation:
                 sh.sss_bsdf = sh.BSDF(
                     response=sh.Float3(0), throughput=sh.Float3(1)
                 )
-                _sss_color = (sh.coat_affected_subsurface_color
-                              if self._coat else sh.subsurface_color)
                 with sh.if_(sh.thin_walled):
                     sh.mx_translucent_bsdf(
                         closureData=sh.closureData,
                         weight=1.0,
-                        color=_sss_color,
+                        color=sh.subsurface_color,
                         normal=sh.normal,
                         bsdf=sh.sss_bsdf,
                     )
@@ -350,7 +346,7 @@ class Permutation:
                     sh.mx_subsurface_bsdf(
                         closureData=sh.closureData,
                         weight=1.0,
-                        color=_sss_color,
+                        color=sh.subsurface_color,
                         radius=sh.subsurface_radius_scaled,
                         anisotropy=sh.subsurface_anisotropy,
                         normal=sh.normal,
