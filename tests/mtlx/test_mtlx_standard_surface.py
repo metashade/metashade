@@ -105,6 +105,8 @@ class TestStandardSurface:
     @pytest.mark.parametrize("kwargs", [
         pytest.param({}, id="full"),
         pytest.param({"subsurface": False}, id="subsurface0"),
+        pytest.param({"coat": False}, id="coat0"),
+        pytest.param({"subsurface": False, "coat": False}, id="coat0_subsurface0"),
     ])
     def test_generate(self, stdlib_doc, kwargs):
         """Generate the Standard Surface BSDF + surfaceshader."""
