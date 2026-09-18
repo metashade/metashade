@@ -624,36 +624,53 @@ class Permutation:
 
         return doc
 
-    def prune_material(self, doc: mx.Document) -> mx.Document | None:
-        """Prune a material document to use this permutation.
 
-        Every top-level ``standard_surface`` node in *doc* is replaced
-        with the pruned surfaceshader category, and inputs belonging to
-        pruned lobes are removed.  The document is copied — the
-        original is not modified.
 
-        Returns ``None`` for the full permutation (no lobes disabled),
-        signalling that the caller can use the original material as-is.
+def prune_material(stdlib_doc: mx.Document, material_doc: mx.Document) -> bool:
+    """Optimize a material by pruning inactive lobes per node.
 
-        .. note::
-           Only document-level nodes are rewritten.  Nodes nested inside
-           ``NodeGraph`` elements (e.g. Prism/Protein wrappers) are not
-           yet handled.
-        """
-        if not self.name_suffix:
-            return None
+    Each top-level ``standard_surface`` node is independently analyzed:
+    its lobe gate inputs determine which lobes are active, a matching
+    :class:`Permutation` is instantiated, and the node is rewritten to
+    the pruned category with unused inputs removed.
 
-        result = doc.copy()
+    Modifies *material_doc* in place.  Returns whether any node was
+    pruned.
 
-        for node in result.getNodes():
-            if node.getCategory() == "standard_surface":
-                node.setCategory(self._surfaceshader_category)
+    .. note::
+       Only document-level nodes are analyzed and rewritten.  Nodes
+       nested inside ``NodeGraph`` elements (e.g. Prism/Protein
+       wrappers) are not yet handled.
+    """
+    any_pruned = False
 
-                for inp in node.getActiveInputs():
-                    if inp.getName() not in self._inputs:
-                        node.removeInput(inp.getName())
+    for node in material_doc.getNodes():
+        if node.getCategory() != "standard_surface":
+            continue
 
-        return result
+        lobe_flags = {}
+        for lobe in LOBES:
+            inp = node.getInput(lobe.gate_input)
+            if inp is None:
+                lobe_flags[lobe.name] = False
+            elif inp.getNodeName() or inp.getNodeGraphString():
+                lobe_flags[lobe.name] = True
+            elif inp.getValueString() in ("", "0", "0.0", "0.000000"):
+                lobe_flags[lobe.name] = False
+            else:
+                lobe_flags[lobe.name] = True
+
+        perm = Permutation(stdlib_doc, **lobe_flags)
+        if not perm.name_suffix:
+            continue
+
+        node.setCategory(perm._surfaceshader_category)
+        for inp in node.getActiveInputs():
+            if inp.getName() not in perm._inputs:
+                node.removeInput(inp.getName())
+        any_pruned = True
+
+    return any_pruned
 
 
 # ---------------------------------------------------------------------------
