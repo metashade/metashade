@@ -293,17 +293,17 @@ class Permutation:
                 sh // ""
                 sh // "Coat affect color: darken diffuse under the coat"
                 sh.coat_gamma = sh.RgbF(
-                    sh.coat.clamp(0.0, 1.0) * sh.coat_affect_color + 1.0
+                    sh.coat.saturate() * sh.coat_affect_color + 1.0
                 )
                 sh.coat_affected_diffuse_color = (
-                    sh.base_color.clamp(0.0, 1.0).pow(sh.coat_gamma)
+                    sh.base_color.saturate().pow(sh.coat_gamma)
                 )
 
                 if self._subsurface:
                     sh // ""
                     sh // "Coat affect subsurface color"
                     sh.coat_affected_subsurface_color = (
-                        sh.subsurface_color.clamp(0.0, 1.0).pow(
+                        sh.subsurface_color.saturate().pow(
                             sh.coat_gamma
                         )
                     )
@@ -397,7 +397,7 @@ class Permutation:
             sh // ""
             sh.transmission_roughness_clamped = (
                 (sh.specular_roughness + sh.transmission_extra_roughness)
-                .clamp(0.0, 1.0)
+                .saturate()
             )
             if self._coat:
                 sh // "Transmission roughness (coat-affected)"
