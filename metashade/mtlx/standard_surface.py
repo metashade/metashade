@@ -655,10 +655,12 @@ def prune_material(stdlib_doc: mx.Document, material_doc: mx.Document) -> bool:
                 lobe_flags[lobe.name] = False
             elif inp.getNodeName() or inp.getNodeGraphString():
                 lobe_flags[lobe.name] = True
-            elif inp.getValueString() in ("", "0", "0.0", "0.000000"):
-                lobe_flags[lobe.name] = False
             else:
-                lobe_flags[lobe.name] = True
+                val = inp.getValueString()
+                try:
+                    lobe_flags[lobe.name] = float(val) != 0.0
+                except (ValueError, TypeError):
+                    lobe_flags[lobe.name] = bool(val)
 
         perm = Permutation(stdlib_doc, **lobe_flags)
         if not perm.name_suffix:
