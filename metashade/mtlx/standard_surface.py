@@ -390,22 +390,24 @@ class Permutation:
                 sh.sheen_bsdf_out.throughput * sh.subsurface_mix.throughput
             )
 
-            sh // ""
-            sh.transmission_roughness_clamped = (
-                (sh.specular_roughness + sh.transmission_extra_roughness)
-                .saturate()
-            )
             if self._coat:
+                sh // ""
                 sh // "Transmission roughness (coat-affected)"
+                sh.transmission_roughness_clamped = (
+                    (sh.specular_roughness + sh.transmission_extra_roughness)
+                    .saturate()
+                )
                 sh.transmission_roughness_scalar = (
                     sh.transmission_roughness_clamped
                     * (sh.Float(1) - sh.coat_roughness_factor)
                     + sh.coat_roughness_factor
                 )
             else:
+                sh // ""
                 sh // "Transmission roughness"
                 sh.transmission_roughness_scalar = (
-                    sh.transmission_roughness_clamped
+                    (sh.specular_roughness + sh.transmission_extra_roughness)
+                    .saturate()
                 )
             sh.transmission_roughness = sh.Float2()
             sh.mx_roughness_anisotropy(
