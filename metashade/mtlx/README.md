@@ -79,9 +79,13 @@ classDiagram
 
 * `SourceCodeNode` (`<implementation file="..." function="...">`) instances are **strictly leaves in the shader DAG**: they have no internal `ShaderGraph` and cannot wrap other nodes.
 
-### Target Shading Languages and Code Generation Landscape
+### Portability of Source Code Nodes across Target Languages
 
-While MaterialX node graphs provide a cross-platform codegen mechanism for compositing nodes together, source code nodes are either written directly in the target language, or use ad-hoc, non-graph ways to convert one target language to another.
+While MaterialX node graphs are a cross-platform codegen mechanism, programmatically generating code for all target languages, source code nodes do not have a single-source 
+
+are either written directly in the target language, or use ad-hoc, non-graph ways to convert source from one target language to another.
+
+There isn't a 
 
 ```mermaid
 graph TD
