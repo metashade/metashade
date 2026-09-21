@@ -14,13 +14,25 @@
 // emit mx_rotate_vector3 a second time
 // (see https://github.com/metashade/metashade/issues/230).
 //
-void _mx_metashade_rotate_vector3(vec3 in_, float amount, vec3 axis, out vec3 result)
+vec3 _mx_metashade_rotate_vector3(vec3 in_, float amount, vec3 axis)
 {
 	vec3 axis_n = normalize(axis);
 	float rad = radians(amount);
 	float s = sin(rad);
 	float c = cos(rad);
-	result = ((in_ * c) + (cross(in_, axis_n) * s)) + ((axis_n * dot(axis_n, in_)) * (1 - c));
+	return ((in_ * c) + (cross(in_, axis_n) * s)) + ((axis_n * dot(axis_n, in_)) * (1 - c));
+}
+
+// Conditionally rotate a tangent vector when anisotropy is active.
+//
+vec3 _mx_metashade_rotate_tangent(vec3 tangent, float anisotropy, float rotation, vec3 axis)
+{
+	if (anisotropy > 0.0)
+	{
+		float rotate_degree = rotation * 360.0;
+		return normalize(_mx_metashade_rotate_vector3(tangent, rotate_degree, axis));
+	}
+	return tangent;
 }
 
 void mx_metashade_standard_surface_bsdf(ClosureData closureData, float base, vec3 base_color, float diffuse_roughness, float metalness, float specular, vec3 specular_color, float specular_roughness, float specular_IOR, float specular_anisotropy, float specular_rotation, float transmission, vec3 transmission_color, float transmission_extra_roughness, float subsurface, vec3 subsurface_color, vec3 subsurface_radius, float subsurface_scale, float subsurface_anisotropy, float sheen, vec3 sheen_color, float sheen_roughness, float coat, vec3 coat_color, float coat_roughness, float coat_anisotropy, float coat_rotation, float coat_IOR, vec3 coat_normal, float coat_affect_color, float coat_affect_roughness, float thin_film_thickness, float thin_film_IOR, bool thin_walled, vec3 normal, vec3 tangent, inout BSDF bsdf)
@@ -35,24 +47,10 @@ void mx_metashade_standard_surface_bsdf(ClosureData closureData, float base, vec
 	mx_roughness_anisotropy(coat_affected_specular_roughness, specular_anisotropy, main_roughness);
 	// 
 	// Tangent rotation
-	vec3 main_tangent = tangent;
-	if (specular_anisotropy > 0.0)
-	{
-		float tangent_rotate_degree = specular_rotation * 360.0;
-		vec3 tangent_rotated;
-		_mx_metashade_rotate_vector3(tangent, tangent_rotate_degree, normal, tangent_rotated);
-		main_tangent = normalize(tangent_rotated);
-	}
+	vec3 main_tangent = _mx_metashade_rotate_tangent(tangent, specular_anisotropy, specular_rotation, normal);
 	// 
 	// Coat tangent rotation
-	vec3 coat_tangent = tangent;
-	if (coat_anisotropy > 0.0)
-	{
-		float coat_tangent_rotate_degree = coat_rotation * 360.0;
-		vec3 coat_tangent_rotated;
-		_mx_metashade_rotate_vector3(tangent, coat_tangent_rotate_degree, coat_normal, coat_tangent_rotated);
-		coat_tangent = normalize(coat_tangent_rotated);
-	}
+	vec3 coat_tangent = _mx_metashade_rotate_tangent(tangent, coat_anisotropy, coat_rotation, coat_normal);
 	// 
 	// Coat affect color: darken diffuse under the coat
 	vec3 coat_gamma = vec3((clamp(coat, 0.0, 1.0) * coat_affect_color) + 1.0);
