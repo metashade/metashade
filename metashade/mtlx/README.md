@@ -3,7 +3,7 @@
 This package integrates Metashade with [MaterialX](https://github.com/AcademySoftwareFoundation/MaterialX). It aims to extend MaterialX's nodegraph-centric codegen and provide the following benefits:
 * a single-source mechanism for implementing source code nodes for diverse target languages;
 * flexible control flow, impossible or hard to express in node graphs;
-* metaprogramming, enabling optimization.
+* metaprogramming, enabling optimization among other things.
 
 ## MaterialX architecture recap
 
@@ -17,21 +17,19 @@ Crucially, **Implementations reference NodeDefs, not the other way around**, whi
 
 ### MaterialX Node Implementation Code Generation mechanisms
 
-In order to understand how Metashade's codegen can integrate with MaterialX's, let's first discuss how MaterialX generates code for individual nodes.
+A MaterialX node implementation uses one of the [four different codegen approaches](https://github.com/AcademySoftwareFoundation/MaterialX/blob/main/documents/DeveloperGuide/ShaderGeneration.md#13-node-implementations) to generate target code:
 
-MaterialX uses [4 different codegen approaches](https://github.com/AcademySoftwareFoundation/MaterialX/blob/main/documents/DeveloperGuide/ShaderGeneration.md#13-node-implementations):
-
-1. **Inline Expression** — The node implementation is specified as a simple inline expression directly in the node definition. This is used for straightforward operations that can be expressed in a single line (e.g., `{{in1}} + {{in2}}` for an add node). The expression uses the target shading language syntax with input ports wrapped in double curly brackets.
+1. **Inline Expression** — a simple inline expression specified directly in the node definition. This is used for straightforward operations that can be expressed in a single line (e.g., `{{in1}} + {{in2}}` for an add node). The expression uses the target shading language syntax with input port references wrapped in double curly brackets.
 
 2. **Shading Language Function** — The node is implemented as a function written in the target language, with the source code stored in a separate file. The function signature matches the nodedef's interface of typed inputs and outputs.
 
-3. **Nodegraph Implementation** — The node is implemented as a compound nodegraph composed of other nodes.
+3. **Nodegraph Implementation** — The node is implemented as a nodegraph composed of other nodes.
 
 4. **Dynamic Code Generation (C++)** — A C++ class derived from `ShaderNodeImpl` handles the implementation, emitting code programmatically during shader generation. Used when static source code isn't sufficient — for example, when code needs to be customized based on node parameters, or when vertex streams and uniforms need to be created dynamically.
 
 ### Key Implementation Classes
 
-The following diagram shows how the four code generation methods map to `ShaderNodeImpl` subclasses:
+The following diagram shows how the above four methods map to `ShaderNodeImpl` subclasses:
 
 ```mermaid
 classDiagram
