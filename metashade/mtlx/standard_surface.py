@@ -245,11 +245,10 @@ class Permutation:
                 sh.coat_roughness_factor = (
                     sh.coat_affect_roughness * sh.coat * sh.coat_roughness
                 )
-                sh.coat_affected_specular_roughness = (
+                sh.coat_affected_specular_roughness = \
                     sh.coat_roughness_factor.lerp(
                         sh.specular_roughness, sh.Float(1)
                     )
-                )
 
             sh // ""
             sh // "Roughness"
@@ -397,11 +396,10 @@ class Permutation:
                     (sh.specular_roughness + sh.transmission_extra_roughness)
                     .saturate()
                 )
-                sh.transmission_roughness_scalar = (
+                sh.transmission_roughness_scalar = \
                     sh.coat_roughness_factor.lerp(
                         sh.transmission_roughness_clamped, sh.Float(1)
                     )
-                )
             else:
                 sh // ""
                 sh // "Transmission roughness"
