@@ -104,6 +104,47 @@ LOBES: tuple[Lobe, ...] = (
 _LOBES_BY_NAME: dict[str, Lobe] = {lobe.name: lobe for lobe in LOBES}
 
 
+# ---------------------------------------------------------------------------
+# Generated helper functions (emitted via sh.instantiate)
+# ---------------------------------------------------------------------------
+
+def _mx_metashade_rotate_vector3(
+    sh, in_: Float3, amount: Float, axis: Float3,
+) -> Float3:
+    """Rodrigues' rotation formula.
+
+    Private copy of the stdlib rotate3d helper.  Avoids
+    duplicate-definition errors when the material's own nodegraph
+    also uses rotate3d nodes, which would cause the generator to
+    emit mx_rotate_vector3 a second time
+    (see https://github.com/metashade/metashade/issues/230).
+    """
+    sh.axis_n = axis.normalize()
+    sh.rad = amount.radians()
+    sh.s = sh.rad.sin()
+    sh.c = sh.rad.cos()
+    sh.return_(
+        in_ * sh.c
+        + in_.cross(sh.axis_n) * sh.s
+        + sh.axis_n * sh.axis_n.dot(in_) * (sh.Float(1) - sh.c)
+    )
+
+
+def _mx_metashade_rotate_tangent(
+    sh, tangent: Float3, anisotropy: Float, rotation: Float,
+    axis: Float3,
+) -> Float3:
+    """Conditionally rotate a tangent vector when anisotropy is active."""
+    with sh.if_(anisotropy > 0.0):
+        sh.rotate_degree = rotation * 360.0
+        sh.return_(sh._mx_metashade_rotate_vector3(
+            in_=tangent,
+            amount=sh.rotate_degree,
+            axis=axis,
+        ).normalize())
+    sh.return_(tangent)
+
+
 class Permutation:
     """Identifies a specific Standard Surface specialization.
 
@@ -237,6 +278,7 @@ class Permutation:
 
         _acquire_stdlib_sourcecode_nodes(sh, stdlib_doc, stdlib_imports)
         sh.instantiate(_mx_metashade_rotate_vector3)
+        sh.instantiate(_mx_metashade_rotate_tangent)
 
         with self._create_bsdf_function(sh):
             if self._coat:
@@ -262,32 +304,22 @@ class Permutation:
 
             sh // ""
             sh // "Tangent rotation"
-            sh.main_tangent = sh.tangent
-            with sh.if_(sh.specular_anisotropy > 0.0):
-                sh.tangent_rotate_degree = sh.specular_rotation * 360.0
-                sh.tangent_rotated = sh.Float3()
-                sh._mx_metashade_rotate_vector3(
-                    in_=sh.tangent,
-                    amount=sh.tangent_rotate_degree,
-                    axis=sh.normal,
-                    result=sh.tangent_rotated,
-                )
-                sh.main_tangent = sh.tangent_rotated.normalize()
+            sh.main_tangent = sh._mx_metashade_rotate_tangent(
+                tangent=sh.tangent,
+                anisotropy=sh.specular_anisotropy,
+                rotation=sh.specular_rotation,
+                axis=sh.normal,
+            )
 
             if self._coat:
                 sh // ""
                 sh // "Coat tangent rotation"
-                sh.coat_tangent = sh.tangent
-                with sh.if_(sh.coat_anisotropy > 0.0):
-                    sh.coat_tangent_rotate_degree = sh.coat_rotation * 360.0
-                    sh.coat_tangent_rotated = sh.Float3()
-                    sh._mx_metashade_rotate_vector3(
-                        in_=sh.tangent,
-                        amount=sh.coat_tangent_rotate_degree,
-                        axis=sh.coat_normal,
-                        result=sh.coat_tangent_rotated,
-                    )
-                    sh.coat_tangent = sh.coat_tangent_rotated.normalize()
+                sh.coat_tangent = sh._mx_metashade_rotate_tangent(
+                    tangent=sh.tangent,
+                    anisotropy=sh.coat_anisotropy,
+                    rotation=sh.coat_rotation,
+                    axis=sh.coat_normal,
+                )
 
                 sh // ""
                 sh // "Coat affect color: darken diffuse under the coat"
@@ -767,24 +799,3 @@ def _acquire_stdlib_sourcecode_nodes(sh, stdlib_doc, node_names):
 
 
 
-def _mx_metashade_rotate_vector3(
-    sh, in_: Float3, amount: Float, axis: Float3,
-    result: Out[Float3],
-):
-    """Rodrigues' rotation formula.
-
-    Private copy of the stdlib rotate3d helper.  Avoids
-    duplicate-definition errors when the material's own nodegraph
-    also uses rotate3d nodes, which would cause the generator to
-    emit mx_rotate_vector3 a second time
-    (see https://github.com/metashade/metashade/issues/230).
-    """
-    sh.axis_n = axis.normalize()
-    sh.rad = amount.radians()
-    sh.s = sh.rad.sin()
-    sh.c = sh.rad.cos()
-    result._ = (
-        in_ * sh.c
-        + in_.cross(sh.axis_n) * sh.s
-        + sh.axis_n * sh.axis_n.dot(in_) * (sh.Float(1) - sh.c)
-    )
