@@ -28,7 +28,7 @@ void mx_metashade_standard_surface_bsdf(ClosureData closureData, float base, vec
 	// 
 	// Coat affect roughness: blend specular roughness toward 1.0
 	float coat_roughness_factor = (coat_affect_roughness * coat) * coat_roughness;
-	float coat_affected_specular_roughness = (specular_roughness * (1 - coat_roughness_factor)) + coat_roughness_factor;
+	float coat_affected_specular_roughness = mix(specular_roughness, 1, coat_roughness_factor);
 	// 
 	// Roughness
 	vec2 main_roughness;
@@ -92,9 +92,10 @@ void mx_metashade_standard_surface_bsdf(ClosureData closureData, float base, vec
 	bsdf.response = sheen_bsdf_out.response + (subsurface_mix.response * sheen_bsdf_out.throughput);
 	bsdf.throughput = sheen_bsdf_out.throughput * subsurface_mix.throughput;
 	// 
-	// Transmission roughness (coat-affected)
-	float transmission_roughness_clamped = clamp(specular_roughness + transmission_extra_roughness, 0.0, 1.0);
-	float transmission_roughness_scalar = (transmission_roughness_clamped * (1 - coat_roughness_factor)) + coat_roughness_factor;
+	// Transmission roughness
+	float transmission_roughness_scalar = clamp(specular_roughness + transmission_extra_roughness, 0.0, 1.0);
+	// Coat-affected
+	transmission_roughness_scalar = mix(transmission_roughness_scalar, 1, coat_roughness_factor);
 	vec2 transmission_roughness;
 	mx_roughness_anisotropy(transmission_roughness_scalar, specular_anisotropy, transmission_roughness);
 	// 
