@@ -86,6 +86,19 @@ LOBES: tuple[Lobe, ...] = (
         }),
         stdlib_imports=("translucent_bsdf", "subsurface_bsdf"),
     ),
+    Lobe(
+        name="coat",
+        gate_input="coat",
+        params=frozenset({
+            "coat", "coat_color", "coat_roughness", "coat_anisotropy",
+            "coat_rotation", "coat_IOR", "coat_normal",
+            "coat_affect_color", "coat_affect_roughness",
+        }),
+        # dielectric_bsdf shared with specular and transmission;
+        # currently in _BASE_STDLIB_IMPORTS but listed here so the
+        # import is preserved when the base set is refined.
+        stdlib_imports=("dielectric_bsdf",),
+    ),
 )
 
 _LOBES_BY_NAME: dict[str, Lobe] = {lobe.name: lobe for lobe in LOBES}
@@ -105,8 +118,10 @@ class Permutation:
     """
 
     def __init__(self, stdlib_doc: mx.Document, *,
-                 subsurface: bool = True):
+                 subsurface: bool = True,
+                 coat: bool = True):
         self._subsurface = subsurface
+        self._coat = coat
 
         stdlib_surfaceshader = stdlib_doc.getNodeDef(_STDLIB_SURFACESHADER_NODEDEF)
         if stdlib_surfaceshader is None:
@@ -142,6 +157,11 @@ class Permutation:
     def subsurface(self) -> bool:
         """Whether the subsurface lobe is enabled (read-only)."""
         return self._subsurface
+
+    @property
+    def coat(self) -> bool:
+        """Whether the coat lobe is enabled (read-only)."""
+        return self._coat
 
     @property
     def name_suffix(self) -> str:
@@ -219,22 +239,23 @@ class Permutation:
         sh.instantiate(_mx_metashade_rotate_vector3)
 
         with self._create_bsdf_function(sh):
-            sh // ""
-            sh // "Coat affect roughness: blend specular roughness toward 1.0"
-            sh.coat_roughness_factor = (
-                sh.coat_affect_roughness * sh.coat * sh.coat_roughness
-            )
-            sh.coat_affected_specular_roughness = (
-                sh.specular_roughness
-                * (sh.Float(1) - sh.coat_roughness_factor)
-                + sh.coat_roughness_factor
-            )
+            if self._coat:
+                sh // ""
+                sh // "Coat affect roughness: blend specular roughness toward 1.0"
+                sh.coat_roughness_factor = (
+                    sh.coat_affect_roughness * sh.coat * sh.coat_roughness
+                )
+                sh.coat_affected_specular_roughness = \
+                    sh.coat_roughness_factor.lerp(
+                        sh.specular_roughness, sh.Float(1)
+                    )
 
             sh // ""
             sh // "Roughness"
             sh.main_roughness = sh.Float2()
             sh.mx_roughness_anisotropy(
-                roughness=sh.coat_affected_specular_roughness,
+                roughness=(sh.coat_affected_specular_roughness
+                           if self._coat else sh.specular_roughness),
                 anisotropy=sh.specular_anisotropy,
                 out_=sh.main_roughness,
             )
@@ -253,35 +274,36 @@ class Permutation:
                 )
                 sh.main_tangent = sh.tangent_rotated.normalize()
 
-            sh // ""
-            sh // "Coat tangent rotation"
-            sh.coat_tangent = sh.tangent
-            with sh.if_(sh.coat_anisotropy > 0.0):
-                sh.coat_tangent_rotate_degree = sh.coat_rotation * 360.0
-                sh.coat_tangent_rotated = sh.Float3()
-                sh._mx_metashade_rotate_vector3(
-                    in_=sh.tangent,
-                    amount=sh.coat_tangent_rotate_degree,
-                    axis=sh.coat_normal,
-                    result=sh.coat_tangent_rotated,
-                )
-                sh.coat_tangent = sh.coat_tangent_rotated.normalize()
-
-            sh // ""
-            sh // "Coat affect color: darken diffuse under the coat"
-            sh.coat_gamma = sh.RgbF(
-                sh.coat.clamp(0.0, 1.0) * sh.coat_affect_color + 1.0
-            )
-            sh.coat_affected_diffuse_color = (
-                sh.base_color.clamp(0.0, 1.0).pow(sh.coat_gamma)
-            )
-
-            if self._subsurface:
+            if self._coat:
                 sh // ""
-                sh // "Coat affect subsurface color"
-                sh.coat_affected_subsurface_color = (
-                    sh.subsurface_color.clamp(0.0, 1.0).pow(sh.coat_gamma)
+                sh // "Coat tangent rotation"
+                sh.coat_tangent = sh.tangent
+                with sh.if_(sh.coat_anisotropy > 0.0):
+                    sh.coat_tangent_rotate_degree = sh.coat_rotation * 360.0
+                    sh.coat_tangent_rotated = sh.Float3()
+                    sh._mx_metashade_rotate_vector3(
+                        in_=sh.tangent,
+                        amount=sh.coat_tangent_rotate_degree,
+                        axis=sh.coat_normal,
+                        result=sh.coat_tangent_rotated,
+                    )
+                    sh.coat_tangent = sh.coat_tangent_rotated.normalize()
+
+                sh // ""
+                sh // "Coat affect color: darken diffuse under the coat"
+                sh.coat_gamma = sh.RgbF(
+                    sh.coat.saturate() * sh.coat_affect_color + 1.0
                 )
+                sh.coat_affected_diffuse_color = (
+                    sh.base_color.saturate().pow(sh.coat_gamma)
+                )
+
+                if self._subsurface:
+                    sh // ""
+                    sh // "Coat affect subsurface color"
+                    sh.subsurface_color = (
+                        sh.subsurface_color.saturate().pow(sh.coat_gamma)
+                    )
 
             sh // ""
             sh // "Diffuse BSDF (Oren-Nayar)"
@@ -294,7 +316,8 @@ class Permutation:
             sh.mx_oren_nayar_diffuse_bsdf(
                 closureData=sh.closureData,
                 weight=sh.base,
-                color=sh.coat_affected_diffuse_color,
+                color=(sh.coat_affected_diffuse_color
+                       if self._coat else sh.base_color),
                 roughness=sh.diffuse_roughness,
                 normal=sh.normal,
                 energy_compensation=False,
@@ -314,7 +337,7 @@ class Permutation:
                     sh.mx_translucent_bsdf(
                         closureData=sh.closureData,
                         weight=1.0,
-                        color=sh.coat_affected_subsurface_color,
+                        color=sh.subsurface_color,
                         normal=sh.normal,
                         bsdf=sh.sss_bsdf,
                     )
@@ -322,7 +345,7 @@ class Permutation:
                     sh.mx_subsurface_bsdf(
                         closureData=sh.closureData,
                         weight=1.0,
-                        color=sh.coat_affected_subsurface_color,
+                        color=sh.subsurface_color,
                         radius=sh.subsurface_radius_scaled,
                         anisotropy=sh.subsurface_anisotropy,
                         normal=sh.normal,
@@ -367,16 +390,19 @@ class Permutation:
             )
 
             sh // ""
-            sh // "Transmission roughness (coat-affected)"
-            sh.transmission_roughness_clamped = (
-                (sh.specular_roughness + sh.transmission_extra_roughness)
-                .clamp(0.0, 1.0)
-            )
+            sh // "Transmission roughness"
             sh.transmission_roughness_scalar = (
-                sh.transmission_roughness_clamped
-                * (sh.Float(1) - sh.coat_roughness_factor)
-                + sh.coat_roughness_factor
+                (sh.specular_roughness + sh.transmission_extra_roughness)
+                .saturate()
             )
+
+            if self._coat:
+                sh // "Coat-affected"
+                sh.transmission_roughness_scalar = \
+                    sh.coat_roughness_factor.lerp(
+                        sh.transmission_roughness_scalar, sh.Float(1)
+                    )
+
             sh.transmission_roughness = sh.Float2()
             sh.mx_roughness_anisotropy(
                 roughness=sh.transmission_roughness_scalar,
@@ -494,55 +520,56 @@ class Permutation:
                 + sh.bsdf.throughput * sh.one_minus_metalness
             )
 
-            sh // ""
-            sh // "Coat attenuation: tint underlying layers by coat color"
-            sh // ("Float3 coercion needed: RgbF lerp result -> "
-                   "Float3 for BSDF multiply")
-            sh.coat_attenuation = sh.Float3(
-                sh.coat.lerp(sh.RgbF(1.0), sh.coat_color)
-            )
-            sh.bsdf.response = sh.bsdf.response * sh.coat_attenuation
-            sh.bsdf.throughput = sh.bsdf.throughput * sh.coat_attenuation
+            if self._coat:
+                sh // ""
+                sh // "Coat attenuation: tint underlying layers by coat color"
+                sh // ("Float3 coercion needed: RgbF lerp result -> "
+                       "Float3 for BSDF multiply")
+                sh.coat_attenuation = sh.Float3(
+                    sh.coat.lerp(sh.RgbF(1.0), sh.coat_color)
+                )
+                sh.bsdf.response = sh.bsdf.response * sh.coat_attenuation
+                sh.bsdf.throughput = sh.bsdf.throughput * sh.coat_attenuation
 
-            sh // ""
-            sh // "Coat roughness"
-            sh.coat_roughness_vec = sh.Float2()
-            sh.mx_roughness_anisotropy(
-                roughness=sh.coat_roughness,
-                anisotropy=sh.coat_anisotropy,
-                out_=sh.coat_roughness_vec,
-            )
+                sh // ""
+                sh // "Coat roughness"
+                sh.coat_roughness_vec = sh.Float2()
+                sh.mx_roughness_anisotropy(
+                    roughness=sh.coat_roughness,
+                    anisotropy=sh.coat_anisotropy,
+                    out_=sh.coat_roughness_vec,
+                )
 
-            sh // ""
-            sh // "Coat BSDF (dielectric reflection)"
-            sh.coat_bsdf = sh.BSDF(
-                response=sh.Float3(0), throughput=sh.Float3(1)
-            )
-            sh.mx_dielectric_bsdf(
-                closureData=sh.closureData,
-                weight=sh.coat,
-                tint=[1.0, 1.0, 1.0],
-                ior=sh.coat_IOR,
-                roughness=sh.coat_roughness_vec,
-                retroreflective=False,
-                thinfilm_thickness=0.0,
-                thinfilm_ior=1.5,
-                normal=sh.coat_normal,
-                tangent=sh.coat_tangent,
-                distribution=_DISTRIBUTION_GGX,
-                scatter_mode=_SCATTER_R,
-                bsdf=sh.coat_bsdf,
-            )
+                sh // ""
+                sh // "Coat BSDF (dielectric reflection)"
+                sh.coat_bsdf = sh.BSDF(
+                    response=sh.Float3(0), throughput=sh.Float3(1)
+                )
+                sh.mx_dielectric_bsdf(
+                    closureData=sh.closureData,
+                    weight=sh.coat,
+                    tint=[1.0, 1.0, 1.0],
+                    ior=sh.coat_IOR,
+                    roughness=sh.coat_roughness_vec,
+                    retroreflective=False,
+                    thinfilm_thickness=0.0,
+                    thinfilm_ior=1.5,
+                    normal=sh.coat_normal,
+                    tangent=sh.coat_tangent,
+                    distribution=_DISTRIBUTION_GGX,
+                    scatter_mode=_SCATTER_R,
+                    bsdf=sh.coat_bsdf,
+                )
 
-            sh // ""
-            sh // "Coat layer: coat over attenuated base"
-            sh.bsdf.response = (
-                sh.coat_bsdf.response
-                + sh.bsdf.response * sh.coat_bsdf.throughput
-            )
-            sh.bsdf.throughput = (
-                sh.coat_bsdf.throughput * sh.bsdf.throughput
-            )
+                sh // ""
+                sh // "Coat layer: coat over attenuated base"
+                sh.bsdf.response = (
+                    sh.coat_bsdf.response
+                    + sh.bsdf.response * sh.coat_bsdf.throughput
+                )
+                sh.bsdf.throughput = (
+                    sh.coat_bsdf.throughput * sh.bsdf.throughput
+                )
 
         ctx.add_node_impl(
             func_name=self.func_name,
