@@ -81,11 +81,9 @@ classDiagram
 
 ### Portability of Source Code Nodes across Target Languages
 
-While MaterialX node graphs are a cross-platform codegen mechanism, programmatically generating code for all target languages, source code nodes do not have a single-source 
-
-are either written directly in the target language, or use ad-hoc, non-graph ways to convert source from one target language to another.
-
-There isn't a 
+While MaterialX node graphs implementations programmatically generate code for all target languages, source code nodes are implemented directly in one of the target languages. To achieve portability, code in one target language may be transformed to another, however:
+* The typical mechanism for this transformation is ad-hoc string substitution, similar to the C Preprocessor.
+* There is no single-source solution, and the same nodes are reimplemented as code separately in multiple languages. This is mostly because string substitution is not sufficient for languages that diverge too much syntactically, e.g. GLSL and OSL or WGSL.
 
 ```mermaid
 graph TD
