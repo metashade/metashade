@@ -1,6 +1,8 @@
 #include "mx_artistic_ior.glsl"
 #include "mx_conductor_bsdf.glsl"
 #include "mx_dielectric_bsdf.glsl"
+#include "mx_layer_bsdf.glsl"
+#include "mx_mix_bsdf.glsl"
 #include "mx_oren_nayar_diffuse_bsdf.glsl"
 #include "mx_roughness_anisotropy.glsl"
 #include "mx_sheen_bsdf.glsl"
@@ -64,20 +66,14 @@ void mx_metashade_standard_surface_coat0_bsdf(ClosureData closureData, float bas
 		{
 			mx_subsurface_bsdf(closureData, 1.0, subsurface_color, subsurface_radius_scaled, subsurface_anisotropy, normal, sss_bsdf);
 		}
-		// 
-		// Subsurface mix: blend SSS with diffuse
-		bsdf.response = mix(bsdf.response, sss_bsdf.response, subsurface);
-		bsdf.throughput = mix(bsdf.throughput, sss_bsdf.throughput, subsurface);
+		mx_mix_bsdf(closureData, sss_bsdf, bsdf, subsurface, bsdf);
 	}
 	// 
 	// Sheen BSDF
 	{
 		BSDF sheen_bsdf_out = BSDF(vec3(0), vec3(1));
 		mx_sheen_bsdf(closureData, sheen, sheen_color, sheen_roughness, normal, 0, sheen_bsdf_out);
-		// 
-		// Sheen layer: sheen over diffuse/subsurface
-		bsdf.response = sheen_bsdf_out.response + (bsdf.response * sheen_bsdf_out.throughput);
-		bsdf.throughput = sheen_bsdf_out.throughput * bsdf.throughput;
+		mx_layer_bsdf(closureData, sheen_bsdf_out, bsdf, bsdf);
 	}
 	// 
 	// Transmission roughness
@@ -89,20 +85,14 @@ void mx_metashade_standard_surface_coat0_bsdf(ClosureData closureData, float bas
 	{
 		BSDF transmission_bsdf = BSDF(vec3(0), vec3(1));
 		mx_dielectric_bsdf(closureData, 1.0, transmission_color, specular_IOR, transmission_roughness, false, 0.0, 1.5, normal, main_tangent, 0, 1, transmission_bsdf);
-		// 
-		// Transmission mix: blend transmission with sheen layer
-		bsdf.response = mix(bsdf.response, transmission_bsdf.response, transmission);
-		bsdf.throughput = mix(bsdf.throughput, transmission_bsdf.throughput, transmission);
+		mx_mix_bsdf(closureData, transmission_bsdf, bsdf, transmission, bsdf);
 	}
 	// 
 	// Specular BSDF (dielectric reflection)
 	{
 		BSDF specular_bsdf = BSDF(vec3(0), vec3(1));
 		mx_dielectric_bsdf(closureData, specular, specular_color, specular_IOR, main_roughness, false, thin_film_thickness, thin_film_IOR, normal, main_tangent, 0, 0, specular_bsdf);
-		// 
-		// Layer: specular over transmission mix
-		bsdf.response = specular_bsdf.response + (bsdf.response * specular_bsdf.throughput);
-		bsdf.throughput = specular_bsdf.throughput * bsdf.throughput;
+		mx_layer_bsdf(closureData, specular_bsdf, bsdf, bsdf);
 	}
 	// 
 	// Artistic IOR (reflectivity/edge-color -> physical IOR/extinction)
