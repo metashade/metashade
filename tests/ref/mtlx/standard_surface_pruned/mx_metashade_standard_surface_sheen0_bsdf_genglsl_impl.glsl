@@ -63,6 +63,7 @@ void mx_metashade_standard_surface_sheen0_bsdf(ClosureData closureData, float ba
 	// instead of the more physically-correct `true` in OpenPBR
 	BSDF diffuse_bsdf = BSDF(vec3(0), vec3(1));
 	mx_oren_nayar_diffuse_bsdf(closureData, base, coat_affected_diffuse_color, diffuse_roughness, normal, false, diffuse_bsdf);
+	bsdf = diffuse_bsdf;
 	// 
 	// Subsurface scattering
 	vec3 subsurface_radius_scaled = subsurface_radius * subsurface_scale;
@@ -77,10 +78,8 @@ void mx_metashade_standard_surface_sheen0_bsdf(ClosureData closureData, float ba
 	}
 	// 
 	// Subsurface mix: blend SSS with diffuse
-	BSDF subsurface_mix;
-	subsurface_mix.response = mix(diffuse_bsdf.response, sss_bsdf.response, subsurface);
-	subsurface_mix.throughput = mix(diffuse_bsdf.throughput, sss_bsdf.throughput, subsurface);
-	bsdf = subsurface_mix;
+	bsdf.response = mix(bsdf.response, sss_bsdf.response, subsurface);
+	bsdf.throughput = mix(bsdf.throughput, sss_bsdf.throughput, subsurface);
 	// 
 	// Transmission roughness
 	float transmission_roughness_scalar = clamp(specular_roughness + transmission_extra_roughness, 0.0, 1.0);

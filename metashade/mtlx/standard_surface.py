@@ -392,6 +392,8 @@ class Permutation:
                 bsdf=sh.diffuse_bsdf,
             )
 
+            sh.bsdf = sh.diffuse_bsdf
+
             if self.lobes.subsurface:
                 sh // ""
                 sh // "Subsurface scattering"
@@ -422,15 +424,12 @@ class Permutation:
 
                 sh // ""
                 sh // "Subsurface mix: blend SSS with diffuse"
-                sh.subsurface_mix = sh.BSDF()
-                sh.subsurface_mix.response = sh.subsurface.lerp(
-                    sh.diffuse_bsdf.response, sh.sss_bsdf.response
+                sh.bsdf.response = sh.subsurface.lerp(
+                    sh.bsdf.response, sh.sss_bsdf.response
                 )
-                sh.subsurface_mix.throughput = sh.subsurface.lerp(
-                    sh.diffuse_bsdf.throughput, sh.sss_bsdf.throughput
+                sh.bsdf.throughput = sh.subsurface.lerp(
+                    sh.bsdf.throughput, sh.sss_bsdf.throughput
                 )
-            else:
-                sh.subsurface_mix = sh.diffuse_bsdf
 
             if self.lobes.sheen:
                 sh // ""
@@ -449,18 +448,14 @@ class Permutation:
                 )
 
                 sh // ""
-                sh // "Sheen layer: sheen over subsurface mix"
+                sh // "Sheen layer: sheen over diffuse/subsurface"
                 sh.bsdf.response = (
                     sh.sheen_bsdf_out.response
-                    + sh.subsurface_mix.response
-                    * sh.sheen_bsdf_out.throughput
+                    + sh.bsdf.response * sh.sheen_bsdf_out.throughput
                 )
                 sh.bsdf.throughput = (
-                    sh.sheen_bsdf_out.throughput
-                    * sh.subsurface_mix.throughput
+                    sh.sheen_bsdf_out.throughput * sh.bsdf.throughput
                 )
-            else:
-                sh.bsdf = sh.subsurface_mix
 
             sh // ""
             sh // "Transmission roughness"
