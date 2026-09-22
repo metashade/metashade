@@ -91,8 +91,9 @@ void mx_metashade_standard_surface_subsurface0_bsdf(ClosureData closureData, flo
 		mx_layer_bsdf(closureData, specular_bsdf, bsdf, bsdf);
 	}
 	// 
-	// Artistic IOR (reflectivity/edge-color -> physical IOR/extinction)
+	// Metalness
 	{
+		// Artistic IOR (reflectivity/edge-color -> physical IOR/extinction)
 		vec3 metal_reflectivity = base_color * base;
 		vec3 metal_edgecolor = specular_color * specular;
 		vec3 ior_n;
@@ -113,7 +114,6 @@ void mx_metashade_standard_surface_subsurface0_bsdf(ClosureData closureData, flo
 	// 
 	// Coat attenuation and layer
 	{
-		// Float3 coercion needed: RgbF lerp result -> Float3 for BSDF multiply
 		vec3 coat_attenuation = mix(vec3(1.0), coat_color, coat);
 		bsdf.response *= coat_attenuation;
 		bsdf.throughput *= coat_attenuation;

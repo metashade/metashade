@@ -105,6 +105,14 @@ LOBES: tuple[Lobe, ...] = (
         stdlib_imports=("dielectric_bsdf",),
     ),
     Lobe(
+        name="metalness",
+        gate_input="metalness",
+        params=frozenset({
+            "metalness",
+        }),
+        stdlib_imports=("conductor_bsdf", "artistic_ior"),
+    ),
+    Lobe(
         name="coat",
         gate_input="coat",
         params=frozenset({
@@ -548,62 +556,62 @@ class Permutation:
                     bsdf=sh.bsdf,
                 )
 
-            sh // ""
-            sh // ("Artistic IOR (reflectivity/edge-color -> physical "
-                   "IOR/extinction)")
-            with sh.block():
-                sh.metal_reflectivity = sh.base_color * sh.base
-                sh.metal_edgecolor = sh.specular_color * sh.specular
-                sh.ior_n = sh.RgbF()
-                sh.ior_k = sh.RgbF()
-                sh.mx_artistic_ior(
-                    reflectivity=sh.metal_reflectivity,
-                    edge_color=sh.metal_edgecolor,
-                    ior=sh.ior_n,
-                    extinction=sh.ior_k,
-                )
-
+            if self.lobes.metalness:
                 sh // ""
-                sh // "Conductor BSDF (metal reflection)"
-                sh.metal_bsdf = sh.BSDF(
-                    response=sh.Float3(0), throughput=sh.Float3(1)
-                )
-                sh.mx_conductor_bsdf(
-                    closureData=sh.closureData,
-                    weight=sh.metalness,
-                    ior=sh.ior_n,
-                    extinction=sh.ior_k,
-                    roughness=sh.main_roughness,
-                    retroreflective=False,
-                    thinfilm_thickness=sh.thin_film_thickness,
-                    thinfilm_ior=sh.thin_film_IOR,
-                    normal=sh.normal,
-                    tangent=sh.main_tangent,
-                    distribution=_DISTRIBUTION_GGX,
-                    bsdf=sh.metal_bsdf,
-                )
+                sh // "Metalness"
+                with sh.block():
+                    sh // ("Artistic IOR (reflectivity/edge-color -> physical "
+                          "IOR/extinction)")
+                    sh.metal_reflectivity = sh.base_color * sh.base
+                    sh.metal_edgecolor = sh.specular_color * sh.specular
+                    sh.ior_n = sh.RgbF()
+                    sh.ior_k = sh.RgbF()
+                    sh.mx_artistic_ior(
+                        reflectivity=sh.metal_reflectivity,
+                        edge_color=sh.metal_edgecolor,
+                        ior=sh.ior_n,
+                        extinction=sh.ior_k,
+                    )
 
-                sh // ""
-                sh // "Metalness mix: conductor (fg) vs specular layer (bg)"
-                sh // ("Conductor response is already scaled by metalness "
-                       "(the weight),")
-                sh // "so we just add it to the attenuated specular layer."
-                sh.one_minus_metalness = sh.Float(1) - sh.metalness
-                sh.bsdf.response = (
-                    sh.metal_bsdf.response
-                    + sh.bsdf.response * sh.one_minus_metalness
-                )
-                sh.bsdf.throughput = (
-                    sh.metal_bsdf.throughput
-                    + sh.bsdf.throughput * sh.one_minus_metalness
-                )
+                    sh // ""
+                    sh // "Conductor BSDF (metal reflection)"
+                    sh.metal_bsdf = sh.BSDF(
+                        response=sh.Float3(0), throughput=sh.Float3(1)
+                    )
+                    sh.mx_conductor_bsdf(
+                        closureData=sh.closureData,
+                        weight=sh.metalness,
+                        ior=sh.ior_n,
+                        extinction=sh.ior_k,
+                        roughness=sh.main_roughness,
+                        retroreflective=False,
+                        thinfilm_thickness=sh.thin_film_thickness,
+                        thinfilm_ior=sh.thin_film_IOR,
+                        normal=sh.normal,
+                        tangent=sh.main_tangent,
+                        distribution=_DISTRIBUTION_GGX,
+                        bsdf=sh.metal_bsdf,
+                    )
+
+                    sh // ""
+                    sh // "Metalness mix: conductor (fg) vs specular layer (bg)"
+                    sh // ("Conductor response is already scaled by metalness "
+                        "(the weight),")
+                    sh // "so we just add it to the attenuated specular layer."
+                    sh.one_minus_metalness = sh.Float(1) - sh.metalness
+                    sh.bsdf.response = (
+                        sh.metal_bsdf.response
+                        + sh.bsdf.response * sh.one_minus_metalness
+                    )
+                    sh.bsdf.throughput = (
+                        sh.metal_bsdf.throughput
+                        + sh.bsdf.throughput * sh.one_minus_metalness
+                    )
 
             if self.lobes.coat:
                 sh // ""
                 sh // "Coat attenuation and layer"
                 with sh.block():
-                    sh // ("Float3 coercion needed: RgbF lerp result -> "
-                           "Float3 for BSDF multiply")
                     sh.coat_attenuation = sh.Float3(
                         sh.coat.lerp(sh.RgbF(1.0), sh.coat_color)
                     )
@@ -791,8 +799,6 @@ _BASE_STDLIB_IMPORTS = frozenset({
     "roughness_anisotropy",
     "oren_nayar_diffuse_bsdf",
     "dielectric_bsdf",
-    "conductor_bsdf",
-    "artistic_ior",
     "layer_bsdf",
     "mix_bsdf",
 })
