@@ -287,17 +287,12 @@ class Function:
                 f'{self._name}({arg_str})'
             )
     
-class _ConditionalStatement:
+class _Block:
+    """Bare ``{ ... }`` block scope for narrowing variable lifetimes."""
     def __init__(self, sh):
         self._sh = sh
 
-    @abc.abstractmethod
-    def _emit_statement(self):
-        pass
-
     def __enter__(self):
-        self._sh._emit_indent()
-        self._emit_statement()
         self._sh._emit_indent()
         self._sh._emit('{\n')
         self._sh._push_indent()
@@ -311,6 +306,18 @@ class _ConditionalStatement:
         self._sh._pop_indent()
         self._sh._emit_indent()
         self._sh._emit('}\n')
+
+
+class _ConditionalStatement(_Block):
+    @abc.abstractmethod
+    def _emit_statement(self):
+        pass
+
+    def __enter__(self):
+        self._sh._emit_indent()
+        self._emit_statement()
+        return super().__enter__()
+
 
 class If(_ConditionalStatement):
     def __init__(self, sh, condition):

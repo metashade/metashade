@@ -25,3 +25,21 @@ class TestScopes:
                     match = "Undeclared symbol: 'c'"
                 ):
                     sh.return_(sh.a + sh.c)
+
+    @ctx_cls_hg
+    def test_block_scope(self, ctx_cls):
+        """Variables declared inside sh.block() are scoped to the block."""
+        with ctx_cls(no_file = True) as sh:
+            with sh.function('test_block')(a = sh.Float):
+                sh.result = sh.Float(0)
+
+                with sh.block():
+                    sh.tmp = sh.a * sh.Float(2)
+                    sh.result = sh.tmp
+
+                # tmp should not be accessible outside the block
+                with pytest.raises(
+                    AttributeError,
+                    match = "Undeclared symbol: 'tmp'"
+                ):
+                    sh.result = sh.tmp
