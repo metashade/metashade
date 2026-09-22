@@ -58,6 +58,10 @@ class Generator(base.Generator):
     
     def else_(self):
         return context.Else(self)
+
+    def block(self):
+        """Bare ``{ ... }`` block for narrowing variable lifetimes."""
+        return context._Block(self)
     
     def _single_line_comment(self, comment):
         self._emit_indent()

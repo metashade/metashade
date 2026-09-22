@@ -397,65 +397,67 @@ class Permutation:
             if self.lobes.subsurface:
                 sh // ""
                 sh // "Subsurface scattering"
-                sh.subsurface_radius_scaled = (
-                    sh.subsurface_radius * sh.subsurface_scale
-                )
-                sh.sss_bsdf = sh.BSDF(
-                    response=sh.Float3(0), throughput=sh.Float3(1)
-                )
-                with sh.if_(sh.thin_walled):
-                    sh.mx_translucent_bsdf(
-                        closureData=sh.closureData,
-                        weight=1.0,
-                        color=sh.subsurface_color,
-                        normal=sh.normal,
-                        bsdf=sh.sss_bsdf,
+                with sh.block():
+                    sh.subsurface_radius_scaled = (
+                        sh.subsurface_radius * sh.subsurface_scale
                     )
-                with sh.else_():
-                    sh.mx_subsurface_bsdf(
-                        closureData=sh.closureData,
-                        weight=1.0,
-                        color=sh.subsurface_color,
-                        radius=sh.subsurface_radius_scaled,
-                        anisotropy=sh.subsurface_anisotropy,
-                        normal=sh.normal,
-                        bsdf=sh.sss_bsdf,
+                    sh.sss_bsdf = sh.BSDF(
+                        response=sh.Float3(0), throughput=sh.Float3(1)
                     )
+                    with sh.if_(sh.thin_walled):
+                        sh.mx_translucent_bsdf(
+                            closureData=sh.closureData,
+                            weight=1.0,
+                            color=sh.subsurface_color,
+                            normal=sh.normal,
+                            bsdf=sh.sss_bsdf,
+                        )
+                    with sh.else_():
+                        sh.mx_subsurface_bsdf(
+                            closureData=sh.closureData,
+                            weight=1.0,
+                            color=sh.subsurface_color,
+                            radius=sh.subsurface_radius_scaled,
+                            anisotropy=sh.subsurface_anisotropy,
+                            normal=sh.normal,
+                            bsdf=sh.sss_bsdf,
+                        )
 
-                sh // ""
-                sh // "Subsurface mix: blend SSS with diffuse"
-                sh.bsdf.response = sh.subsurface.lerp(
-                    sh.bsdf.response, sh.sss_bsdf.response
-                )
-                sh.bsdf.throughput = sh.subsurface.lerp(
-                    sh.bsdf.throughput, sh.sss_bsdf.throughput
-                )
+                    sh // ""
+                    sh // "Subsurface mix: blend SSS with diffuse"
+                    sh.bsdf.response = sh.subsurface.lerp(
+                        sh.bsdf.response, sh.sss_bsdf.response
+                    )
+                    sh.bsdf.throughput = sh.subsurface.lerp(
+                        sh.bsdf.throughput, sh.sss_bsdf.throughput
+                    )
 
             if self.lobes.sheen:
                 sh // ""
                 sh // "Sheen BSDF"
-                sh.sheen_bsdf_out = sh.BSDF(
-                    response=sh.Float3(0), throughput=sh.Float3(1)
-                )
-                sh.mx_sheen_bsdf(
-                    closureData=sh.closureData,
-                    weight=sh.sheen,
-                    color=sh.sheen_color,
-                    roughness=sh.sheen_roughness,
-                    normal=sh.normal,
-                    mode=0,
-                    bsdf=sh.sheen_bsdf_out,
-                )
+                with sh.block():
+                    sh.sheen_bsdf_out = sh.BSDF(
+                        response=sh.Float3(0), throughput=sh.Float3(1)
+                    )
+                    sh.mx_sheen_bsdf(
+                        closureData=sh.closureData,
+                        weight=sh.sheen,
+                        color=sh.sheen_color,
+                        roughness=sh.sheen_roughness,
+                        normal=sh.normal,
+                        mode=0,
+                        bsdf=sh.sheen_bsdf_out,
+                    )
 
-                sh // ""
-                sh // "Sheen layer: sheen over diffuse/subsurface"
-                sh.bsdf.response = (
-                    sh.sheen_bsdf_out.response
-                    + sh.bsdf.response * sh.sheen_bsdf_out.throughput
-                )
-                sh.bsdf.throughput = (
-                    sh.sheen_bsdf_out.throughput * sh.bsdf.throughput
-                )
+                    sh // ""
+                    sh // "Sheen layer: sheen over diffuse/subsurface"
+                    sh.bsdf.response = (
+                        sh.sheen_bsdf_out.response
+                        + sh.bsdf.response * sh.sheen_bsdf_out.throughput
+                    )
+                    sh.bsdf.throughput = (
+                        sh.sheen_bsdf_out.throughput * sh.bsdf.throughput
+                    )
 
             sh // ""
             sh // "Transmission roughness"
@@ -480,164 +482,168 @@ class Permutation:
 
             sh // ""
             sh // "Transmission BSDF (dielectric transmission)"
-            sh.transmission_bsdf = sh.BSDF(
-                response=sh.Float3(0), throughput=sh.Float3(1)
-            )
-            sh.mx_dielectric_bsdf(
-                closureData=sh.closureData,
-                weight=1.0,
-                tint=sh.transmission_color,
-                ior=sh.specular_IOR,
-                roughness=sh.transmission_roughness,
-                retroreflective=False,
-                thinfilm_thickness=0.0,
-                thinfilm_ior=1.5,
-                normal=sh.normal,
-                tangent=sh.main_tangent,
-                distribution=_DISTRIBUTION_GGX,
-                scatter_mode=_SCATTER_T,
-                bsdf=sh.transmission_bsdf,
-            )
-
-            sh // ""
-            sh // "Transmission mix: blend transmission with sheen layer"
-            sh.bsdf.response = sh.transmission.lerp(
-                sh.bsdf.response, sh.transmission_bsdf.response
-            )
-            sh.bsdf.throughput = sh.transmission.lerp(
-                sh.bsdf.throughput, sh.transmission_bsdf.throughput
-            )
-
-            sh // ""
-            sh // "Specular BSDF (dielectric reflection)"
-            sh.specular_bsdf = sh.BSDF(
-                response=sh.Float3(0), throughput=sh.Float3(1)
-            )
-            sh.mx_dielectric_bsdf(
-                closureData=sh.closureData,
-                weight=sh.specular,
-                tint=sh.specular_color,
-                ior=sh.specular_IOR,
-                roughness=sh.main_roughness,
-                retroreflective=False,
-                thinfilm_thickness=sh.thin_film_thickness,
-                thinfilm_ior=sh.thin_film_IOR,
-                normal=sh.normal,
-                tangent=sh.main_tangent,
-                distribution=_DISTRIBUTION_GGX,
-                scatter_mode=_SCATTER_R,
-                bsdf=sh.specular_bsdf,
-            )
-
-            sh // ""
-            sh // "Layer: specular over transmission mix"
-            sh.bsdf.response = (
-                sh.specular_bsdf.response
-                + sh.bsdf.response * sh.specular_bsdf.throughput
-            )
-            sh.bsdf.throughput = (
-                sh.specular_bsdf.throughput * sh.bsdf.throughput
-            )
-
-            sh // ""
-            sh // ("Artistic IOR (reflectivity/edge-color -> physical "
-                   "IOR/extinction)")
-            sh.metal_reflectivity = sh.base_color * sh.base
-            sh.metal_edgecolor = sh.specular_color * sh.specular
-            sh.ior_n = sh.RgbF()
-            sh.ior_k = sh.RgbF()
-            sh.mx_artistic_ior(
-                reflectivity=sh.metal_reflectivity,
-                edge_color=sh.metal_edgecolor,
-                ior=sh.ior_n,
-                extinction=sh.ior_k,
-            )
-
-            sh // ""
-            sh // "Conductor BSDF (metal reflection)"
-            sh.metal_bsdf = sh.BSDF(
-                response=sh.Float3(0), throughput=sh.Float3(1)
-            )
-            sh.mx_conductor_bsdf(
-                closureData=sh.closureData,
-                weight=sh.metalness,
-                ior=sh.ior_n,
-                extinction=sh.ior_k,
-                roughness=sh.main_roughness,
-                retroreflective=False,
-                thinfilm_thickness=sh.thin_film_thickness,
-                thinfilm_ior=sh.thin_film_IOR,
-                normal=sh.normal,
-                tangent=sh.main_tangent,
-                distribution=_DISTRIBUTION_GGX,
-                bsdf=sh.metal_bsdf,
-            )
-
-            sh // ""
-            sh // "Metalness mix: conductor (fg) vs specular layer (bg)"
-            sh // ("Conductor response is already scaled by metalness "
-                   "(the weight),")
-            sh // "so we just add it to the attenuated specular layer."
-            sh.one_minus_metalness = sh.Float(1) - sh.metalness
-            sh.bsdf.response = (
-                sh.metal_bsdf.response
-                + sh.bsdf.response * sh.one_minus_metalness
-            )
-            sh.bsdf.throughput = (
-                sh.metal_bsdf.throughput
-                + sh.bsdf.throughput * sh.one_minus_metalness
-            )
-
-            if self.lobes.coat:
-                sh // ""
-                sh // "Coat attenuation: tint underlying layers by coat color"
-                sh // ("Float3 coercion needed: RgbF lerp result -> "
-                       "Float3 for BSDF multiply")
-                sh.coat_attenuation = sh.Float3(
-                    sh.coat.lerp(sh.RgbF(1.0), sh.coat_color)
-                )
-                sh.bsdf.response = sh.bsdf.response * sh.coat_attenuation
-                sh.bsdf.throughput = sh.bsdf.throughput * sh.coat_attenuation
-
-                sh // ""
-                sh // "Coat roughness"
-                sh.coat_roughness_vec = sh.Float2()
-                sh.mx_roughness_anisotropy(
-                    roughness=sh.coat_roughness,
-                    anisotropy=sh.coat_anisotropy,
-                    out_=sh.coat_roughness_vec,
-                )
-
-                sh // ""
-                sh // "Coat BSDF (dielectric reflection)"
-                sh.coat_bsdf = sh.BSDF(
+            with sh.block():
+                sh.transmission_bsdf = sh.BSDF(
                     response=sh.Float3(0), throughput=sh.Float3(1)
                 )
                 sh.mx_dielectric_bsdf(
                     closureData=sh.closureData,
-                    weight=sh.coat,
-                    tint=[1.0, 1.0, 1.0],
-                    ior=sh.coat_IOR,
-                    roughness=sh.coat_roughness_vec,
+                    weight=1.0,
+                    tint=sh.transmission_color,
+                    ior=sh.specular_IOR,
+                    roughness=sh.transmission_roughness,
                     retroreflective=False,
                     thinfilm_thickness=0.0,
                     thinfilm_ior=1.5,
-                    normal=sh.coat_normal,
-                    tangent=sh.coat_tangent,
+                    normal=sh.normal,
+                    tangent=sh.main_tangent,
                     distribution=_DISTRIBUTION_GGX,
-                    scatter_mode=_SCATTER_R,
-                    bsdf=sh.coat_bsdf,
+                    scatter_mode=_SCATTER_T,
+                    bsdf=sh.transmission_bsdf,
                 )
 
                 sh // ""
-                sh // "Coat layer: coat over attenuated base"
+                sh // "Transmission mix: blend transmission with sheen layer"
+                sh.bsdf.response = sh.transmission.lerp(
+                    sh.bsdf.response, sh.transmission_bsdf.response
+                )
+                sh.bsdf.throughput = sh.transmission.lerp(
+                    sh.bsdf.throughput, sh.transmission_bsdf.throughput
+                )
+
+            sh // ""
+            sh // "Specular BSDF (dielectric reflection)"
+            with sh.block():
+                sh.specular_bsdf = sh.BSDF(
+                    response=sh.Float3(0), throughput=sh.Float3(1)
+                )
+                sh.mx_dielectric_bsdf(
+                    closureData=sh.closureData,
+                    weight=sh.specular,
+                    tint=sh.specular_color,
+                    ior=sh.specular_IOR,
+                    roughness=sh.main_roughness,
+                    retroreflective=False,
+                    thinfilm_thickness=sh.thin_film_thickness,
+                    thinfilm_ior=sh.thin_film_IOR,
+                    normal=sh.normal,
+                    tangent=sh.main_tangent,
+                    distribution=_DISTRIBUTION_GGX,
+                    scatter_mode=_SCATTER_R,
+                    bsdf=sh.specular_bsdf,
+                )
+
+                sh // ""
+                sh // "Layer: specular over transmission mix"
                 sh.bsdf.response = (
-                    sh.coat_bsdf.response
-                    + sh.bsdf.response * sh.coat_bsdf.throughput
+                    sh.specular_bsdf.response
+                    + sh.bsdf.response * sh.specular_bsdf.throughput
                 )
                 sh.bsdf.throughput = (
-                    sh.coat_bsdf.throughput * sh.bsdf.throughput
+                    sh.specular_bsdf.throughput * sh.bsdf.throughput
                 )
+
+            sh // ""
+            sh // ("Artistic IOR (reflectivity/edge-color -> physical "
+                   "IOR/extinction)")
+            with sh.block():
+                sh.metal_reflectivity = sh.base_color * sh.base
+                sh.metal_edgecolor = sh.specular_color * sh.specular
+                sh.ior_n = sh.RgbF()
+                sh.ior_k = sh.RgbF()
+                sh.mx_artistic_ior(
+                    reflectivity=sh.metal_reflectivity,
+                    edge_color=sh.metal_edgecolor,
+                    ior=sh.ior_n,
+                    extinction=sh.ior_k,
+                )
+
+                sh // ""
+                sh // "Conductor BSDF (metal reflection)"
+                sh.metal_bsdf = sh.BSDF(
+                    response=sh.Float3(0), throughput=sh.Float3(1)
+                )
+                sh.mx_conductor_bsdf(
+                    closureData=sh.closureData,
+                    weight=sh.metalness,
+                    ior=sh.ior_n,
+                    extinction=sh.ior_k,
+                    roughness=sh.main_roughness,
+                    retroreflective=False,
+                    thinfilm_thickness=sh.thin_film_thickness,
+                    thinfilm_ior=sh.thin_film_IOR,
+                    normal=sh.normal,
+                    tangent=sh.main_tangent,
+                    distribution=_DISTRIBUTION_GGX,
+                    bsdf=sh.metal_bsdf,
+                )
+
+                sh // ""
+                sh // "Metalness mix: conductor (fg) vs specular layer (bg)"
+                sh // ("Conductor response is already scaled by metalness "
+                       "(the weight),")
+                sh // "so we just add it to the attenuated specular layer."
+                sh.one_minus_metalness = sh.Float(1) - sh.metalness
+                sh.bsdf.response = (
+                    sh.metal_bsdf.response
+                    + sh.bsdf.response * sh.one_minus_metalness
+                )
+                sh.bsdf.throughput = (
+                    sh.metal_bsdf.throughput
+                    + sh.bsdf.throughput * sh.one_minus_metalness
+                )
+
+            if self.lobes.coat:
+                sh // ""
+                sh // "Coat attenuation and layer"
+                with sh.block():
+                    sh // ("Float3 coercion needed: RgbF lerp result -> "
+                           "Float3 for BSDF multiply")
+                    sh.coat_attenuation = sh.Float3(
+                        sh.coat.lerp(sh.RgbF(1.0), sh.coat_color)
+                    )
+                    sh.bsdf.response *= sh.coat_attenuation
+                    sh.bsdf.throughput *= sh.coat_attenuation
+
+                    sh // ""
+                    sh // "Coat roughness"
+                    sh.coat_roughness_vec = sh.Float2()
+                    sh.mx_roughness_anisotropy(
+                        roughness=sh.coat_roughness,
+                        anisotropy=sh.coat_anisotropy,
+                        out_=sh.coat_roughness_vec,
+                    )
+
+                    sh // ""
+                    sh // "Coat BSDF (dielectric reflection)"
+                    sh.coat_bsdf = sh.BSDF(
+                        response=sh.Float3(0), throughput=sh.Float3(1)
+                    )
+                    sh.mx_dielectric_bsdf(
+                        closureData=sh.closureData,
+                        weight=sh.coat,
+                        tint=[1.0, 1.0, 1.0],
+                        ior=sh.coat_IOR,
+                        roughness=sh.coat_roughness_vec,
+                        retroreflective=False,
+                        thinfilm_thickness=0.0,
+                        thinfilm_ior=1.5,
+                        normal=sh.coat_normal,
+                        tangent=sh.coat_tangent,
+                        distribution=_DISTRIBUTION_GGX,
+                        scatter_mode=_SCATTER_R,
+                        bsdf=sh.coat_bsdf,
+                    )
+
+                    sh // ""
+                    sh // "Coat layer: coat over attenuated base"
+                    sh.bsdf.response = (
+                        sh.coat_bsdf.response
+                        + sh.bsdf.response * sh.coat_bsdf.throughput
+                    )
+                    sh.bsdf.throughput = (
+                        sh.coat_bsdf.throughput * sh.bsdf.throughput
+                    )
 
         ctx.add_node_impl(
             func_name=self.func_name,
