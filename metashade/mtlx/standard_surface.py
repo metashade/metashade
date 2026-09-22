@@ -423,13 +423,12 @@ class Permutation:
                             bsdf=sh.sss_bsdf,
                         )
 
-                    sh // ""
-                    sh // "Subsurface mix: blend SSS with diffuse"
-                    sh.bsdf.response = sh.subsurface.lerp(
-                        sh.bsdf.response, sh.sss_bsdf.response
-                    )
-                    sh.bsdf.throughput = sh.subsurface.lerp(
-                        sh.bsdf.throughput, sh.sss_bsdf.throughput
+                    sh.mx_mix_bsdf(
+                        closureData=sh.closureData,
+                        fg=sh.sss_bsdf,
+                        bg=sh.bsdf,
+                        mix=sh.subsurface,
+                        bsdf=sh.bsdf,
                     )
 
             if self.lobes.sheen:
@@ -449,14 +448,11 @@ class Permutation:
                         bsdf=sh.sheen_bsdf_out,
                     )
 
-                    sh // ""
-                    sh // "Sheen layer: sheen over diffuse/subsurface"
-                    sh.bsdf.response = (
-                        sh.sheen_bsdf_out.response
-                        + sh.bsdf.response * sh.sheen_bsdf_out.throughput
-                    )
-                    sh.bsdf.throughput = (
-                        sh.sheen_bsdf_out.throughput * sh.bsdf.throughput
+                    sh.mx_layer_bsdf(
+                        closureData=sh.closureData,
+                        top=sh.sheen_bsdf_out,
+                        base=sh.bsdf,
+                        bsdf=sh.bsdf,
                     )
 
             sh // ""
@@ -502,13 +498,12 @@ class Permutation:
                     bsdf=sh.transmission_bsdf,
                 )
 
-                sh // ""
-                sh // "Transmission mix: blend transmission with sheen layer"
-                sh.bsdf.response = sh.transmission.lerp(
-                    sh.bsdf.response, sh.transmission_bsdf.response
-                )
-                sh.bsdf.throughput = sh.transmission.lerp(
-                    sh.bsdf.throughput, sh.transmission_bsdf.throughput
+                sh.mx_mix_bsdf(
+                    closureData=sh.closureData,
+                    fg=sh.transmission_bsdf,
+                    bg=sh.bsdf,
+                    mix=sh.transmission,
+                    bsdf=sh.bsdf,
                 )
 
             sh // ""
@@ -533,14 +528,11 @@ class Permutation:
                     bsdf=sh.specular_bsdf,
                 )
 
-                sh // ""
-                sh // "Layer: specular over transmission mix"
-                sh.bsdf.response = (
-                    sh.specular_bsdf.response
-                    + sh.bsdf.response * sh.specular_bsdf.throughput
-                )
-                sh.bsdf.throughput = (
-                    sh.specular_bsdf.throughput * sh.bsdf.throughput
+                sh.mx_layer_bsdf(
+                    closureData=sh.closureData,
+                    top=sh.specular_bsdf,
+                    base=sh.bsdf,
+                    bsdf=sh.bsdf,
                 )
 
             sh // ""
@@ -635,14 +627,11 @@ class Permutation:
                         bsdf=sh.coat_bsdf,
                     )
 
-                    sh // ""
-                    sh // "Coat layer: coat over attenuated base"
-                    sh.bsdf.response = (
-                        sh.coat_bsdf.response
-                        + sh.bsdf.response * sh.coat_bsdf.throughput
-                    )
-                    sh.bsdf.throughput = (
-                        sh.coat_bsdf.throughput * sh.bsdf.throughput
+                    sh.mx_layer_bsdf(
+                        closureData=sh.closureData,
+                        top=sh.coat_bsdf,
+                        base=sh.bsdf,
+                        bsdf=sh.bsdf,
                     )
 
         ctx.add_node_impl(
@@ -791,6 +780,8 @@ _BASE_STDLIB_IMPORTS = frozenset({
     "dielectric_bsdf",
     "conductor_bsdf",
     "artistic_ior",
+    "layer_bsdf",
+    "mix_bsdf",
 })
 
 _BSDF_INPUTS = frozenset({
