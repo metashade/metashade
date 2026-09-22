@@ -113,12 +113,20 @@ class LobeFlags:
     __slots__ = tuple(lobe.name for lobe in LOBES)
 
     def __init__(self, **kwargs: bool):
+        unknown = kwargs.keys() - {lobe.name for lobe in LOBES}
+        if unknown:
+            raise TypeError(
+                f"Unknown lobe(s): {', '.join(sorted(unknown))}"
+            )
         for lobe in LOBES:
             object.__setattr__(
                 self, lobe.name, kwargs.get(lobe.name, True),
             )
 
     def __setattr__(self, name, value):
+        raise AttributeError("LobeFlags is immutable")
+
+    def __delattr__(self, name):
         raise AttributeError("LobeFlags is immutable")
 
     @property
