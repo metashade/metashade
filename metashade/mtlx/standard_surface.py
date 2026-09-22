@@ -87,6 +87,14 @@ LOBES: tuple[Lobe, ...] = (
         stdlib_imports=("translucent_bsdf", "subsurface_bsdf"),
     ),
     Lobe(
+        name="sheen",
+        gate_input="sheen",
+        params=frozenset({
+            "sheen", "sheen_color", "sheen_roughness",
+        }),
+        stdlib_imports=("sheen_bsdf",),
+    ),
+    Lobe(
         name="coat",
         gate_input="coat",
         params=frozenset({
@@ -384,6 +392,8 @@ class Permutation:
                 bsdf=sh.diffuse_bsdf,
             )
 
+            sh.bsdf = sh.diffuse_bsdf
+
             if self.lobes.subsurface:
                 sh // ""
                 sh // "Subsurface scattering"
@@ -414,40 +424,38 @@ class Permutation:
 
                 sh // ""
                 sh // "Subsurface mix: blend SSS with diffuse"
-                sh.subsurface_mix = sh.BSDF()
-                sh.subsurface_mix.response = sh.subsurface.lerp(
-                    sh.diffuse_bsdf.response, sh.sss_bsdf.response
+                sh.bsdf.response = sh.subsurface.lerp(
+                    sh.bsdf.response, sh.sss_bsdf.response
                 )
-                sh.subsurface_mix.throughput = sh.subsurface.lerp(
-                    sh.diffuse_bsdf.throughput, sh.sss_bsdf.throughput
+                sh.bsdf.throughput = sh.subsurface.lerp(
+                    sh.bsdf.throughput, sh.sss_bsdf.throughput
                 )
-            else:
-                sh.subsurface_mix = sh.diffuse_bsdf
 
-            sh // ""
-            sh // "Sheen BSDF"
-            sh.sheen_bsdf_out = sh.BSDF(
-                response=sh.Float3(0), throughput=sh.Float3(1)
-            )
-            sh.mx_sheen_bsdf(
-                closureData=sh.closureData,
-                weight=sh.sheen,
-                color=sh.sheen_color,
-                roughness=sh.sheen_roughness,
-                normal=sh.normal,
-                mode=0,
-                bsdf=sh.sheen_bsdf_out,
-            )
+            if self.lobes.sheen:
+                sh // ""
+                sh // "Sheen BSDF"
+                sh.sheen_bsdf_out = sh.BSDF(
+                    response=sh.Float3(0), throughput=sh.Float3(1)
+                )
+                sh.mx_sheen_bsdf(
+                    closureData=sh.closureData,
+                    weight=sh.sheen,
+                    color=sh.sheen_color,
+                    roughness=sh.sheen_roughness,
+                    normal=sh.normal,
+                    mode=0,
+                    bsdf=sh.sheen_bsdf_out,
+                )
 
-            sh // ""
-            sh // "Sheen layer: sheen over subsurface mix"
-            sh.bsdf.response = (
-                sh.sheen_bsdf_out.response
-                + sh.subsurface_mix.response * sh.sheen_bsdf_out.throughput
-            )
-            sh.bsdf.throughput = (
-                sh.sheen_bsdf_out.throughput * sh.subsurface_mix.throughput
-            )
+                sh // ""
+                sh // "Sheen layer: sheen over diffuse/subsurface"
+                sh.bsdf.response = (
+                    sh.sheen_bsdf_out.response
+                    + sh.bsdf.response * sh.sheen_bsdf_out.throughput
+                )
+                sh.bsdf.throughput = (
+                    sh.sheen_bsdf_out.throughput * sh.bsdf.throughput
+                )
 
             sh // ""
             sh // "Transmission roughness"
@@ -774,7 +782,6 @@ _DISTRIBUTION_GGX = 0
 _BASE_STDLIB_IMPORTS = frozenset({
     "roughness_anisotropy",
     "oren_nayar_diffuse_bsdf",
-    "sheen_bsdf",
     "dielectric_bsdf",
     "conductor_bsdf",
     "artistic_ior",

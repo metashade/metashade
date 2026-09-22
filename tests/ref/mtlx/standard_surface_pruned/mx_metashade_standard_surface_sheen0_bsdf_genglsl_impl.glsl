@@ -3,7 +3,8 @@
 #include "mx_dielectric_bsdf.glsl"
 #include "mx_oren_nayar_diffuse_bsdf.glsl"
 #include "mx_roughness_anisotropy.glsl"
-#include "mx_sheen_bsdf.glsl"
+#include "mx_subsurface_bsdf.glsl"
+#include "mx_translucent_bsdf.glsl"
 // Rodrigues' rotation formula.
 // 
 // Private copy of the stdlib rotate3d helper.  Avoids
@@ -33,7 +34,7 @@ vec3 _mx_metashade_rotate_tangent(vec3 tangent, float anisotropy, float rotation
 	return tangent;
 }
 
-void mx_metashade_standard_surface_subsurface0_bsdf(ClosureData closureData, float base, vec3 base_color, float diffuse_roughness, float metalness, float specular, vec3 specular_color, float specular_roughness, float specular_IOR, float specular_anisotropy, float specular_rotation, float transmission, vec3 transmission_color, float transmission_extra_roughness, float sheen, vec3 sheen_color, float sheen_roughness, float coat, vec3 coat_color, float coat_roughness, float coat_anisotropy, float coat_rotation, float coat_IOR, vec3 coat_normal, float coat_affect_color, float coat_affect_roughness, float thin_film_thickness, float thin_film_IOR, vec3 normal, vec3 tangent, inout BSDF bsdf)
+void mx_metashade_standard_surface_sheen0_bsdf(ClosureData closureData, float base, vec3 base_color, float diffuse_roughness, float metalness, float specular, vec3 specular_color, float specular_roughness, float specular_IOR, float specular_anisotropy, float specular_rotation, float transmission, vec3 transmission_color, float transmission_extra_roughness, float subsurface, vec3 subsurface_color, vec3 subsurface_radius, float subsurface_scale, float subsurface_anisotropy, float coat, vec3 coat_color, float coat_roughness, float coat_anisotropy, float coat_rotation, float coat_IOR, vec3 coat_normal, float coat_affect_color, float coat_affect_roughness, float thin_film_thickness, float thin_film_IOR, bool thin_walled, vec3 normal, vec3 tangent, inout BSDF bsdf)
 {
 	// 
 	// Coat affect roughness: blend specular roughness toward 1.0
@@ -54,6 +55,9 @@ void mx_metashade_standard_surface_subsurface0_bsdf(ClosureData closureData, flo
 	vec3 coat_gamma = vec3((clamp(coat, 0.0, 1.0) * coat_affect_color) + 1.0);
 	vec3 coat_affected_diffuse_color = pow(clamp(base_color, 0.0, 1.0), coat_gamma);
 	// 
+	// Coat affect subsurface color
+	subsurface_color = pow(clamp(subsurface_color, 0.0, 1.0), coat_gamma);
+	// 
 	// Diffuse BSDF (Oren-Nayar)
 	// `energy_compensation=false` to match the Standard Surface spec, 
 	// instead of the more physically-correct `true` in OpenPBR
@@ -61,13 +65,21 @@ void mx_metashade_standard_surface_subsurface0_bsdf(ClosureData closureData, flo
 	mx_oren_nayar_diffuse_bsdf(closureData, base, coat_affected_diffuse_color, diffuse_roughness, normal, false, diffuse_bsdf);
 	bsdf = diffuse_bsdf;
 	// 
-	// Sheen BSDF
-	BSDF sheen_bsdf_out = BSDF(vec3(0), vec3(1));
-	mx_sheen_bsdf(closureData, sheen, sheen_color, sheen_roughness, normal, 0, sheen_bsdf_out);
+	// Subsurface scattering
+	vec3 subsurface_radius_scaled = subsurface_radius * subsurface_scale;
+	BSDF sss_bsdf = BSDF(vec3(0), vec3(1));
+	if (thin_walled)
+	{
+		mx_translucent_bsdf(closureData, 1.0, subsurface_color, normal, sss_bsdf);
+	}
+	else
+	{
+		mx_subsurface_bsdf(closureData, 1.0, subsurface_color, subsurface_radius_scaled, subsurface_anisotropy, normal, sss_bsdf);
+	}
 	// 
-	// Sheen layer: sheen over diffuse/subsurface
-	bsdf.response = sheen_bsdf_out.response + (bsdf.response * sheen_bsdf_out.throughput);
-	bsdf.throughput = sheen_bsdf_out.throughput * bsdf.throughput;
+	// Subsurface mix: blend SSS with diffuse
+	bsdf.response = mix(bsdf.response, sss_bsdf.response, subsurface);
+	bsdf.throughput = mix(bsdf.throughput, sss_bsdf.throughput, subsurface);
 	// 
 	// Transmission roughness
 	float transmission_roughness_scalar = clamp(specular_roughness + transmission_extra_roughness, 0.0, 1.0);
