@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<materialx version="1.39">
+  <nodedef name="ND_metashade_standard_surface_coat0_metalness0_sheen0_bsdf" node="metashade_standard_surface_coat0_metalness0_sheen0_bsdf" doc="Metashade Standard Surface BSDF">
+    <input name="base" type="float" doc="Multiplier on the intensity of the diffuse reflection." />
+    <input name="base_color" type="color3" doc="Color of the diffuse reflection." />
+    <input name="diffuse_roughness" type="float" doc="Roughness of the diffuse reflection. Higher values cause the surface to appear flatter and darker." />
+    <input name="specular" type="float" doc="Multiplier on the intensity of the specular reflection." />
+    <input name="specular_color" type="color3" doc="Color tint on the specular reflection." />
+    <input name="specular_roughness" type="float" doc="The roughness of the specular reflection. Lower numbers produce sharper reflections, higher numbers produce blurrier reflections." />
+    <input name="specular_IOR" type="float" doc="Index of refraction for specular reflection." />
+    <input name="specular_anisotropy" type="float" doc="The directional bias of reflected and transmitted light resulting in materials appearing rougher or glossier in certain directions." />
+    <input name="specular_rotation" type="float" doc="Rotation of the axis of specular anisotropy around the surface normal." />
+    <input name="transmission" type="float" doc="Transmission of light through the surface for materials such as glass or water. The greater the value the more transparent the material." />
+    <input name="transmission_color" type="color3" doc="Color tint on the transmitted light." />
+    <input name="transmission_extra_roughness" type="float" doc="Additional roughness on top of specular roughness. Positive values blur refractions more than reflections, and negative values blur refractions less." />
+    <input name="subsurface" type="float" doc="The blend between diffuse reflection and subsurface scattering. A value of 1.0 indicates full subsurface scattering and a value 0 for diffuse reflection only." />
+    <input name="subsurface_color" type="color3" doc="The color of the subsurface scattering effect." />
+    <input name="subsurface_radius" type="color3" doc="The mean free path. The distance which light can travel before being scattered inside the surface." />
+    <input name="subsurface_scale" type="float" doc="Scalar weight for the subsurface radius value." />
+    <input name="subsurface_anisotropy" type="float" doc="The direction of subsurface scattering. 0 scatters light evenly, positive values scatter forward and negative values scatter backward." />
+    <input name="thin_film_thickness" type="float" doc="The thickness of the thin film layer on a surface. Use for materials such as multitone car paint or soap bubbles (in nanometers)." />
+    <input name="thin_film_IOR" type="float" doc="The index of refraction of the medium surrounding the material." />
+    <input name="thin_walled" type="boolean" doc="If true the surface is double-sided and represents an infinitely thin shell. Suitable for thin objects such as tree leaves or paper." />
+    <input name="normal" type="vector3" doc="Input geometric normal" />
+    <input name="tangent" type="vector3" doc="Input geometric tangent" />
+    <output name="bsdf" type="BSDF" doc="Output parameter bsdf" />
+  </nodedef>
+</materialx>
