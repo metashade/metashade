@@ -95,6 +95,16 @@ LOBES: tuple[Lobe, ...] = (
         stdlib_imports=("sheen_bsdf",),
     ),
     Lobe(
+        name="transmission",
+        gate_input="transmission",
+        params=frozenset({
+            "transmission", "transmission_color",
+            "transmission_extra_roughness",
+        }),
+        # dielectric_bsdf shared with specular and coat.
+        stdlib_imports=("dielectric_bsdf",),
+    ),
+    Lobe(
         name="coat",
         gate_input="coat",
         params=frozenset({
@@ -455,56 +465,59 @@ class Permutation:
                         bsdf=sh.bsdf,
                     )
 
-            sh // ""
-            sh // "Transmission roughness"
-            sh.transmission_roughness_scalar = (
-                (sh.specular_roughness + sh.transmission_extra_roughness)
-                .saturate()
-            )
-
-            if self.lobes.coat:
-                sh // "Coat-affected"
-                sh.transmission_roughness_scalar = \
-                    sh.coat_roughness_factor.lerp(
-                        sh.transmission_roughness_scalar, sh.Float(1)
+            if self.lobes.transmission:
+                sh // ""
+                sh // "Transmission"
+                with sh.block():
+                    sh.transmission_roughness_scalar = (
+                        (sh.specular_roughness
+                         + sh.transmission_extra_roughness)
+                        .saturate()
                     )
 
-            sh.transmission_roughness = sh.Float2()
-            sh.mx_roughness_anisotropy(
-                roughness=sh.transmission_roughness_scalar,
-                anisotropy=sh.specular_anisotropy,
-                out_=sh.transmission_roughness,
-            )
+                    if self.lobes.coat:
+                        sh // "Coat-affected"
+                        sh.transmission_roughness_scalar = \
+                            sh.coat_roughness_factor.lerp(
+                                sh.transmission_roughness_scalar,
+                                sh.Float(1),
+                            )
 
-            sh // ""
-            sh // "Transmission BSDF (dielectric transmission)"
-            with sh.block():
-                sh.transmission_bsdf = sh.BSDF(
-                    response=sh.Float3(0), throughput=sh.Float3(1)
-                )
-                sh.mx_dielectric_bsdf(
-                    closureData=sh.closureData,
-                    weight=1.0,
-                    tint=sh.transmission_color,
-                    ior=sh.specular_IOR,
-                    roughness=sh.transmission_roughness,
-                    retroreflective=False,
-                    thinfilm_thickness=0.0,
-                    thinfilm_ior=1.5,
-                    normal=sh.normal,
-                    tangent=sh.main_tangent,
-                    distribution=_DISTRIBUTION_GGX,
-                    scatter_mode=_SCATTER_T,
-                    bsdf=sh.transmission_bsdf,
-                )
+                    sh.transmission_roughness = sh.Float2()
+                    sh.mx_roughness_anisotropy(
+                        roughness=sh.transmission_roughness_scalar,
+                        anisotropy=sh.specular_anisotropy,
+                        out_=sh.transmission_roughness,
+                    )
 
-                sh.mx_mix_bsdf(
-                    closureData=sh.closureData,
-                    fg=sh.transmission_bsdf,
-                    bg=sh.bsdf,
-                    mix=sh.transmission,
-                    bsdf=sh.bsdf,
-                )
+                    sh // ""
+                    sh // "Transmission BSDF (dielectric transmission)"
+                    sh.transmission_bsdf = sh.BSDF(
+                        response=sh.Float3(0), throughput=sh.Float3(1)
+                    )
+                    sh.mx_dielectric_bsdf(
+                        closureData=sh.closureData,
+                        weight=1.0,
+                        tint=sh.transmission_color,
+                        ior=sh.specular_IOR,
+                        roughness=sh.transmission_roughness,
+                        retroreflective=False,
+                        thinfilm_thickness=0.0,
+                        thinfilm_ior=1.5,
+                        normal=sh.normal,
+                        tangent=sh.main_tangent,
+                        distribution=_DISTRIBUTION_GGX,
+                        scatter_mode=_SCATTER_T,
+                        bsdf=sh.transmission_bsdf,
+                    )
+
+                    sh.mx_mix_bsdf(
+                        closureData=sh.closureData,
+                        fg=sh.transmission_bsdf,
+                        bg=sh.bsdf,
+                        mix=sh.transmission,
+                        bsdf=sh.bsdf,
+                    )
 
             sh // ""
             sh // "Specular BSDF (dielectric reflection)"
@@ -614,7 +627,7 @@ class Permutation:
                     sh.mx_dielectric_bsdf(
                         closureData=sh.closureData,
                         weight=sh.coat,
-                        tint=[1.0, 1.0, 1.0],
+                        tint=sh.RgbF(1.0),
                         ior=sh.coat_IOR,
                         roughness=sh.coat_roughness_vec,
                         retroreflective=False,

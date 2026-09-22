@@ -90,15 +90,15 @@ void mx_metashade_standard_surface_bsdf(ClosureData closureData, float base, vec
 		mx_layer_bsdf(closureData, sheen_bsdf_out, bsdf, bsdf);
 	}
 	// 
-	// Transmission roughness
-	float transmission_roughness_scalar = clamp(specular_roughness + transmission_extra_roughness, 0.0, 1.0);
-	// Coat-affected
-	transmission_roughness_scalar = mix(transmission_roughness_scalar, 1, coat_roughness_factor);
-	vec2 transmission_roughness;
-	mx_roughness_anisotropy(transmission_roughness_scalar, specular_anisotropy, transmission_roughness);
-	// 
-	// Transmission BSDF (dielectric transmission)
+	// Transmission
 	{
+		float transmission_roughness_scalar = clamp(specular_roughness + transmission_extra_roughness, 0.0, 1.0);
+		// Coat-affected
+		transmission_roughness_scalar = mix(transmission_roughness_scalar, 1, coat_roughness_factor);
+		vec2 transmission_roughness;
+		mx_roughness_anisotropy(transmission_roughness_scalar, specular_anisotropy, transmission_roughness);
+		// 
+		// Transmission BSDF (dielectric transmission)
 		BSDF transmission_bsdf = BSDF(vec3(0), vec3(1));
 		mx_dielectric_bsdf(closureData, 1.0, transmission_color, specular_IOR, transmission_roughness, false, 0.0, 1.5, normal, main_tangent, 0, 1, transmission_bsdf);
 		mx_mix_bsdf(closureData, transmission_bsdf, bsdf, transmission, bsdf);
@@ -144,7 +144,7 @@ void mx_metashade_standard_surface_bsdf(ClosureData closureData, float base, vec
 		// 
 		// Coat BSDF (dielectric reflection)
 		BSDF coat_bsdf = BSDF(vec3(0), vec3(1));
-		mx_dielectric_bsdf(closureData, coat, vec3(1.0, 1.0, 1.0), coat_IOR, coat_roughness_vec, false, 0.0, 1.5, coat_normal, coat_tangent, 0, 0, coat_bsdf);
+		mx_dielectric_bsdf(closureData, coat, vec3(1.0), coat_IOR, coat_roughness_vec, false, 0.0, 1.5, coat_normal, coat_tangent, 0, 0, coat_bsdf);
 		mx_layer_bsdf(closureData, coat_bsdf, bsdf, bsdf);
 	}
 }
