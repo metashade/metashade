@@ -108,11 +108,16 @@ class TestStandardSurface:
             standard_surface.LobeFlags(subsurface=False), id="subsurface0",
         ),
         pytest.param(
+            standard_surface.LobeFlags(sheen=False), id="sheen0",
+        ),
+        pytest.param(
             standard_surface.LobeFlags(coat=False), id="coat0",
         ),
         pytest.param(
-            standard_surface.LobeFlags(subsurface=False, coat=False),
-            id="coat0_subsurface0",
+            standard_surface.LobeFlags(
+                subsurface=False, sheen=False, coat=False,
+            ),
+            id="coat0_sheen0_subsurface0",
         ),
     ])
     def test_generate(self, stdlib_doc, lobes):
