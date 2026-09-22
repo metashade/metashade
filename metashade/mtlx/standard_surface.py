@@ -104,6 +104,51 @@ LOBES: tuple[Lobe, ...] = (
 _LOBES_BY_NAME: dict[str, Lobe] = {lobe.name: lobe for lobe in LOBES}
 
 
+class LobeFlags:
+    """Boolean flags for each prunable lobe, with attribute access.
+
+    Built from :data:`LOBES`; each lobe name becomes a bool attribute.
+    Defaults to all lobes active.
+    """
+    __slots__ = tuple(lobe.name for lobe in LOBES)
+
+    def __init__(self, **kwargs: bool):
+        for lobe in LOBES:
+            object.__setattr__(
+                self, lobe.name, kwargs.get(lobe.name, True),
+            )
+
+    def __setattr__(self, name, value):
+        raise AttributeError("LobeFlags is immutable")
+
+    @property
+    def name_suffix(self) -> str:
+        """Subtractive suffix, e.g. ``_coat0_subsurface0``."""
+        disabled = sorted(
+            lobe.name for lobe in LOBES
+            if not getattr(self, lobe.name)
+        )
+        if not disabled:
+            return ""
+        return "_" + "_".join(f"{d}0" for d in disabled)
+
+    @property
+    def pruned_params(self) -> frozenset[str]:
+        """Union of params from all disabled lobes."""
+        return frozenset().union(*(
+            lobe.params for lobe in LOBES
+            if not getattr(self, lobe.name)
+        ))
+
+    @property
+    def stdlib_imports(self) -> frozenset[str]:
+        """Union of stdlib imports from all active lobes."""
+        return frozenset().union(*(
+            lobe.stdlib_imports for lobe in LOBES
+            if getattr(self, lobe.name)
+        ))
+
+
 # ---------------------------------------------------------------------------
 # Generated helper functions (emitted via sh.instantiate)
 # ---------------------------------------------------------------------------
@@ -148,21 +193,18 @@ def _mx_metashade_rotate_tangent(
 class Permutation:
     """Identifies a specific Standard Surface specialization.
 
-    Each boolean field corresponds to a :class:`Lobe`.  ``True`` means the
-    lobe is emitted; ``False`` means it is pruned.  All default to ``True``
-    (full SS, backward compatible).
+    *lobes* is a :class:`LobeFlags` indicating which lobes are active.
+    Defaults to all lobes on (full SS, backward compatible).
 
-    Naming is *subtractive*: :attr:`variant_suffix` lists disabled lobes
+    Naming is *subtractive*: :attr:`name_suffix` lists disabled lobes
     with a ``0`` suffix (e.g. ``_subsurface0``).  This is stable under
     progressive development — adding coat pruning later does not rename
     existing ``_subsurface0`` variants.
     """
 
     def __init__(self, stdlib_doc: mx.Document, *,
-                 subsurface: bool = True,
-                 coat: bool = True):
-        self._subsurface = subsurface
-        self._coat = coat
+                 lobes: LobeFlags | None = None):
+        self.lobes = lobes or LobeFlags()
 
         stdlib_surfaceshader = stdlib_doc.getNodeDef(_STDLIB_SURFACESHADER_NODEDEF)
         if stdlib_surfaceshader is None:
@@ -170,10 +212,7 @@ class Permutation:
                 f"Could not find {_STDLIB_SURFACESHADER_NODEDEF} in stdlib_doc"
             )
 
-        pruned_inputs = frozenset().union(*(
-            lobe.params for lobe in LOBES
-            if not getattr(self, lobe.name)
-        ))
+        pruned_inputs = self.lobes.pruned_params
 
         self._inputs: dict[str, InputMetadata] = {}
         for inp in stdlib_surfaceshader.getActiveInputs():
@@ -195,28 +234,9 @@ class Permutation:
         )
 
     @property
-    def subsurface(self) -> bool:
-        """Whether the subsurface lobe is enabled (read-only)."""
-        return self._subsurface
-
-    @property
-    def coat(self) -> bool:
-        """Whether the coat lobe is enabled (read-only)."""
-        return self._coat
-
-    @property
     def name_suffix(self) -> str:
-        """Subtractive suffix for file/node naming, e.g. ``_subsurface0``.
-
-        Returns an empty string for the full permutation (all lobes on).
-        """
-        disabled = sorted(
-            lobe.name for lobe in LOBES
-            if not getattr(self, lobe.name)
-        )
-        if not disabled:
-            return ""
-        return "_" + "_".join(f"{d}0" for d in disabled)
+        """Subtractive suffix for file/node naming, e.g. ``_subsurface0``."""
+        return self.lobes.name_suffix
 
     @property
     def func_name(self) -> str:
@@ -273,7 +293,7 @@ class Permutation:
 
         stdlib_imports = _BASE_STDLIB_IMPORTS | frozenset().union(*(
             lobe.stdlib_imports for lobe in LOBES
-            if getattr(self, lobe.name)
+            if getattr(self.lobes, lobe.name)
         ))
 
         _acquire_stdlib_sourcecode_nodes(sh, stdlib_doc, stdlib_imports)
@@ -281,7 +301,7 @@ class Permutation:
         sh.instantiate(_mx_metashade_rotate_tangent)
 
         with self._create_bsdf_function(sh):
-            if self._coat:
+            if self.lobes.coat:
                 sh // ""
                 sh // "Coat affect roughness: blend specular roughness toward 1.0"
                 sh.coat_roughness_factor = (
@@ -297,7 +317,7 @@ class Permutation:
             sh.main_roughness = sh.Float2()
             sh.mx_roughness_anisotropy(
                 roughness=(sh.coat_affected_specular_roughness
-                           if self._coat else sh.specular_roughness),
+                           if self.lobes.coat else sh.specular_roughness),
                 anisotropy=sh.specular_anisotropy,
                 out_=sh.main_roughness,
             )
@@ -311,7 +331,7 @@ class Permutation:
                 axis=sh.normal,
             )
 
-            if self._coat:
+            if self.lobes.coat:
                 sh // ""
                 sh // "Coat tangent rotation"
                 sh.coat_tangent = sh._mx_metashade_rotate_tangent(
@@ -330,7 +350,7 @@ class Permutation:
                     sh.base_color.saturate().pow(sh.coat_gamma)
                 )
 
-                if self._subsurface:
+                if self.lobes.subsurface:
                     sh // ""
                     sh // "Coat affect subsurface color"
                     sh.subsurface_color = (
@@ -349,14 +369,14 @@ class Permutation:
                 closureData=sh.closureData,
                 weight=sh.base,
                 color=(sh.coat_affected_diffuse_color
-                       if self._coat else sh.base_color),
+                       if self.lobes.coat else sh.base_color),
                 roughness=sh.diffuse_roughness,
                 normal=sh.normal,
                 energy_compensation=False,
                 bsdf=sh.diffuse_bsdf,
             )
 
-            if self._subsurface:
+            if self.lobes.subsurface:
                 sh // ""
                 sh // "Subsurface scattering"
                 sh.subsurface_radius_scaled = (
@@ -428,7 +448,7 @@ class Permutation:
                 .saturate()
             )
 
-            if self._coat:
+            if self.lobes.coat:
                 sh // "Coat-affected"
                 sh.transmission_roughness_scalar = \
                     sh.coat_roughness_factor.lerp(
@@ -552,7 +572,7 @@ class Permutation:
                 + sh.bsdf.throughput * sh.one_minus_metalness
             )
 
-            if self._coat:
+            if self.lobes.coat:
                 sh // ""
                 sh // "Coat attenuation: tint underlying layers by coat color"
                 sh // ("Float3 coercion needed: RgbF lerp result -> "
@@ -707,21 +727,21 @@ def prune_material(stdlib_doc: mx.Document, material_doc: mx.Document) -> bool:
         if node.getCategory() != "standard_surface":
             continue
 
-        lobe_flags = {}
+        lobe_kwargs = {}
         for lobe in LOBES:
             inp = node.getInput(lobe.gate_input)
             if inp is None:
-                lobe_flags[lobe.name] = False
+                lobe_kwargs[lobe.name] = False
             elif inp.getNodeName() or inp.getNodeGraphString():
-                lobe_flags[lobe.name] = True
+                lobe_kwargs[lobe.name] = True
             else:
                 val = inp.getValueString()
                 try:
-                    lobe_flags[lobe.name] = float(val) != 0.0
+                    lobe_kwargs[lobe.name] = float(val) != 0.0
                 except (ValueError, TypeError):
-                    lobe_flags[lobe.name] = bool(val)
+                    lobe_kwargs[lobe.name] = bool(val)
 
-        perm = Permutation(stdlib_doc, **lobe_flags)
+        perm = Permutation(stdlib_doc, lobes=LobeFlags(**lobe_kwargs))
         if not perm.name_suffix:
             continue
 
