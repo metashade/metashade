@@ -111,7 +111,19 @@ class TestStandardSurface:
             standard_surface.LobeFlags(sheen=False), id="sheen0",
         ),
         pytest.param(
+            standard_surface.LobeFlags(sheen=False, subsurface=False),
+            id="sheen0_subsurface0",
+        ),
+        pytest.param(
             standard_surface.LobeFlags(coat=False), id="coat0",
+        ),
+        pytest.param(
+            standard_surface.LobeFlags(coat=False, subsurface=False),
+            id="coat0_subsurface0",
+        ),
+        pytest.param(
+            standard_surface.LobeFlags(coat=False, sheen=False),
+            id="coat0_sheen0",
         ),
         pytest.param(
             standard_surface.LobeFlags(
