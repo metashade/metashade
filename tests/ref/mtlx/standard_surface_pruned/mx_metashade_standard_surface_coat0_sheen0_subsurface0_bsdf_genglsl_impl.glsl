@@ -51,13 +51,13 @@ void mx_metashade_standard_surface_coat0_sheen0_subsurface0_bsdf(ClosureData clo
 	mx_oren_nayar_diffuse_bsdf(closureData, base, base_color, diffuse_roughness, normal, false, diffuse_bsdf);
 	bsdf = diffuse_bsdf;
 	// 
-	// Transmission roughness
-	float transmission_roughness_scalar = clamp(specular_roughness + transmission_extra_roughness, 0.0, 1.0);
-	vec2 transmission_roughness;
-	mx_roughness_anisotropy(transmission_roughness_scalar, specular_anisotropy, transmission_roughness);
-	// 
-	// Transmission BSDF (dielectric transmission)
+	// Transmission
 	{
+		float transmission_roughness_scalar = clamp(specular_roughness + transmission_extra_roughness, 0.0, 1.0);
+		vec2 transmission_roughness;
+		mx_roughness_anisotropy(transmission_roughness_scalar, specular_anisotropy, transmission_roughness);
+		// 
+		// Transmission BSDF (dielectric transmission)
 		BSDF transmission_bsdf = BSDF(vec3(0), vec3(1));
 		mx_dielectric_bsdf(closureData, 1.0, transmission_color, specular_IOR, transmission_roughness, false, 0.0, 1.5, normal, main_tangent, 0, 1, transmission_bsdf);
 		mx_mix_bsdf(closureData, transmission_bsdf, bsdf, transmission, bsdf);

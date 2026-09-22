@@ -103,34 +103,17 @@ class TestStandardSurface:
     """
 
     @pytest.mark.parametrize("lobes", [
-        pytest.param(standard_surface.LobeFlags(), id="full"),
         pytest.param(
-            standard_surface.LobeFlags(subsurface=False), id="subsurface0",
-        ),
-        pytest.param(
-            standard_surface.LobeFlags(sheen=False), id="sheen0",
-        ),
-        pytest.param(
-            standard_surface.LobeFlags(sheen=False, subsurface=False),
-            id="sheen0_subsurface0",
-        ),
-        pytest.param(
-            standard_surface.LobeFlags(coat=False), id="coat0",
-        ),
-        pytest.param(
-            standard_surface.LobeFlags(coat=False, subsurface=False),
-            id="coat0_subsurface0",
-        ),
-        pytest.param(
-            standard_surface.LobeFlags(coat=False, sheen=False),
-            id="coat0_sheen0",
-        ),
-        pytest.param(
-            standard_surface.LobeFlags(
-                subsurface=False, sheen=False, coat=False,
-            ),
-            id="coat0_sheen0_subsurface0",
-        ),
+            standard_surface.LobeFlags(**{
+                lobe.name: (bit >> i) & 1 == 1
+                for i, lobe in enumerate(standard_surface.LOBES)
+            }),
+            id=(standard_surface.LobeFlags(**{
+                lobe.name: (bit >> i) & 1 == 1
+                for i, lobe in enumerate(standard_surface.LOBES)
+            }).name_suffix.lstrip("_") or "full"),
+        )
+        for bit in range(2 ** len(standard_surface.LOBES))
     ])
     def test_generate(self, stdlib_doc, lobes):
         """Generate the Standard Surface BSDF + surfaceshader."""
