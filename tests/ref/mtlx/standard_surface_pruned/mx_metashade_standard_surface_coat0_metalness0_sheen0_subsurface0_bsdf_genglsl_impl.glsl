@@ -43,11 +43,13 @@ void mx_metashade_standard_surface_coat0_metalness0_sheen0_subsurface0_bsdf(Clos
 	vec3 main_tangent = _mx_metashade_rotate_tangent(tangent, specular_anisotropy, specular_rotation, normal);
 	// 
 	// Diffuse BSDF (Oren-Nayar)
-	// `energy_compensation=false` to match the Standard Surface spec, 
-	// instead of the more physically-correct `true` in OpenPBR
-	BSDF diffuse_bsdf = BSDF(vec3(0), vec3(1));
-	mx_oren_nayar_diffuse_bsdf(closureData, base, base_color, diffuse_roughness, normal, false, diffuse_bsdf);
-	bsdf = diffuse_bsdf;
+	{
+		BSDF diffuse_bsdf = BSDF(vec3(0), vec3(1));
+		// `energy_compensation=false` to match the Standard Surface spec, 
+		// instead of the more physically-correct `true` in OpenPBR
+		mx_oren_nayar_diffuse_bsdf(closureData, base, base_color, diffuse_roughness, normal, false, diffuse_bsdf);
+		bsdf = diffuse_bsdf;
+	}
 	// 
 	// Transmission
 	{

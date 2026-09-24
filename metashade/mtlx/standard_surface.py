@@ -393,24 +393,26 @@ class Permutation:
 
             sh // ""
             sh // "Diffuse BSDF (Oren-Nayar)"
-            sh // ("`energy_compensation=false` to match the Standard "
-                   "Surface spec, ")
-            sh // "instead of the more physically-correct `true` in OpenPBR"
-            sh.diffuse_bsdf = sh.BSDF(
-                response=sh.Float3(0), throughput=sh.Float3(1)
-            )
-            sh.mx_oren_nayar_diffuse_bsdf(
-                closureData=sh.closureData,
-                weight=sh.base,
-                color=(sh.coat_affected_diffuse_color
-                       if self.lobes.coat else sh.base_color),
-                roughness=sh.diffuse_roughness,
-                normal=sh.normal,
-                energy_compensation=False,
-                bsdf=sh.diffuse_bsdf,
-            )
+            with sh.block():
+                sh.diffuse_bsdf = sh.BSDF(
+                    response=sh.Float3(0), throughput=sh.Float3(1)
+                )
 
-            sh.bsdf = sh.diffuse_bsdf
+                sh // ("`energy_compensation=false` to match the Standard "
+                       "Surface spec, ")
+                sh // ("instead of the more physically-correct `true` "
+                       "in OpenPBR")
+                sh.mx_oren_nayar_diffuse_bsdf(
+                    closureData=sh.closureData,
+                    weight=sh.base,
+                    color=(sh.coat_affected_diffuse_color
+                           if self.lobes.coat else sh.base_color),
+                    roughness=sh.diffuse_roughness,
+                    normal=sh.normal,
+                    energy_compensation=False,
+                    bsdf=sh.diffuse_bsdf,
+                )
+                sh.bsdf = sh.diffuse_bsdf
 
             if self.lobes.subsurface:
                 sh // ""
