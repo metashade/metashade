@@ -40,33 +40,34 @@ vec3 _mx_metashade_rotate_tangent(vec3 tangent, float anisotropy, float rotation
 void mx_metashade_standard_surface_bsdf(ClosureData closureData, float base, vec3 base_color, float diffuse_roughness, float metalness, float specular, vec3 specular_color, float specular_roughness, float specular_IOR, float specular_anisotropy, float specular_rotation, float transmission, vec3 transmission_color, float transmission_extra_roughness, float subsurface, vec3 subsurface_color, vec3 subsurface_radius, float subsurface_scale, float subsurface_anisotropy, float sheen, vec3 sheen_color, float sheen_roughness, float coat, vec3 coat_color, float coat_roughness, float coat_anisotropy, float coat_rotation, float coat_IOR, vec3 coat_normal, float coat_affect_color, float coat_affect_roughness, float thin_film_thickness, float thin_film_IOR, bool thin_walled, vec3 normal, vec3 tangent, inout BSDF bsdf)
 {
 	// 
-	// Coat affect roughness: blend specular roughness toward 1.0
+	// Coat affect roughness
 	float coat_roughness_factor = (coat_affect_roughness * coat) * coat_roughness;
-	float coat_affected_specular_roughness = mix(specular_roughness, 1, coat_roughness_factor);
 	// 
 	// Roughness
 	vec2 main_roughness;
-	mx_roughness_anisotropy(coat_affected_specular_roughness, specular_anisotropy, main_roughness);
+	{
+		// Blend specular roughness toward 1.0
+		float coat_affected_specular_roughness = mix(specular_roughness, 1, coat_roughness_factor);
+		mx_roughness_anisotropy(coat_affected_specular_roughness, specular_anisotropy, main_roughness);
+	}
 	// 
 	// Tangent rotation
 	vec3 main_tangent = _mx_metashade_rotate_tangent(tangent, specular_anisotropy, specular_rotation, normal);
 	// 
-	// Coat tangent rotation
-	vec3 coat_tangent = _mx_metashade_rotate_tangent(tangent, coat_anisotropy, coat_rotation, coat_normal);
-	// 
-	// Coat affect color: darken diffuse under the coat
-	vec3 coat_gamma = vec3((clamp(coat, 0.0, 1.0) * coat_affect_color) + 1.0);
-	vec3 coat_affected_diffuse_color = pow(clamp(base_color, 0.0, 1.0), coat_gamma);
-	// 
-	// Coat affect subsurface color
-	subsurface_color = pow(clamp(subsurface_color, 0.0, 1.0), coat_gamma);
-	// 
 	// Diffuse BSDF (Oren-Nayar)
-	// `energy_compensation=false` to match the Standard Surface spec, 
-	// instead of the more physically-correct `true` in OpenPBR
-	BSDF diffuse_bsdf = BSDF(vec3(0), vec3(1));
-	mx_oren_nayar_diffuse_bsdf(closureData, base, coat_affected_diffuse_color, diffuse_roughness, normal, false, diffuse_bsdf);
-	bsdf = diffuse_bsdf;
+	{
+		// Coat affect color: darken diffuse under the coat
+		vec3 coat_gamma = vec3((clamp(coat, 0.0, 1.0) * coat_affect_color) + 1.0);
+		vec3 coat_affected_diffuse_color = pow(clamp(base_color, 0.0, 1.0), coat_gamma);
+		// 
+		// Coat affect subsurface color
+		subsurface_color = pow(clamp(subsurface_color, 0.0, 1.0), coat_gamma);
+		BSDF diffuse_bsdf = BSDF(vec3(0), vec3(1));
+		// `energy_compensation=false` to match the Standard Surface spec, 
+		// instead of the more physically-correct `true` in OpenPBR
+		mx_oren_nayar_diffuse_bsdf(closureData, base, coat_affected_diffuse_color, diffuse_roughness, normal, false, diffuse_bsdf);
+		bsdf = diffuse_bsdf;
+	}
 	// 
 	// Subsurface scattering
 	{
@@ -137,6 +138,9 @@ void mx_metashade_standard_surface_bsdf(ClosureData closureData, float base, vec
 		vec3 coat_attenuation = mix(vec3(1.0), coat_color, coat);
 		bsdf.response *= coat_attenuation;
 		bsdf.throughput *= coat_attenuation;
+		// 
+		// Coat tangent rotation
+		vec3 coat_tangent = _mx_metashade_rotate_tangent(tangent, coat_anisotropy, coat_rotation, coat_normal);
 		// 
 		// Coat roughness
 		vec2 coat_roughness_vec;
