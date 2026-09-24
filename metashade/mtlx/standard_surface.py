@@ -337,24 +337,32 @@ class Permutation:
         with self._create_bsdf_function(sh):
             if self.lobes.coat:
                 sh // ""
-                sh // "Coat affect roughness: blend specular roughness toward 1.0"
+                sh // "Coat affect roughness"
                 sh.coat_roughness_factor = (
                     sh.coat_affect_roughness * sh.coat * sh.coat_roughness
                 )
-                sh.coat_affected_specular_roughness = \
-                    sh.coat_roughness_factor.lerp(
-                        sh.specular_roughness, sh.Float(1)
-                    )
 
             sh // ""
             sh // "Roughness"
             sh.main_roughness = sh.Float2()
-            sh.mx_roughness_anisotropy(
-                roughness=(sh.coat_affected_specular_roughness
-                           if self.lobes.coat else sh.specular_roughness),
-                anisotropy=sh.specular_anisotropy,
-                out_=sh.main_roughness,
-            )
+            if self.lobes.coat:
+                with sh.block():
+                    sh // "Blend specular roughness toward 1.0"
+                    sh.coat_affected_specular_roughness = \
+                        sh.coat_roughness_factor.lerp(
+                            sh.specular_roughness, sh.Float(1)
+                        )
+                    sh.mx_roughness_anisotropy(
+                        roughness=sh.coat_affected_specular_roughness,
+                        anisotropy=sh.specular_anisotropy,
+                        out_=sh.main_roughness,
+                    )
+            else:
+                sh.mx_roughness_anisotropy(
+                    roughness=sh.specular_roughness,
+                    anisotropy=sh.specular_anisotropy,
+                    out_=sh.main_roughness,
+                )
 
             sh // ""
             sh // "Tangent rotation"
@@ -365,35 +373,25 @@ class Permutation:
                 axis=sh.normal,
             )
 
-            if self.lobes.coat:
-                sh // ""
-                sh // "Coat tangent rotation"
-                sh.coat_tangent = sh._mx_metashade_rotate_tangent(
-                    tangent=sh.tangent,
-                    anisotropy=sh.coat_anisotropy,
-                    rotation=sh.coat_rotation,
-                    axis=sh.coat_normal,
-                )
-
-                sh // ""
-                sh // "Coat affect color: darken diffuse under the coat"
-                sh.coat_gamma = sh.RgbF(
-                    sh.coat.saturate() * sh.coat_affect_color + 1.0
-                )
-                sh.coat_affected_diffuse_color = (
-                    sh.base_color.saturate().pow(sh.coat_gamma)
-                )
-
-                if self.lobes.subsurface:
-                    sh // ""
-                    sh // "Coat affect subsurface color"
-                    sh.subsurface_color = (
-                        sh.subsurface_color.saturate().pow(sh.coat_gamma)
-                    )
-
             sh // ""
             sh // "Diffuse BSDF (Oren-Nayar)"
             with sh.block():
+                if self.lobes.coat:
+                    sh // "Coat affect color: darken diffuse under the coat"
+                    sh.coat_gamma = sh.RgbF(
+                        sh.coat.saturate() * sh.coat_affect_color + 1.0
+                    )
+                    sh.coat_affected_diffuse_color = (
+                        sh.base_color.saturate().pow(sh.coat_gamma)
+                    )
+
+                    if self.lobes.subsurface:
+                        sh // ""
+                        sh // "Coat affect subsurface color"
+                        sh.subsurface_color = (
+                            sh.subsurface_color.saturate().pow(sh.coat_gamma)
+                        )
+
                 sh.diffuse_bsdf = sh.BSDF(
                     response=sh.Float3(0), throughput=sh.Float3(1)
                 )
@@ -619,6 +617,15 @@ class Permutation:
                     )
                     sh.bsdf.response *= sh.coat_attenuation
                     sh.bsdf.throughput *= sh.coat_attenuation
+
+                    sh // ""
+                    sh // "Coat tangent rotation"
+                    sh.coat_tangent = sh._mx_metashade_rotate_tangent(
+                        tangent=sh.tangent,
+                        anisotropy=sh.coat_anisotropy,
+                        rotation=sh.coat_rotation,
+                        axis=sh.coat_normal,
+                    )
 
                     sh // ""
                     sh // "Coat roughness"
