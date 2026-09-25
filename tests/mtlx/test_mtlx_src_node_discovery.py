@@ -16,7 +16,7 @@
 Test for discovering MaterialX source-code nodes using PyMaterialX.
 
 This test module:
-1. Uses PyMaterialX to load stdlib/pbrlib definitions
+1. Uses PyMaterialX to load ASWF library definitions
 2. Identifies "source-code nodes" (implementations with external GLSL files)
 3. Outputs a reference list of discovered nodes for validation
 """
@@ -79,19 +79,19 @@ def discover_source_code_nodes(doc: mx.Document) -> list[SourceCodeNode]:
 class TestNodeDiscovery:
     """Tests for discovering MaterialX source-code nodes using PyMaterialX."""
     
-    def test_stdlib_loads(self, aswf_lib_doc: mx.Document):
+    def test_aswf_lib_loads(self, aswf_lib_doc: mx.Document):
         """Verify we can load the MaterialX standard library."""
         # Should have nodedefs
         nodedefs = aswf_lib_doc.getNodeDefs()
         assert len(nodedefs) > 100, f"Expected >100 nodedefs, found {len(nodedefs)}"
     
     def test_has_implementations(self, aswf_lib_doc: mx.Document):
-        """Verify the stdlib has implementations."""
+        """Verify the ASWF libraries have implementations."""
         impls = aswf_lib_doc.getImplementations()
         assert len(impls) > 100, f"Expected >100 implementations, found {len(impls)}"
     
     def test_discover_source_code_nodes(self, aswf_lib_doc: mx.Document):
-        """Discover all source-code nodes in stdlib."""
+        """Discover all source-code nodes in ASWF libraries."""
         nodes = discover_source_code_nodes(aswf_lib_doc)
         
         # Should find a significant number of source-code nodes

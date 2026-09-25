@@ -59,7 +59,7 @@ class TestAdskLibraryPruning:
         pruned = standard_surface.prune_library(aswf_lib_doc, lib_doc)
         assert pruned, "Expected at least one standard_surface node to be pruned"
 
-        # Extract just the pruned nodegraphs (strip the imported stdlib)
+        # Extract just the pruned nodegraphs (strip the imported ASWF libs)
         out_doc = mx.createDocument()
         mx.readFromXmlFile(out_doc, str(_ADSKLIB_NG))
         standard_surface.prune_library(aswf_lib_doc, out_doc)
