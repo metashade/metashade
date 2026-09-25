@@ -746,6 +746,41 @@ class Permutation:
 
 
 
+def _analyze_ss_node(node) -> LobeFlags | None:
+    """Determine active lobes for a ``standard_surface`` node.
+
+    Returns a :class:`LobeFlags` reflecting which lobes are active based
+    on the node's gate inputs.  Returns *None* if the node is not a
+    ``standard_surface``.
+    """
+    if node.getCategory() != "standard_surface":
+        return None
+
+    lobe_kwargs = {}
+    for lobe in LOBES:
+        inp = node.getInput(lobe.gate_input)
+        if inp is None:
+            lobe_kwargs[lobe.name] = False
+        elif inp.getNodeName() or inp.getNodeGraphString():
+            lobe_kwargs[lobe.name] = True
+        else:
+            val = inp.getValueString()
+            try:
+                lobe_kwargs[lobe.name] = float(val) != 0.0
+            except (ValueError, TypeError):
+                lobe_kwargs[lobe.name] = bool(val)
+
+    return LobeFlags(**lobe_kwargs)
+
+
+def _rewrite_ss_node(node, perm: "Permutation") -> None:
+    """Rewrite a ``standard_surface`` node to use a pruned permutation."""
+    node.setCategory(perm._surfaceshader_category)
+    for inp in node.getActiveInputs():
+        if inp.getName() not in perm._inputs:
+            node.removeInput(inp.getName())
+
+
 def prune_material(stdlib_doc: mx.Document, material_doc: mx.Document) -> bool:
     """Optimize a material by pruning inactive lobes per node.
 
@@ -758,39 +793,55 @@ def prune_material(stdlib_doc: mx.Document, material_doc: mx.Document) -> bool:
     pruned.
 
     .. note::
-       Only document-level nodes are analyzed and rewritten.  Nodes
-       nested inside ``NodeGraph`` elements (e.g. Prism/Protein
-       wrappers) are not yet handled.
+       Only document-level nodes are analyzed and rewritten.  For
+       library nodegraphs (e.g. Prism/Protein wrappers), use
+       :func:`prune_library` instead.
     """
     any_pruned = False
 
     for node in material_doc.getNodes():
-        if node.getCategory() != "standard_surface":
+        lobes = _analyze_ss_node(node)
+        if lobes is None:
             continue
 
-        lobe_kwargs = {}
-        for lobe in LOBES:
-            inp = node.getInput(lobe.gate_input)
-            if inp is None:
-                lobe_kwargs[lobe.name] = False
-            elif inp.getNodeName() or inp.getNodeGraphString():
-                lobe_kwargs[lobe.name] = True
-            else:
-                val = inp.getValueString()
-                try:
-                    lobe_kwargs[lobe.name] = float(val) != 0.0
-                except (ValueError, TypeError):
-                    lobe_kwargs[lobe.name] = bool(val)
-
-        perm = Permutation(stdlib_doc, lobes=LobeFlags(**lobe_kwargs))
+        perm = Permutation(stdlib_doc, lobes=lobes)
         if not perm.name_suffix:
             continue
 
-        node.setCategory(perm._surfaceshader_category)
-        for inp in node.getActiveInputs():
-            if inp.getName() not in perm._inputs:
-                node.removeInput(inp.getName())
+        _rewrite_ss_node(node, perm)
         any_pruned = True
+
+    return any_pruned
+
+
+def prune_library(stdlib_doc: mx.Document, lib_doc: mx.Document) -> bool:
+    """Optimize library nodegraphs by pruning ``standard_surface`` nodes.
+
+    Walks all ``NodeGraph`` elements in *lib_doc*, finds any
+    ``standard_surface`` child nodes, and rewrites them to pruned
+    permutations based on their statically wired inputs.
+
+    This is the library-level counterpart of :func:`prune_material`:
+    it targets the ``standard_surface`` nodes *inside* wrapper
+    nodegraphs (e.g. ``adsk:opaque``, ``adsk:metal``) rather than
+    top-level material nodes.
+
+    Modifies *lib_doc* in place.  Returns whether any node was pruned.
+    """
+    any_pruned = False
+
+    for ng in lib_doc.getNodeGraphs():
+        for node in ng.getNodes():
+            lobes = _analyze_ss_node(node)
+            if lobes is None:
+                continue
+
+            perm = Permutation(stdlib_doc, lobes=lobes)
+            if not perm.name_suffix:
+                continue
+
+            _rewrite_ss_node(node, perm)
+            any_pruned = True
 
     return any_pruned
 
