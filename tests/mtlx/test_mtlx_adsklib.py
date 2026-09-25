@@ -47,7 +47,7 @@ pytestmark = pytest.mark.skipif(
 )
 
 
-class TestAdskLibraryPruning:
+class TestAdsklibPruning:
     """Prune ``standard_surface`` inside adsk wrapper nodegraphs."""
 
     def test_prune_adsklib(self, aswf_lib_doc):
