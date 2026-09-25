@@ -25,15 +25,15 @@ mx = pytest.importorskip("MaterialX")
 
 from metashade.mtlx.mtlx_reflection import (
     acquire_function,
-    acquire_stdlib,
+    acquire_library_functions,
 )
 
 
 class TestAcquireFunction:
     """Tests for acquiring MaterialX functions into Metashade."""
     
-    def test_acquire_stdlib(self, stdlib_doc: mx.Document):
-        """Verify we can acquire all stdlib functions."""
+    def test_acquire_library_functions(self, aswf_lib_doc: mx.Document):
+        """Verify we can acquire all library functions."""
         from io import StringIO
         from metashade.targets.glsl import frag
         
@@ -41,7 +41,7 @@ class TestAcquireFunction:
         out = StringIO()
         sh = frag.Generator(out, glsl_version='')
         
-        functions = acquire_stdlib(sh, stdlib_doc, target="genglsl")
+        functions = acquire_library_functions(sh, aswf_lib_doc, target="genglsl")
         
         assert len(functions) > 50, (
             f"Expected >50 functions, got {len(functions)}"
@@ -51,7 +51,7 @@ class TestAcquireFunction:
         assert "mx_fractal3d_float" in functions
         assert hasattr(sh, "mx_fractal3d_float")
     
-    def test_acquire_single_function(self, stdlib_doc: mx.Document):
+    def test_acquire_single_function(self, aswf_lib_doc: mx.Document):
         """Test acquiring a single function."""
         from io import StringIO
         from metashade.targets.glsl import frag
@@ -62,7 +62,7 @@ class TestAcquireFunction:
         
         # Find the fractal3d implementation
         impl = None
-        for i in stdlib_doc.getImplementations():
+        for i in aswf_lib_doc.getImplementations():
             if i.getAttribute("function") == "mx_fractal3d_float":
                 impl = i
                 break
