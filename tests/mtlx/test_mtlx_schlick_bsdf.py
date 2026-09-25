@@ -27,9 +27,9 @@ from metashade.mtlx.util.testing import GlslTestContext
 
 
 @pytest.fixture
-def schlick_impl(stdlib_doc: mx.Document):
+def schlick_impl(aswf_lib_doc: mx.Document):
     """Get the genglsl implementation for generalized_schlick_bsdf."""
-    for impl in stdlib_doc.getImplementations():
+    for impl in aswf_lib_doc.getImplementations():
         if (
             impl.getNodeDefString().endswith("generalized_schlick_bsdf") and
             impl.getTarget() == "genglsl"

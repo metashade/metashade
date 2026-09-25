@@ -236,14 +236,14 @@ class Permutation:
     existing ``_subsurface0`` variants.
     """
 
-    def __init__(self, stdlib_doc: mx.Document, *,
+    def __init__(self, aswf_lib_doc: mx.Document, *,
                  lobes: LobeFlags | None = None):
         self.lobes = lobes or LobeFlags()
 
-        stdlib_surfaceshader = stdlib_doc.getNodeDef(_STDLIB_SURFACESHADER_NODEDEF)
+        stdlib_surfaceshader = aswf_lib_doc.getNodeDef(_STDLIB_SURFACESHADER_NODEDEF)
         if stdlib_surfaceshader is None:
             raise RuntimeError(
-                f"Could not find {_STDLIB_SURFACESHADER_NODEDEF} in stdlib_doc"
+                f"Could not find {_STDLIB_SURFACESHADER_NODEDEF} in aswf_lib_doc"
             )
 
         pruned_inputs = self.lobes.pruned_params
@@ -311,7 +311,7 @@ class Permutation:
     def generate_bsdf(
         self,
         ctx: GlslGeneratorContext,
-        stdlib_doc: mx.Document,
+        aswf_lib_doc: mx.Document,
     ):
         """Generate the Standard Surface BSDF source-code node.
 
@@ -319,7 +319,7 @@ class Permutation:
             ctx: A production generator context (or any subclass such as
                  ``GlslTestContext``).  Only the ``_sh`` generator and
                  ``add_node_impl`` method are used.
-            stdlib_doc: A MaterialX document with the standard library loaded.
+            aswf_lib_doc: A MaterialX document with the standard library loaded.
         """
         sh = ctx._sh
 
@@ -330,7 +330,7 @@ class Permutation:
             if getattr(self.lobes, lobe.name)
         ))
 
-        _acquire_stdlib_sourcecode_nodes(sh, stdlib_doc, stdlib_imports)
+        _acquire_stdlib_sourcecode_nodes(sh, aswf_lib_doc, stdlib_imports)
         sh.instantiate(_mx_metashade_rotate_vector3)
         sh.instantiate(_mx_metashade_rotate_tangent)
 
@@ -746,42 +746,44 @@ class Permutation:
 
 
 
-def _analyze_ss_node(node) -> LobeFlags | None:
-    """Determine active lobes for a ``standard_surface`` node.
+def _prune_nodes(aswf_lib_doc: mx.Document, nodes) -> bool:
+    """Analyze and rewrite ``standard_surface`` nodes to pruned variants.
 
-    Returns a :class:`LobeFlags` reflecting which lobes are active based
-    on the node's gate inputs.  Returns *None* if the node is not a
-    ``standard_surface``.
+    Shared core for :func:`prune_material` and :func:`prune_library`.
+    Returns whether any node was pruned.
     """
-    if node.getCategory() != "standard_surface":
-        return None
+    any_pruned = False
+    for node in nodes:
+        if node.getCategory() != "standard_surface":
+            continue
 
-    lobe_kwargs = {}
-    for lobe in LOBES:
-        inp = node.getInput(lobe.gate_input)
-        if inp is None:
-            lobe_kwargs[lobe.name] = False
-        elif inp.getNodeName() or inp.getNodeGraphString():
-            lobe_kwargs[lobe.name] = True
-        else:
-            val = inp.getValueString()
-            try:
-                lobe_kwargs[lobe.name] = float(val) != 0.0
-            except (ValueError, TypeError):
-                lobe_kwargs[lobe.name] = bool(val)
+        lobe_kwargs = {}
+        for lobe in LOBES:
+            inp = node.getInput(lobe.gate_input)
+            if inp is None:
+                lobe_kwargs[lobe.name] = False
+            elif inp.getNodeName() or inp.getNodeGraphString():
+                lobe_kwargs[lobe.name] = True
+            else:
+                val = inp.getValueString()
+                try:
+                    lobe_kwargs[lobe.name] = float(val) != 0.0
+                except (ValueError, TypeError):
+                    lobe_kwargs[lobe.name] = bool(val)
 
-    return LobeFlags(**lobe_kwargs)
+        perm = Permutation(aswf_lib_doc, lobes=LobeFlags(**lobe_kwargs))
+        if not perm.name_suffix:
+            continue
+
+        node.setCategory(perm._surfaceshader_category)
+        for inp in node.getActiveInputs():
+            if inp.getName() not in perm._inputs:
+                node.removeInput(inp.getName())
+        any_pruned = True
+    return any_pruned
 
 
-def _rewrite_ss_node(node, perm: "Permutation") -> None:
-    """Rewrite a ``standard_surface`` node to use a pruned permutation."""
-    node.setCategory(perm._surfaceshader_category)
-    for inp in node.getActiveInputs():
-        if inp.getName() not in perm._inputs:
-            node.removeInput(inp.getName())
-
-
-def prune_material(stdlib_doc: mx.Document, material_doc: mx.Document) -> bool:
+def prune_material(aswf_lib_doc: mx.Document, material_doc: mx.Document) -> bool:
     """Optimize a material by pruning inactive lobes per node.
 
     Each top-level ``standard_surface`` node is independently analyzed:
@@ -791,33 +793,14 @@ def prune_material(stdlib_doc: mx.Document, material_doc: mx.Document) -> bool:
 
     Modifies *material_doc* in place.  Returns whether any node was
     pruned.
-
-    .. note::
-       Only document-level nodes are analyzed and rewritten.  For
-       library nodegraphs (e.g. Prism/Protein wrappers), use
-       :func:`prune_library` instead.
     """
-    any_pruned = False
-
-    for node in material_doc.getNodes():
-        lobes = _analyze_ss_node(node)
-        if lobes is None:
-            continue
-
-        perm = Permutation(stdlib_doc, lobes=lobes)
-        if not perm.name_suffix:
-            continue
-
-        _rewrite_ss_node(node, perm)
-        any_pruned = True
-
-    return any_pruned
+    return _prune_nodes(aswf_lib_doc, material_doc.getNodes())
 
 
-def prune_library(stdlib_doc: mx.Document, lib_doc: mx.Document) -> bool:
+def prune_library(aswf_lib_doc: mx.Document, inout_lib_doc: mx.Document) -> bool:
     """Optimize library nodegraphs by pruning ``standard_surface`` nodes.
 
-    Walks all ``NodeGraph`` elements in *lib_doc*, finds any
+    Walks all ``NodeGraph`` elements in *inout_lib_doc*, finds any
     ``standard_surface`` child nodes, and rewrites them to pruned
     permutations based on their statically wired inputs.
 
@@ -826,23 +809,12 @@ def prune_library(stdlib_doc: mx.Document, lib_doc: mx.Document) -> bool:
     nodegraphs (e.g. ``adsk:opaque``, ``adsk:metal``) rather than
     top-level material nodes.
 
-    Modifies *lib_doc* in place.  Returns whether any node was pruned.
+    Modifies *inout_lib_doc* in place.  Returns whether any node was pruned.
     """
     any_pruned = False
-
-    for ng in lib_doc.getNodeGraphs():
-        for node in ng.getNodes():
-            lobes = _analyze_ss_node(node)
-            if lobes is None:
-                continue
-
-            perm = Permutation(stdlib_doc, lobes=lobes)
-            if not perm.name_suffix:
-                continue
-
-            _rewrite_ss_node(node, perm)
+    for ng in inout_lib_doc.getNodeGraphs():
+        if _prune_nodes(aswf_lib_doc, ng.getNodes()):
             any_pruned = True
-
     return any_pruned
 
 
@@ -881,14 +853,14 @@ _BSDF_INPUTS = frozenset({
 })
 
 
-def _acquire_stdlib_sourcecode_nodes(sh, stdlib_doc, node_names):
+def _acquire_stdlib_sourcecode_nodes(sh, aswf_lib_doc, node_names):
     """Resolve, include, and acquire stdlib sourcecode nodes.
 
     Nodes are grouped by header file.  Both the ``#include`` directives
     and the function acquisitions within each header are emitted in
     sorted order for deterministic output.
     """
-    all_impls = stdlib_doc.getImplementations()
+    all_impls = aswf_lib_doc.getImplementations()
     by_file: dict[str, list[tuple[str, object]]] = {}
     for name in node_names:
         impl = next(

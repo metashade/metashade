@@ -25,7 +25,7 @@ testing.TestContextBase.setup_class(test_dir)
 
 
 @pytest.fixture
-def stdlib_doc() -> mx.Document:
+def aswf_lib_doc() -> mx.Document:
     """Load the MaterialX standard library."""
     doc = mx.createDocument()
     search_path = mx.getDefaultDataSearchPath()
