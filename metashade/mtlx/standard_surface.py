@@ -19,7 +19,7 @@ Two-layer architecture:
 
 1. A BSDF-outputting source-code node (``metashade_standard_surface_bsdf``) that
    receives ``ClosureData`` injection from the shader generator and
-   calls stdlib BSDFs (Oren-Nayar diffuse, dielectric specular).
+   calls pbrlib BSDFs (Oren-Nayar diffuse, dielectric specular).
 
 2. A thin hand-written nodegraph that wires the BSDF to the stock
    ``surface`` constructor, overriding ``ND_standard_surface_surfaceshader``.
@@ -44,7 +44,7 @@ _FUNC_NAME_BASE = "mx_metashade_standard_surface"
 _FUNC_NAME_TYPE = "_bsdf"
 FUNC_NAME = _FUNC_NAME_BASE + _FUNC_NAME_TYPE
 
-_STDLIB_SURFACESHADER_NODEDEF = "ND_standard_surface_surfaceshader"
+_ASWF_SURFACESHADER_NODEDEF = "ND_standard_surface_surfaceshader"
 _NODEGRAPH_NAME = "NG_metashade_standard_surface"
 
 
@@ -57,13 +57,13 @@ class Lobe:
     """A prunable Standard Surface feature bundle.
 
     Each lobe groups the gate input that enables it, the BSDF function
-    parameters it owns, the stdlib ``#include`` s it requires, and any
+    parameters it owns, the pbrlib ``#include`` s it requires, and any
     nodegraph-only inputs (e.g. emission).
     """
     name: str
     gate_input: str
     params: frozenset[str]
-    stdlib_imports: tuple[str, ...]
+    aswf_imports: tuple[str, ...]
     nodegraph_inputs: tuple[str, ...] = ()
 
 
@@ -84,7 +84,7 @@ LOBES: tuple[Lobe, ...] = (
             "subsurface_scale", "subsurface_anisotropy",
             "thin_walled",
         }),
-        stdlib_imports=("translucent_bsdf", "subsurface_bsdf"),
+        aswf_imports=("translucent_bsdf", "subsurface_bsdf"),
     ),
     Lobe(
         name="sheen",
@@ -92,7 +92,7 @@ LOBES: tuple[Lobe, ...] = (
         params=frozenset({
             "sheen", "sheen_color", "sheen_roughness",
         }),
-        stdlib_imports=("sheen_bsdf",),
+        aswf_imports=("sheen_bsdf",),
     ),
     Lobe(
         name="transmission",
@@ -102,7 +102,7 @@ LOBES: tuple[Lobe, ...] = (
             "transmission_extra_roughness",
         }),
         # dielectric_bsdf shared with specular and coat.
-        stdlib_imports=("dielectric_bsdf",),
+        aswf_imports=("dielectric_bsdf",),
     ),
     Lobe(
         name="metalness",
@@ -110,7 +110,7 @@ LOBES: tuple[Lobe, ...] = (
         params=frozenset({
             "metalness",
         }),
-        stdlib_imports=("conductor_bsdf", "artistic_ior"),
+        aswf_imports=("conductor_bsdf", "artistic_ior"),
     ),
     Lobe(
         name="coat",
@@ -121,9 +121,9 @@ LOBES: tuple[Lobe, ...] = (
             "coat_affect_color", "coat_affect_roughness",
         }),
         # dielectric_bsdf shared with specular and transmission;
-        # currently in _BASE_STDLIB_IMPORTS but listed here so the
+        # currently in _BASE_ASWF_IMPORTS but listed here so the
         # import is preserved when the base set is refined.
-        stdlib_imports=("dielectric_bsdf",),
+        aswf_imports=("dielectric_bsdf",),
     ),
 )
 
@@ -175,10 +175,10 @@ class LobeFlags:
         ))
 
     @property
-    def stdlib_imports(self) -> frozenset[str]:
-        """Union of stdlib imports from all active lobes."""
+    def aswf_imports(self) -> frozenset[str]:
+        """Union of pbrlib imports from all active lobes."""
         return frozenset().union(*(
-            lobe.stdlib_imports for lobe in LOBES
+            lobe.aswf_imports for lobe in LOBES
             if getattr(self, lobe.name)
         ))
 
@@ -240,16 +240,16 @@ class Permutation:
                  lobes: LobeFlags | None = None):
         self.lobes = lobes or LobeFlags()
 
-        stdlib_surfaceshader = aswf_lib_doc.getNodeDef(_STDLIB_SURFACESHADER_NODEDEF)
-        if stdlib_surfaceshader is None:
+        aswf_surfaceshader = aswf_lib_doc.getNodeDef(_ASWF_SURFACESHADER_NODEDEF)
+        if aswf_surfaceshader is None:
             raise RuntimeError(
-                f"Could not find {_STDLIB_SURFACESHADER_NODEDEF} in aswf_lib_doc"
+                f"Could not find {_ASWF_SURFACESHADER_NODEDEF} in the ASWF libraries"
             )
 
         pruned_inputs = self.lobes.pruned_params
 
         self._inputs: dict[str, InputMetadata] = {}
-        for inp in stdlib_surfaceshader.getActiveInputs():
+        for inp in aswf_surfaceshader.getActiveInputs():
             input_name = inp.getName()
             if input_name not in pruned_inputs:
                 self._inputs[input_name] = InputMetadata(
@@ -264,7 +264,7 @@ class Permutation:
         
         self._surfaceshader_nodedef_name = (
             f"ND_{self._surfaceshader_category}_surfaceshader"
-            if self.name_suffix else _STDLIB_SURFACESHADER_NODEDEF
+            if self.name_suffix else _ASWF_SURFACESHADER_NODEDEF
         )
 
     @property
@@ -325,12 +325,12 @@ class Permutation:
 
         register_mtlx_closure_structs(sh)
 
-        stdlib_imports = _BASE_STDLIB_IMPORTS | frozenset().union(*(
-            lobe.stdlib_imports for lobe in LOBES
+        aswf_imports = _BASE_ASWF_IMPORTS | frozenset().union(*(
+            lobe.aswf_imports for lobe in LOBES
             if getattr(self.lobes, lobe.name)
         ))
 
-        _acquire_stdlib_sourcecode_nodes(sh, aswf_lib_doc, stdlib_imports)
+        _acquire_aswf_sourcecode_nodes(sh, aswf_lib_doc, aswf_imports)
         sh.instantiate(_mx_metashade_rotate_vector3)
         sh.instantiate(_mx_metashade_rotate_tangent)
 
@@ -827,7 +827,7 @@ _SCATTER_R = 0
 _SCATTER_T = 1
 _DISTRIBUTION_GGX = 0
 
-_BASE_STDLIB_IMPORTS = frozenset({
+_BASE_ASWF_IMPORTS = frozenset({
     "roughness_anisotropy",
     "oren_nayar_diffuse_bsdf",
     "dielectric_bsdf",
@@ -853,8 +853,8 @@ _BSDF_INPUTS = frozenset({
 })
 
 
-def _acquire_stdlib_sourcecode_nodes(sh, aswf_lib_doc, node_names):
-    """Resolve, include, and acquire stdlib sourcecode nodes.
+def _acquire_aswf_sourcecode_nodes(sh, aswf_lib_doc, node_names):
+    """Resolve, include, and acquire pbrlib sourcecode nodes.
 
     Nodes are grouped by header file.  Both the ``#include`` directives
     and the function acquisitions within each header are emitted in
