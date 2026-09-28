@@ -129,18 +129,18 @@ def acquire_function(sh, impl):
     return getattr(sh, func_attr)
 
 
-def acquire_stdlib(sh, doc, target: str) -> dict[str, 'Function']:
+def acquire_library_functions(sh, lib_doc, target: str) -> dict[str, 'Function']:
     """
     Acquire all MaterialX source-code functions into the generator.
     
-    After calling this, all MaterialX stdlib functions are available
+    After calling this, all library functions are available
     as callables on the generator (e.g., sh.mx_fractal3d_float(...)).
     
     Functions with unmappable types (e.g., string params) are skipped.
     
     Args:
         sh: The Metashade generator instance
-        doc: A MaterialX Document with libraries loaded
+        lib_doc: A MaterialX Document with libraries loaded
         target: The codegen target (e.g., "genglsl", "genhlsl")
         
     Returns:
@@ -149,7 +149,7 @@ def acquire_stdlib(sh, doc, target: str) -> dict[str, 'Function']:
     register_mtlx_closure_structs(sh)
     functions = {}
     
-    for impl in doc.getImplementations():
+    for impl in lib_doc.getImplementations():
         if impl.getTarget() != target:
             continue
         

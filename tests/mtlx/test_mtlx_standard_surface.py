@@ -47,9 +47,9 @@ def _register_surfaceshader_struct(sh):
 
 
 @pytest.fixture
-def surfaceshader_nodedef(stdlib_doc: mx.Document):
+def surfaceshader_nodedef(aswf_lib_doc: mx.Document):
     """Get the default-version Standard Surface nodedef."""
-    nodedef = stdlib_doc.getNodeDef(_SURFACESHADER_NODEDEF)
+    nodedef = aswf_lib_doc.getNodeDef(_SURFACESHADER_NODEDEF)
     assert nodedef is not None, f"Could not find {_SURFACESHADER_NODEDEF}"
     return nodedef
 
@@ -115,9 +115,9 @@ class TestStandardSurface:
         )
         for bit in range(2 ** len(standard_surface.LOBES))
     ])
-    def test_generate(self, stdlib_doc, lobes):
+    def test_generate(self, aswf_lib_doc, lobes):
         """Generate the Standard Surface BSDF + surfaceshader."""
-        permutation = standard_surface.Permutation(stdlib_doc, lobes=lobes)
+        permutation = standard_surface.Permutation(aswf_lib_doc, lobes=lobes)
         subdir = ("standard_surface"
                   if not permutation.name_suffix
                   else "standard_surface_pruned")
@@ -127,7 +127,7 @@ class TestStandardSurface:
             impl_only=False,
             subdir=subdir,
         ) as glsl_ctx:
-            permutation.generate_bsdf(glsl_ctx, stdlib_doc)
+            permutation.generate_bsdf(glsl_ctx, aswf_lib_doc)
 
         ng_doc = permutation.generate_surfaceshader_nodegraph()
 

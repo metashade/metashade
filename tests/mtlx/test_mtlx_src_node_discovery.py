@@ -16,7 +16,7 @@
 Test for discovering MaterialX source-code nodes using PyMaterialX.
 
 This test module:
-1. Uses PyMaterialX to load stdlib/pbrlib definitions
+1. Uses PyMaterialX to load ASWF library definitions
 2. Identifies "source-code nodes" (implementations with external GLSL files)
 3. Outputs a reference list of discovered nodes for validation
 """
@@ -79,20 +79,20 @@ def discover_source_code_nodes(doc: mx.Document) -> list[SourceCodeNode]:
 class TestNodeDiscovery:
     """Tests for discovering MaterialX source-code nodes using PyMaterialX."""
     
-    def test_stdlib_loads(self, stdlib_doc: mx.Document):
+    def test_aswf_lib_loads(self, aswf_lib_doc: mx.Document):
         """Verify we can load the MaterialX standard library."""
         # Should have nodedefs
-        nodedefs = stdlib_doc.getNodeDefs()
+        nodedefs = aswf_lib_doc.getNodeDefs()
         assert len(nodedefs) > 100, f"Expected >100 nodedefs, found {len(nodedefs)}"
     
-    def test_has_implementations(self, stdlib_doc: mx.Document):
-        """Verify the stdlib has implementations."""
-        impls = stdlib_doc.getImplementations()
+    def test_has_implementations(self, aswf_lib_doc: mx.Document):
+        """Verify the ASWF libraries have implementations."""
+        impls = aswf_lib_doc.getImplementations()
         assert len(impls) > 100, f"Expected >100 implementations, found {len(impls)}"
     
-    def test_discover_source_code_nodes(self, stdlib_doc: mx.Document):
-        """Discover all source-code nodes in stdlib."""
-        nodes = discover_source_code_nodes(stdlib_doc)
+    def test_discover_source_code_nodes(self, aswf_lib_doc: mx.Document):
+        """Discover all source-code nodes in ASWF libraries."""
+        nodes = discover_source_code_nodes(aswf_lib_doc)
         
         # Should find a significant number of source-code nodes
         assert len(nodes) > 50, f"Expected >50 source-code nodes, found {len(nodes)}"
@@ -103,9 +103,9 @@ class TestNodeDiscovery:
             assert node.glsl_file.endswith(".glsl")
             assert node.function_name  # Non-empty
     
-    def test_discover_known_nodes(self, stdlib_doc: mx.Document):
+    def test_discover_known_nodes(self, aswf_lib_doc: mx.Document):
         """Verify specific well-known nodes are discovered."""
-        nodes = discover_source_code_nodes(stdlib_doc)
+        nodes = discover_source_code_nodes(aswf_lib_doc)
         
         # Build a set of function names for easy lookup
         func_names = {n.function_name for n in nodes}
@@ -121,9 +121,9 @@ class TestNodeDiscovery:
         for expected_func in expected:
             assert expected_func in func_names, f"Expected to find {expected_func}"
     
-    def test_reference_list(self, stdlib_doc: mx.Document):
+    def test_reference_list(self, aswf_lib_doc: mx.Document):
         """Generate/verify reference list of discovered source-code nodes."""
-        nodes = discover_source_code_nodes(stdlib_doc)
+        nodes = discover_source_code_nodes(aswf_lib_doc)
         
         # Sort by function name for stable ordering
         nodes.sort(key=lambda n: n.function_name)
