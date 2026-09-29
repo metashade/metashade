@@ -39,7 +39,7 @@ _ADSKLIB_DIR = (
 )
 _ADSKLIB_NG = _ADSKLIB_DIR / "adsklib_ng.mtlx"
 
-_SUBDIR = "adsklib_pruned"
+_SUBDIR = "adsklib_pruned/adsklib"
 
 pytestmark = pytest.mark.skipif(
     not _ADSKLIB_NG.exists(),

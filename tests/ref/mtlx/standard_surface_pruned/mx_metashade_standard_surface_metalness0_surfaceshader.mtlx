@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <materialx version="1.39">
-  <nodedef name="ND_metashade_standard_surface_metalness0_surfaceshader" node="metashade_standard_surface_metalness0">
+  <nodedef name="ND_metashade_standard_surface_metalness0_surfaceshader" node="metashade_standard_surface_metalness0" version="1.0.1" isdefaultversion="true">
     <output name="out" type="surfaceshader" />
     <input name="base" type="float" value="1.0" doc="Multiplier on the intensity of the diffuse reflection." />
     <input name="base_color" type="color3" value="0.8, 0.8, 0.8" doc="Color of the diffuse reflection." />

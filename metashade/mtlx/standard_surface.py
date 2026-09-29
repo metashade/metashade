@@ -246,6 +246,9 @@ class Permutation:
                 f"Could not find {_ASWF_SURFACESHADER_NODEDEF} in the ASWF libraries"
             )
 
+        self._aswf_version = aswf_surfaceshader.getVersionString()
+        self._aswf_is_default_version = aswf_surfaceshader.getDefaultVersion()
+
         pruned_inputs = self.lobes.pruned_params
 
         self._inputs: dict[str, InputMetadata] = {}
@@ -692,6 +695,10 @@ class Permutation:
                 "surfaceshader",
                 self._surfaceshader_category,
             )
+            if self._aswf_version:
+                nodedef.setVersionString(self._aswf_version)
+            if self._aswf_is_default_version:
+                nodedef.setDefaultVersion(True)
             for name, meta in self._inputs.items():
                 nodedef_input = nodedef.addInput(name, meta.mtlx_type)
                 if meta.default_value:
