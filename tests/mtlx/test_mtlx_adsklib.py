@@ -52,17 +52,11 @@ class TestAdsklibPruning:
 
     def test_prune_adsklib(self, aswf_lib_doc):
         """Prune adsklib_ng.mtlx and write as a reviewable reference."""
-        lib_doc = mx.createDocument()
-        lib_doc.importLibrary(aswf_lib_doc)
-        mx.readFromXmlFile(lib_doc, str(_ADSKLIB_NG))
-
-        pruned = standard_surface.prune_library(aswf_lib_doc, lib_doc)
-        assert pruned, "Expected at least one standard_surface node to be pruned"
-
-        # Extract just the pruned nodegraphs (strip the imported ASWF libs)
         out_doc = mx.createDocument()
         mx.readFromXmlFile(out_doc, str(_ADSKLIB_NG))
-        standard_surface.prune_library(aswf_lib_doc, out_doc)
+
+        pruned = standard_surface.prune_library(aswf_lib_doc, out_doc)
+        assert pruned, "Expected at least one standard_surface node to be pruned"
 
         with MtlxTestContext("adsklib_ng_pruned.mtlx", subdir=_SUBDIR) as ctx:
             ctx.write(out_doc)
