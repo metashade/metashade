@@ -117,39 +117,31 @@ graph TD
 
 ## How Metashade Integrates
 
-Metashade integrates with MaterialX primarily at the source code implementation level, with support for companion nodegraph wiring and design-time specialization:
+`metashade.mtlx` generates MaterialX source code nodes (`SourceCodeNode`) and companion nodegraphs (`CompoundNode`) from Python shader definitions. Currently, it targets `genglsl` and provides a re-implementation of Standard Surface (`standard_surface.py`) with design-time lobe pruning. The same approach can be applied to other surface shading models in MaterialX, such as glTF PBR (`gltf_pbr`) and OpenPBR (`open_pbr_surface`).
 
-### 1. Leaf Level: Source Code Nodes
+### 1. Reflecting Upstream Source Code Nodes (`acquire_function`)
 
-Authoring complex shading models directly as handwritten GLSL files is error-prone, while expressing them as pure XML nodegraphs can quickly become unwieldy.
+Because a `SourceCodeNode` is a leaf in the MaterialX shader DAG, it cannot contain an internal `ShaderGraph`, though its generated source code can call other standard library functions directly.
 
-Metashade allows authoring leaf node logic in Python and compiling it into target source code (such as GLSL) along with the corresponding MaterialX `<implementation>`. For example, `metashade_standard_surface_bsdf` implements the multi-lobe evaluation of standard surface in Python.
+To reuse existing MaterialX `stdlib` and `pbrlib` implementations without re-implementing them, `acquire_function()` (`mtlx_reflection.py`) inspects upstream MaterialX `<nodedef>` and `<implementation>` elements and exposes their underlying GLSL functions as typed Python callables on the Metashade context. It maps MaterialX data types (`dtypes.py`), injects the synthetic `ClosureData` parameter required by `pbrlib` BSDFs, handles `out`/`inout` outputs, and emits the corresponding `#include` directives.
 
-### 2. Source Code Node Acquisition (`acquire_function`)
+### 2. Re-implementing Standard Surface (Overriding Standard Implementations)
 
-To avoid reimplementing standard library functions, Metashade provides a reflection mechanism:
+In the stock MaterialX library, `ND_standard_surface_surfaceshader` is implemented as a `<nodegraph>` (`NG_standard_surface_surfaceshader_100`) that wires individual `pbrlib` BSDF and math nodes into the `surface` constructor.
 
-`acquire_function()` inspects upstream MaterialX `NodeDef` and `Implementation` declarations and exposes them as callable Python functions. For example, it can acquire `ND_oren_nayar_diffuse_bsdf` and `ND_dielectric_bsdf`, translating typed arguments, `ClosureData`, and `inout` parameters so they can be invoked directly from Metashade code, while automatically tracking required `#include` headers.
+`metashade.mtlx.standard_surface` replaces this graph using a two-layer implementation:
+1. **BSDF source code node (`metashade_standard_surface_bsdf`)**: A Metashade-generated GLSL function (`mx_metashade_standard_surface_bsdf`) that receives `ClosureData` and calls acquired `pbrlib` functions (`mx_oren_nayar_diffuse_bsdf`, `mx_dielectric_bsdf`, `mx_conductor_bsdf`, `mx_sheen_bsdf`, `mx_translucent_bsdf`, `mx_subsurface_bsdf`, `mx_roughness_anisotropy`, `mx_artistic_ior`, `mx_layer_bsdf`, and `mx_mix_bsdf`).
+2. **Surface shader nodegraph (`NG_metashade_standard_surface`)**: A thin `<nodegraph>` that wires the BSDF node together with emission (`uniform_edf`) and opacity into the `surface` constructor.
 
-### 3. Re-implementing Standard Surface
+For the full (unpruned) shader, `NG_metashade_standard_surface` points directly to the standard `ND_standard_surface_surfaceshader` NodeDef. Loading the generated library overrides the stock `<nodegraph>` implementation in place, so existing materials continue to work without modification.
 
-To integrate with existing pipelines, the generated BSDF implementation can override the stock standard surface definition:
+### 3. Lobe Pruning (Specialized NodeDefs and Graph Rewriting)
 
-1. Metashade generates the leaf BSDF source code node (`metashade_standard_surface_bsdf`).
-2. A companion compound `<nodegraph>` (`NG_metashade_standard_surface`) exposes the `ND_standard_surface_surfaceshader` interface, instantiates the leaf BSDF node, and connects its output to `ND_surface`.
+When specializing a shader by removing unused parameters, overriding the standard NodeDef in place is no longer sufficient because each specialized variant has a reduced input interface and multiple variants must be able to coexist in the same scene or library.
 
-Because MaterialX implementations reference NodeDefs, this cleanly overrides the stock implementation without modifying definitions.
-
-### 4. Design-Time Permutations (Lobe Pruning)
-
-Metashade supports generating specialized shader variants at design time via the `Permutation` configuration:
-* For variants with disabled lobes (such as `subsurface=False`), dead code branches and acquired function calls are stripped from the generated source code.
-* Unused inputs (such as subsurface parameters) are omitted from the node definition and nodegraph, and unneeded `#include` headers are dropped.
-
-This reduces shader code size and avoids unnecessary GPU resource usage.
-
-### 5. Single-Source Multi-Target Authoring
-
-By authoring node logic in Python, Metashade provides the missing single-source mechanism for leaf implementations. Instead of maintaining separate GLSL and OSL codebases or relying on fragile string search-and-replace passes, developers can express shader math once in Python and compile clean, idiomatic target code for diverse backends.
-
+`standard_surface.py` defines five optional feature bundles (`LOBES`: `subsurface`, `sheen`, `transmission`, `metalness`, and `coat`), yielding $2^5 = 32$ `Permutation` variants parameterized by `LobeFlags`:
+* **Specialized `<nodedef>`s and codegen**: While the full permutation overrides `ND_standard_surface_surfaceshader`, each of the 31 pruned permutations introduces a new `surfaceshader` `<nodedef>` (suffixed with its active lobes, e.g. `standard_surface_metalness_coat`) along with its own `<nodegraph>` and BSDF `<implementation>`. Disabled lobes have their code paths, unused input parameters, and unreferenced `pbrlib` `#include` directives stripped.
+* **Rewriting materials and wrapper nodegraphs (`prune_material`, `prune_library`)**: To route existing assets to these new NodeDefs:
+  * `prune_material(aswf_lib_doc, material_doc)` inspects top-level `standard_surface` nodes in a material document, determines which lobe gate inputs are statically zero or unconnected, rewrites each node's category to the matching pruned NodeDef, and strips unused inputs.
+  * `prune_library(aswf_lib_doc, inout_lib_doc)` performs the same rewrite on `standard_surface` child nodes encapsulated inside wrapper nodegraphs in a library document (such as `adsk:opaque` or `adsk:metal`).
 
