@@ -79,61 +79,39 @@ classDiagram
 
 ### Portability of Source Code Nodes across Target Languages
 
-While MaterialX node graphs implementations programmatically generate code for all target languages, source code nodes are implemented directly in one of the target languages. To achieve portability, code in one target language may be transformed to another, however:
-* The typical mechanism for this transformation is ad-hoc string substitution, similar to the C Preprocessor.
-* There is no single-source solution, and the same nodes are reimplemented as code separately in multiple languages. This is mostly because string substitution is not sufficient for languages that diverge too much syntactically, e.g. GLSL and OSL or WGSL.
+While nodegraph implementations (`CompoundNode`) are target-agnostic and programmatically generate code for any target language, source code nodes (`SourceCodeNode`) are written directly in a specific shading language. As of MaterialX 1.39.5, there is no single-source mechanism for them; instead, targets either reuse the GLSL implementation files via inheritance and ad-hoc string substitution, or maintain separate implementations from scratch:
 
 ```mermaid
 graph TD
-    subgraph RealTime ["Real-Time Hardware Targets (GLSL Monoculture)"]
-        GLSL["genglsl (GLSL)<br/><i>131 .glsl files in stdlib</i>"]
+    subgraph GLSLBased ["GLSL-Based Hardware Targets"]
+        GLSL["genglsl (GLSL)<br/><i>.glsl stdlib files</i>"]
         ESSL["essl (OpenGL ES)<br/><i>C++ subclass + XML inherit</i>"]
         VK["VkShaderGenerator<br/><i>GLSL 450 + Vulkan layout</i>"]
         WGSL["WgslShaderGenerator<br/><i>GLSL 450 + split samplers</i>"]
-        MSL["genmsl (MSL)<br/><i>MetalizeGeneratedShader token pass</i>"]
-        SLANG["genslang (Slang)<br/><i>SlangSyntaxFromGlsl token pass</i>"]
+        MSL["genmsl (MSL)<br/><i>MetalizeGeneratedShader() token pass</i>"]
+        SLANG["genslang (Slang)<br/><i>SlangSyntaxFromGlsl() token pass</i>"]
         
         GLSL -->|inherit / subclass| ESSL
         GLSL -->|subclass| VK
         VK -->|subclass| WGSL
-        GLSL -.->|C++ token substitution| MSL
-        GLSL -.->|C++ token substitution| SLANG
+        GLSL -.->|C++ string substitution| MSL
+        GLSL -.->|C++ string substitution| SLANG
     end
 
     subgraph External ["External to MaterialX"]
-        NAGA["Naga / Tint / SPIRV-Cross<br/><i>transpiles Vulkan GLSL to WGSL</i>"]
+        NAGA["Naga / Tint<br/><i>transpiles Vulkan GLSL to WGSL</i>"]
         WGSL -.->|downstream handoff| NAGA
     end
 
-    subgraph Offline ["Offline Raytracing Targets (Isolated)"]
-        OSL["genosl (OSL)<br/><i>93 separate .osl files</i>"]
+    subgraph Standalone ["Standalone Targets (Separate Implementations)"]
+        OSL["genosl (OSL)<br/><i>separate .osl files</i>"]
         MDL["genmdl (MDL)<br/><i>inline calls to external modules</i>"]
     end
 ```
 
-#### 1. The Real-Time Hardware Cluster (GLSL Monoculture)
-
-Rather than maintaining separate shading libraries for each real-time shading language, MaterialX treats GLSL as the primary source of truth:
-
-* **GLSL (`genglsl`)**: The base hardware target implemented by `GlslShaderGenerator`. Standard libraries contain 131 `.glsl` source files.
-* **OpenGL ES (`essl`)**: Inherits from `genglsl` in XML target definitions (`<targetdef name="essl" inherit="genglsl" />`) and subclasses `GlslShaderGenerator` in C++, adjusting version directives and precision qualifiers.
-* **Vulkan GLSL (`VkShaderGenerator`)**: A C++ subclass of `GlslShaderGenerator` emitting `#version 450` Vulkan GLSL with explicit descriptor sets and binding locations.
-* **WGSL (`WgslShaderGenerator`)**: A 68-line C++ subclass of `VkShaderGenerator`. It does **not** emit WGSL syntax; it generates Vulkan GLSL 450 with split texture and sampler bindings (`texture2D name_texture, sampler name_sampler`), relying on downstream tools outside MaterialX (such as Naga or Tint) to transpile the resulting shader to WGSL.
-* **Metal Shading Language (`genmsl`)**: Targets inherit from `genglsl` in XML and point directly to `.glsl` files. After emitting the shader stages, `MslShaderGenerator` runs `MetalizeGeneratedShader()`—a C++ post-processing pass that rewrites parameter references (`out/inout Type` to `thread Type &`) and performs string-token replacements (`vec*` to `float*`, `mat4` to `float4x4`, `sampler2D` to `MetalTexture`, `dFdx/dFdy` to `dfdx/dfdy`).
-* **Slang (`genslang`)**: Similarly inherits from `genglsl` in XML (`<targetdef name="genslang" inherit="genglsl" />`) and reuses standard `.glsl` files directly. After stage emission, `SlangShaderGenerator` runs `SlangSyntaxFromGlsl()`, a token-replacement pass converting GLSL intrinsics to Slang/HLSL syntax (`mix` to `lerp`, `fract` to `frac`, `vec*` to `float*`), along with ad-hoc workarounds for specific GLSL shaders (e.g. replacing `const float` with `static const float`).
-
-#### 2. The Offline Raytracing Targets (Isolated)
-
-Offline rendering targets share no code with the real-time cluster:
-
-* **OSL (`genosl`)**: Implemented via `OslShaderGenerator` (subclassing `ShaderGenerator`). It is completely independent and requires 93 dedicated, handwritten `.osl` files in the standard library.
-* **MDL (`genmdl`)**: Implemented via `MdlShaderGenerator` (subclassing `ShaderGenerator`). It does not use standalone source files in the repository, instead emitting inline expressions that invoke external `materialx::stdlib` MDL modules.
-
-#### 3. The Multi-Target Authoring Burden
-
-Because MaterialX lacks a cross-language abstraction for source code nodes, writing a new leaf node presents an authoring dilemma:
-* To support real-time renderers, you must write GLSL—and hope that the string-replacement passes in `genmsl` and `genslang` correctly handle your code idioms without choking.
-* To support offline renderers, you must manually rewrite the exact same logic in OSL (and MDL), maintaining multiple disjoint implementations over time.
+* **GLSL dialects (`genglsl`, `essl`, `VkShaderGenerator`, `WgslShaderGenerator`)**: Share the `.glsl` standard library directly. `EsslShaderGenerator` and `VkShaderGenerator` subclass `GlslShaderGenerator` to adjust version directives, precision qualifiers, and resource bindings. `WgslShaderGenerator` is a small subclass of `VkShaderGenerator` that emits Vulkan GLSL 450 with split texture and sampler parameters (`texture2D` + `sampler`), leaving actual transpilation to WGSL to external tools such as Naga or Tint.
+* **String-substituted targets (`genmsl`, `genslang`)**: Inherit from `genglsl` in XML (`<targetdef inherit="genglsl" />`) and point directly to its `.glsl` files. After emitting the shader stages, `MslShaderGenerator::MetalizeGeneratedShader()` and `SlangShaderGenerator::SlangSyntaxFromGlsl()` run C++ string-replacement passes over the generated code to rewrite parameter qualifiers (`out`/`inout` to `thread Type &`), vector/matrix types, and intrinsics (`mix` to `lerp`, `dFdx` to `dfdx`/`ddx`). Because this transformation is ad-hoc, nodes that use unsupported constructs must either be worked around in the token table or reimplemented in the target language.
+* **Standalone targets (`genosl`, `genmdl`)**: Diverge too much syntactically from GLSL for string substitution, so source code nodes must be implemented separately—as dedicated `.osl` files for `OslShaderGenerator`, or as inline calls to external `materialx::stdlib` modules for `MdlShaderGenerator`.
 
 ---
 
