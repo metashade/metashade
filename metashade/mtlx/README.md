@@ -3,35 +3,33 @@
 This package integrates Metashade with [MaterialX](https://github.com/AcademySoftwareFoundation/MaterialX). It aims to extend MaterialX's nodegraph-centric codegen and provide the following benefits:
 * a single-source mechanism for implementing source code nodes for diverse target languages;
 * flexible control flow, impossible or hard to express in node graphs;
-* metaprogramming, enabling optimization.
+* metaprogramming, enabling optimization among other things.
 
 ## MaterialX architecture recap
 
 In MaterialX, **node definitions**, represented by the `NodeDef` C++ class and serialized as `<nodedef>` XML elements, define the interface of nodes of a given type from the perspective of node graphs and visual editors (category names, input/output port names, types, and default values).
 
-The actual code generation logic is defined in separate **node implementation** declarations:
-* In the **document model**, implementations are serialized as either `<implementation>` (C++ `Implementation`) or `<nodegraph>` (C++ `NodeGraph`).
-* In the **shader generator**, these declarations are bound to C++ classes derived from `ShaderNodeImpl` (such as `SourceCodeNode` for static files/inlines, `CompoundNode` for subgraphs, or custom C++ classes).
+The actual codegen implementations for the node definitions are defined in separate **node implementation** objects:
+* in the document model, serialized as either `<implementation>` (class `Implementation`) or `<nodegraph>` (class `NodeGraph`).
+* in codegen, implemented by C++ classes derived from `ShaderNodeImpl`.
 
 Crucially, **Implementations reference NodeDefs, not the other way around**, which makes it possible to override implementations without modifying upstream node definitions.
 
 ### MaterialX Node Implementation Code Generation mechanisms
 
-In order to understand how Metashade's codegen can integrate with MaterialX's, let's first discuss how MaterialX generates code for individual nodes.
+A MaterialX node implementation uses one of the [four different codegen approaches](https://github.com/AcademySoftwareFoundation/MaterialX/blob/main/documents/DeveloperGuide/ShaderGeneration.md#13-node-implementations) to generate target code:
 
-MaterialX uses [4 different codegen approaches](https://github.com/AcademySoftwareFoundation/MaterialX/blob/main/documents/DeveloperGuide/ShaderGeneration.md#13-node-implementations):
+1. **Inline Expression** — a simple inline expression specified directly in the node definition. This is used for straightforward operations that can be expressed in a single line (e.g., `{{in1}} + {{in2}}` for an add node). The expression uses the target shading language syntax with input port references wrapped in double curly brackets.
 
-1. **Inline Expression** — The node implementation is specified as a simple inline expression directly in the node definition. This is used for straightforward operations that can be expressed in a single line (e.g., `{{in1}} + {{in2}}` for an add node). The expression uses the target shading language syntax with input ports wrapped in double curly brackets.
+2. **Shading Language Function** — The node is implemented as a function written in the target language, with the source code stored in a separate file. The function signature matches the nodedef's interface of typed inputs and outputs.
 
-2. **Shading Language Function** — The node is implemented as a function written in the target language (GLSL, OSL, etc.), with the source code stored in a separate file. The function signature matches the nodedef's interface of typed inputs and outputs.
+3. **Nodegraph Implementation** — The node is implemented as a nodegraph composed of other nodes.
 
-3. **Nodegraph Implementation** — The node is implemented as a compound nodegraph composed of other nodes. This is useful for creating reusable compound operations or compatibility graphs for unknown/proprietary nodes.
-
-4. **Dynamic Code Generation (C++)** — A C++ class derived from `ShaderNodeImpl` handles the implementation, emitting code programmatically during shader generation. This is used when static source code isn't sufficient — for example, when code needs to be customized based on node parameters, or when vertex streams and uniforms need to be created dynamically.
+4. **Dynamic Code Generation (C++)** — A C++ class derived from `ShaderNodeImpl` handles the implementation, emitting code programmatically during shader generation. Used when static source code isn't sufficient — for example, when code needs to be customized based on node parameters, or when vertex streams and uniforms need to be created dynamically.
 
 ### Key Implementation Classes
 
-The following diagram shows how the four code generation methods map to `ShaderNodeImpl` subclasses:
+The following diagram shows how the above four methods map to `ShaderNodeImpl` subclasses:
 
 ```mermaid
 classDiagram
@@ -52,67 +50,100 @@ classDiagram
     for dynamic code emission"
 ```
 
+### Composition of Node Implementation Types
+
+The different MaterialX node implementation types can be composited in the following ways:
+
+```mermaid
+classDiagram
+    direction TB
+    class CompoundNode {
+        +ShaderGraph graph
+    }
+    class SourceCodeNode {
+        +string filePath
+        +string functionName
+    }
+    class CustomImpl {
+        +emitDynamicCode()
+    }
+
+    CompoundNode *-- CompoundNode : nests (compound subgraphs)
+    CompoundNode *-- SourceCodeNode : composes (leaf operations)
+    CompoundNode *-- CustomImpl : composes (dynamic C++ nodes)
+```
+
+* `CompoundNode` (`<nodegraph nodedef="...">`) encapsulates an internal `ShaderGraph`. It can recursively contain and instantiate other `CompoundNode`s as well as leaf `SourceCodeNode`s and `CustomImpl` nodes.
+
+* `SourceCodeNode` (`<implementation file="..." function="...">`) instances are **strictly leaves in the shader DAG**: they have no internal `ShaderGraph` and cannot wrap other nodes.
+
+### Portability of Source Code Nodes across Target Languages
+
+While nodegraph implementations (`CompoundNode`) are target-agnostic and programmatically generate code for any target language, source code nodes (`SourceCodeNode`) are written directly in a specific shading language. As of MaterialX 1.39.5, there is no single-source mechanism for them; instead, targets either reuse the GLSL implementation files via inheritance and ad-hoc string substitution, or maintain separate implementations from scratch:
+
+```mermaid
+graph TD
+    subgraph GLSLBased ["GLSL-Based Hardware Targets"]
+        GLSL["genglsl (GLSL)<br/><i>.glsl stdlib files</i>"]
+        ESSL["essl (OpenGL ES)<br/><i>C++ subclass + XML inherit</i>"]
+        VK["VkShaderGenerator<br/><i>GLSL 450 + Vulkan layout</i>"]
+        WGSL["WgslShaderGenerator<br/><i>GLSL 450 + split samplers</i>"]
+        MSL["genmsl (MSL)<br/><i>MetalizeGeneratedShader() token pass</i>"]
+        SLANG["genslang (Slang)<br/><i>SlangSyntaxFromGlsl() token pass</i>"]
+        
+        GLSL -->|inherit / subclass| ESSL
+        GLSL -->|subclass| VK
+        VK -->|subclass| WGSL
+        GLSL -.->|C++ string substitution| MSL
+        GLSL -.->|C++ string substitution| SLANG
+    end
+
+    subgraph External ["External to MaterialX"]
+        NAGA["Naga / Tint<br/><i>transpiles Vulkan GLSL to WGSL</i>"]
+        WGSL -.->|downstream handoff| NAGA
+    end
+
+    subgraph Standalone ["Standalone Targets (Separate Implementations)"]
+        OSL["genosl (OSL)<br/><i>separate .osl files</i>"]
+        MDL["genmdl (MDL)<br/><i>inline calls to external modules</i>"]
+    end
+```
+
+* **GLSL dialects (`genglsl`, `essl`, `VkShaderGenerator`, `WgslShaderGenerator`)**: Share the `.glsl` standard library directly. `EsslShaderGenerator` and `VkShaderGenerator` subclass `GlslShaderGenerator` to adjust version directives, precision qualifiers, and resource bindings. `WgslShaderGenerator` is a small subclass of `VkShaderGenerator` that emits Vulkan GLSL 450 with split texture and sampler parameters (`texture2D` + `sampler`), leaving actual transpilation to WGSL to external tools such as Naga or Tint.
+* **String-substituted targets (`genmsl`, `genslang`)**: Inherit from `genglsl` in XML (`<targetdef inherit="genglsl" />`) and point directly to its `.glsl` files. After emitting the shader stages, `MslShaderGenerator::MetalizeGeneratedShader()` and `SlangShaderGenerator::SlangSyntaxFromGlsl()` run C++ string-replacement passes over the generated code to rewrite parameter qualifiers (`out`/`inout` to `thread Type &`), vector/matrix types, and intrinsics (`mix` to `lerp`, `dFdx` to `dfdx`/`ddx`). Because this transformation is ad-hoc, nodes that use unsupported constructs must either be worked around in the token table or reimplemented in the target language.
+* **Standalone targets (`genosl`, `genmdl`)**: Diverge too much syntactically from GLSL for string substitution, so source code nodes must be implemented separately—as dedicated `.osl` files for `OslShaderGenerator`, or as inline calls to external `materialx::stdlib` modules for `MdlShaderGenerator`.
+
 ---
 
-## Roadmap
+## How Metashade Integrates
 
-### Phase 1: Static Source Code Nodes (Current State)
+`metashade.mtlx` generates MaterialX source code nodes (`SourceCodeNode`) and companion nodegraphs (`CompoundNode`) from Python shader definitions. Currently, it targets `genglsl` and provides a re-implementation of Standard Surface (`standard_surface.py`) with design-time lobe pruning. The same approach can be applied to other surface shading models in MaterialX, such as glTF PBR (`gltf_pbr`) and OpenPBR (`open_pbr_surface`).
 
-Metashade can generate static GLSL or HLSL/Slang source code and the accompanying `.mtlx` implementation files.
+### 1. Reflecting Upstream Source Code Nodes (`acquire_function`)
 
-Because standard "Source Code Nodes" in MaterialX are typically static assets (loading a `.glsl` file from disk), Metashade can already fully reimplement them.
+Because a `SourceCodeNode` is a leaf in the MaterialX shader DAG, it cannot contain an internal `ShaderGraph`, though its generated source code can call other standard library functions directly.
 
-**The Workflow:**
-1.  Write node logic in Python using Metashade.
-2.  Run Metashade to generate `node_impl.glsl` and `node_impl.mtlx`.
-3.  MaterialX loads these files at runtime exactly as it would load the standard library.
+To reuse existing MaterialX `stdlib` and `pbrlib` implementations without re-implementing them, `acquire_function()` (`mtlx_reflection.py`) inspects upstream MaterialX `<nodedef>` and `<implementation>` elements and exposes their underlying GLSL functions as typed Python callables on the Metashade context. It maps MaterialX data types (`dtypes.py`), injects the synthetic `ClosureData` parameter required by `pbrlib` BSDFs, and handles `out`/`inout` outputs.
 
-This allows us to immediately start optimizing complex mathematical functions (like PBR Distribution terms) or unrolling heavy procedural loops (like Noise).
+### 2. Re-implementing Standard Surface (Overriding Stock Implementations)
 
-### Phase 2: Source Code Node Acquisition (Planned)
+In the stock MaterialX library, `ND_standard_surface_surfaceshader` (node category `standard_surface`) is implemented as a `<nodegraph>` (`NG_standard_surface_surfaceshader_100`) that wires individual `pbrlib` BSDF and math nodes into the `surface` constructor. Re-implementing Standard Surface in Metashade improves the readability of the generated GLSL code (compare [stock `Default_ps.glsl`](https://github.com/metashade/MaterialX/blob/d5f272733eb66605b0c41f00a3250ea1f74628d4/contrib/tests/metashade_ref/renders/source_code_node_passthrus/aswf/standard_surface_default/Default_ps.glsl#L1692-L1900) vs. [Metashade `Default_ps.glsl`](https://github.com/metashade/MaterialX/blob/d5f272733eb66605b0c41f00a3250ea1f74628d4/contrib/tests/metashade_ref/renders/standard_surface/aswf/standard_surface_default/Default_ps.glsl#L1630-L1813) and [`mx_metashade_standard_surface_bsdf_genglsl_impl.glsl`](https://github.com/metashade/MaterialX/blob/d5f272733eb66605b0c41f00a3250ea1f74628d4/contrib/tests/metashade_ref/libraries/standard_surface/mx_metashade_standard_surface_bsdf_genglsl_impl.glsl#L40-L155)) and enables Python metaprogramming such as design-time lobe pruning.
 
-The next step is **Hybrid Graph Generation**. We aim to let Metashade "acquire" (call) existing MaterialX source code nodes.
+`metashade.mtlx.standard_surface` replaces this graph using a two-layer implementation:
+1. **BSDF source code node (`ND_metashade_standard_surface_bsdf`, category `metashade_standard_surface_bsdf`)**: Implemented by `IM_metashade_standard_surface_bsdf_genglsl` and backed by the Metashade-generated GLSL function `mx_metashade_standard_surface_bsdf`, which receives `ClosureData` and calls acquired `pbrlib` functions (`mx_oren_nayar_diffuse_bsdf`, `mx_dielectric_bsdf`, `mx_conductor_bsdf`, `mx_sheen_bsdf`, `mx_translucent_bsdf`, `mx_subsurface_bsdf`, `mx_roughness_anisotropy`, `mx_artistic_ior`, `mx_layer_bsdf`, and `mx_mix_bsdf`).
+2. **Surface shader nodegraph (`NG_metashade_standard_surface`)**: A thin `<nodegraph>` that instantiates `metashade_standard_surface_bsdf` and wires it together with emission (`uniform_edf`) and opacity into the `surface` constructor.
 
-Instead of rewriting every single utility node in Python immediately, Metashade will inspect existing MaterialX `NodeDefs` and expose them as callable Python functions during generation.
+For the full (unpruned) shader, `NG_metashade_standard_surface` points directly to the stock `ND_standard_surface_surfaceshader` NodeDef. Loading the generated library overrides the stock `<nodegraph>` implementation in place, so existing materials continue to work without modification.
 
-**The Concept:**
-* Metashade parses `ND_fractal3d_float`.
-* It exposes a Python callable: `stdlib.fractal3d(...)`.
-* When invoked in a Metashade graph, it emits the correct native function call in the generated GLSL.
+### 3. Lobe Pruning (Specialized NodeDefs and Graph Rewriting)
 
-This bridges the gap, allowing users to write high-level imperative control flow (Python) that orchestrates low-level atomic operations (Standard MaterialX Library).
+Most materials use only a subset of Standard Surface's lobes. Pruning inactive lobes at design time (see [issue #233](https://github.com/metashade/metashade/issues/233)) substantially simplifies the generated shader—further improving readability and speeding up shader compilation by reducing the optimization and dead-code elimination workload for the downstream shader compiler (see the minimal base + specular permutation: [pruned BSDF `.glsl`](https://github.com/metashade/MaterialX/blob/d5f272733eb66605b0c41f00a3250ea1f74628d4/contrib/tests/metashade_ref/libraries/standard_surface_pruned/mx_metashade_standard_surface_coat0_metalness0_sheen0_subsurface0_transmission0_bsdf_genglsl_impl.glsl#L35-L61) and [pruned `Default_ps.glsl`](https://github.com/metashade/MaterialX/blob/d5f272733eb66605b0c41f00a3250ea1f74628d4/contrib/tests/metashade_ref/renders/standard_surface_pruned/aswf/standard_surface_default/Default_ps.glsl#L1238-L1332)).
 
-### Phase 3: Dynamic Runtime Generation (Experimental)
+When specializing a shader by removing unused parameters, overriding the stock NodeDef in place is no longer sufficient because each specialized variant has a reduced input interface and multiple variants must be able to coexist in the same scene or library.
 
-The ultimate goal is to move beyond static files and enable **Just-In-Time (JIT) Optimization**.
+`standard_surface.py` defines five optional feature bundles (`LOBES`: `subsurface`, `sheen`, `transmission`, `metalness`, and `coat`), yielding $2^5 = 32$ `Permutation` variants parameterized by `LobeFlags`:
+* **Specialized `<nodedef>`s and codegen**: While the full permutation overrides `ND_standard_surface_surfaceshader`, each of the 31 pruned permutations introduces a new `surfaceshader` `<nodedef>` (`ND_metashade_standard_surface_<suffix>_surfaceshader`, with node category `metashade_standard_surface_<suffix>`, where `<suffix>` lists disabled lobes such as `_subsurface0` or `_coat0_metalness0_sheen0_subsurface0_transmission0`), along with its own `<nodegraph>` (`NG_metashade_standard_surface_<suffix>`) and BSDF node (`ND_metashade_standard_surface_<suffix>_bsdf` / `IM_metashade_standard_surface_<suffix>_bsdf_genglsl` / `mx_metashade_standard_surface_<suffix>_bsdf`). Disabled lobes have their code paths, unused input parameters, and unreferenced `pbrlib` `#include` directives stripped.
+* **Rewriting materials and wrapper nodegraphs (`prune_material`, `prune_library`)**: To route existing assets to these new NodeDefs:
+  * `prune_material(aswf_lib_doc, material_doc)` inspects top-level `standard_surface` nodes in a material document, determines which lobe gate inputs are statically zero or unconnected, rewrites each node's category to the matching pruned category (`metashade_standard_surface_<suffix>`), and strips unused inputs.
+  * `prune_library(aswf_lib_doc, inout_lib_doc)` performs the same rewrite on `standard_surface` child nodes encapsulated inside wrapper nodegraphs in a library document (such as `adsk:opaque` or `adsk:metal`).
 
-In this model, Metashade integrates directly into the MaterialX `ShaderGen` step via a custom C++ node running an embedded Python interpreter.
-
-**The Workflow:**
-1.  A "Dynamic Node" in the graph captures design-time constants from the current material instance.
-2.  The C++ `ShaderGen` passes these constants to the embedded Metashade interpreter.
-3.  Metashade generates a **bespoke GLSL implementation** on the fly for *that specific material*.
-
-**Why this matters:**
-This allows for optimizations that are impossible with static files, such as baking a "Generic Blur" node that unrolls its sampling loop based on a specific kernel size, or stripping dead code branches based on constant inputs (e.g., removing Anisotropy logic if `roughness` is isotropic).
-
-A proof-of-concept implementation of this approach exists in the [`metashade/dev` branch](https://github.com/metashade/MaterialX/tree/metashade/dev) of a Metashade-specific fork of MaterialX. See the [`MetashadeNode`](https://github.com/metashade/MaterialX/tree/metashade/dev/source/PyMaterialX/PyMaterialXMetashade) class, which demonstrates embedding Python into MaterialX's codegen via pybind11.
-
----
-
-## Why Metashade?
-
-Integrating Metashade into MaterialX offers benefits across the pipeline, from authoring to runtime execution.
-
-### For the Runtime (Performance)
-* **Dead Code Elimination:** Unlike GLSL drivers which struggle with uniform-based branching, Metashade performs graph-aware analysis. If an input is unconnected or constant, the associated code branch is stripped *before* the GPU ever sees it.
-* **Register Pressure Reduction:** By specializing generalized ubershaders (like `standard_surface`) into micro-shaders, we significantly reduce the number of temporary variables (VGPRs), allowing higher occupancy on the GPU.
-* **Loop Unrolling:** Procedural patterns (Noise, Voronoi) can be unrolled based on design-time constants (octaves), replacing heavy loops with flat arithmetic sequences.
-
-### For the Pipeline (Safety)
-* **Global Sanitization:** Metashade can inject "Safe Math" wrappers (e.g., `safe_pow`, `safe_div`) globally across all generated code, preventing NaN explosions in production renders caused by bad user inputs (e.g., `roughness=0`).
-* **Validation:** Python-side type checking catches invalid node connections or parameter types during generation, providing readable error messages instead of cryptic driver crashes.
-
-### For the Developer (Architecture)
-* **Imperative Authoring:** Write complex node logic using standard Python control flow (`if`, `for`, `try`) instead of manually constructing XML nodegraphs.
-* **Source Code Acquisition:** (Planned) Metashade will be able to wrap existing MaterialX source code nodes, allowing developers to rewrite high-level graph topology in Python while reusing optimized low-level GLSL atoms.
