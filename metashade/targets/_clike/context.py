@@ -389,9 +389,9 @@ class For(_ConditionalStatement):
         )
         self._sh._emit(f'; {cond}; ')
         if self._step > 0:
-            self._counter._emit_assign_op(self._step, '+')
+            self._counter._assign_op(self._step, '+')
         else:
-            self._counter._emit_assign_op(-self._step, '-')
+            self._counter._assign_op(-self._step, '-')
         self._sh._emit(')\n')
 
     def __enter__(self):

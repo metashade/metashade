@@ -101,17 +101,12 @@ class BaseType(base.BaseType):
         self._sh._emit_indent()
         self._sh._emit( f'{self} = {value_ref};\n' )
 
-    def _emit_assign_op(self, value, op):
+    def _assign_op(self, value, op):
         value_ref = self.__class__._get_value_ref(value)
         if value_ref is None:
             raise ArithmeticError('Type mismatch')
 
         self._sh._emit(f'{self} {op}= {value_ref}')
-
-    def _assign_op(self, value, op):
-        self._sh._emit_indent()
-        self._emit_assign_op(value, op)
-        self._sh._emit(';\n')
 
     @classmethod
     def _get_target_type_name(cls):
@@ -163,7 +158,9 @@ class ArithmeticType(BaseType):
     def _inplace_binary_operator(self, rhs, op):
         if not self._is_lvalue:
              raise RuntimeError("Can't modify an rvalue")
+        self._sh._emit_indent()
         self._assign_op(rhs, op)
+        self._sh._emit(';\n')
         return self
 
     def __add__(self, rhs):
