@@ -264,6 +264,15 @@ class Float(_ScalarComparisons, ArithmeticType, Scalar):
 class Int(_ScalarComparisons, ArithmeticType, Scalar):
     _target_name = 'int'
 
+    @staticmethod
+    def _get_value_ref_static(concrete_cls, value):
+        if (
+            isinstance(value, numbers.Number)
+            and not isinstance(value, numbers.Integral)
+        ):
+            return None
+        return Scalar._get_value_ref_static(concrete_cls, value)
+
 class Bool(Scalar):
     _target_name = 'bool'
 
