@@ -297,9 +297,8 @@ class _Block:
         self._sh._emit('{\n')
         self._sh._push_indent()
 
-        body = base.Scope()
-        self._sh._push_context(body)
-        return body
+        self._scope = base.Scope()
+        self._sh._push_context(self._scope)
 
     def __exit__(self, exc_type, exc_value, traceback):
         self._sh._pop_context()
@@ -308,7 +307,7 @@ class _Block:
         self._sh._emit('}\n')
 
 
-class _ConditionalStatement(_Block):
+class _FlowControlStatement(_Block):
     @abc.abstractmethod
     def _emit_statement(self):
         pass
@@ -316,10 +315,10 @@ class _ConditionalStatement(_Block):
     def __enter__(self):
         self._sh._emit_indent()
         self._emit_statement()
-        return super().__enter__()
+        super().__enter__()
 
 
-class If(_ConditionalStatement):
+class If(_FlowControlStatement):
     def __init__(self, sh, condition):
         super().__init__(sh)
         self._condition = condition
@@ -327,12 +326,12 @@ class If(_ConditionalStatement):
     def _emit_statement(self):
         self._sh._emit(f'if ({self._condition})\n')
 
-class Else(_ConditionalStatement):
+class Else(_FlowControlStatement):
     def _emit_statement(self):
         self._sh._emit('else\n')
 
 
-class For(_ConditionalStatement):
+class For(_FlowControlStatement):
     def __init__(self, sh, **kwargs):
         super().__init__(sh)
         if len(kwargs) != 1:
@@ -395,7 +394,7 @@ class For(_ConditionalStatement):
         self._sh._emit(')\n')
 
     def __enter__(self):
-        body = super().__enter__()
-        body._locals[self._var_name] = self._counter
+        super().__enter__()
+        self._scope._locals[self._var_name] = self._counter
         return self._counter
 

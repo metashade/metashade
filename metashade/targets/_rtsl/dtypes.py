@@ -48,7 +48,6 @@ class _RawVector(clike.ArithmeticType):
 
         self._sh._emit(f'{self} {op}= {value_ref}')
 
-
     def __getattr__(self, name):
         '''Implements swizzling.'''
         is_valid_swizzle = False
