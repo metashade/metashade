@@ -46,8 +46,7 @@ class _RawVector(clike.ArithmeticType):
         if value_ref is None:
              raise ArithmeticError('Type mismatch')
 
-        self._sh._emit_indent()
-        self._sh._emit( f'{self} {op}= {value_ref};\n' )
+        self._sh._emit(f'{self} {op}= {value_ref}')
 
     def __getattr__(self, name):
         '''Implements swizzling.'''

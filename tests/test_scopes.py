@@ -43,3 +43,33 @@ class TestScopes:
                     match = "Undeclared symbol: 'tmp'"
                 ):
                     sh.result = sh.tmp
+
+    @ctx_cls_hg
+    def test_for_scope(self, ctx_cls):
+        """Loop counter and body locals are scoped to sh.for_()."""
+        with ctx_cls(no_file = True) as sh:
+            with sh.function('test_loop_scope')(n = sh.Int):
+                sh.total = sh.Int(0)
+
+                with sh.for_(i = sh.n):
+                    sh.step_val = sh.i * sh.Int(2)
+                    sh.total += sh.step_val
+
+                    with pytest.raises(
+                        AttributeError,
+                        match = "'i': can't redefine Metashade symbol"
+                    ):
+                        with sh.for_(i = 4):
+                            pass
+
+                with pytest.raises(
+                    AttributeError,
+                    match = "Undeclared symbol: 'i'"
+                ):
+                    sh.total += sh.i
+
+                with pytest.raises(
+                    AttributeError,
+                    match = "Undeclared symbol: 'step_val'"
+                ):
+                    sh.total += sh.step_val

@@ -297,9 +297,8 @@ class _Block:
         self._sh._emit('{\n')
         self._sh._push_indent()
 
-        body = base.Scope()
-        self._sh._push_context(body)
-        return body
+        self._scope = base.Scope()
+        self._sh._push_context(self._scope)
 
     def __exit__(self, exc_type, exc_value, traceback):
         self._sh._pop_context()
@@ -308,7 +307,7 @@ class _Block:
         self._sh._emit('}\n')
 
 
-class _ConditionalStatement(_Block):
+class _FlowControlStatement(_Block):
     @abc.abstractmethod
     def _emit_statement(self):
         pass
@@ -316,10 +315,10 @@ class _ConditionalStatement(_Block):
     def __enter__(self):
         self._sh._emit_indent()
         self._emit_statement()
-        return super().__enter__()
+        super().__enter__()
 
 
-class If(_ConditionalStatement):
+class If(_FlowControlStatement):
     def __init__(self, sh, condition):
         super().__init__(sh)
         self._condition = condition
@@ -327,6 +326,75 @@ class If(_ConditionalStatement):
     def _emit_statement(self):
         self._sh._emit(f'if ({self._condition})\n')
 
-class Else(_ConditionalStatement):
+class Else(_FlowControlStatement):
     def _emit_statement(self):
         self._sh._emit('else\n')
+
+
+class For(_FlowControlStatement):
+    def __init__(self, sh, **kwargs):
+        super().__init__(sh)
+        if len(kwargs) != 1:
+            raise ValueError(
+                "for_() requires exactly one keyword argument "
+                "specifying the loop variable and range"
+            )
+        var_name, range_spec = next(iter(kwargs.items()))
+        sh._check_public_name(var_name)
+        sh._check_unique_attr(var_name)
+
+        self._var_name = var_name
+        self._counter, self._stop, self._step = self._parse_range(range_spec)
+
+    def _parse_range(self, range_spec):
+        if isinstance(range_spec, range):
+            start, stop, step = (
+                range_spec.start, range_spec.stop, range_spec.step
+            )
+        elif isinstance(range_spec, (tuple, list)):
+            if len(range_spec) == 1:
+                start, stop, step = 0, range_spec[0], 1
+            elif len(range_spec) == 2:
+                start, stop, step = range_spec[0], range_spec[1], 1
+            elif len(range_spec) == 3:
+                start, stop, step = (
+                    range_spec[0], range_spec[1], range_spec[2]
+                )
+            else:
+                raise ValueError(
+                    "for_() range tuple must have 1, 2, or 3 elements: "
+                    "(stop,), (start, stop), or (start, stop, step)"
+                )
+        else:
+            start, stop, step = 0, range_spec, 1
+
+        if not isinstance(step, int) or isinstance(step, bool):
+            raise TypeError(
+                f"for_() step must be an int, "
+                f"got '{type(step).__name__}'"
+            )
+        if step == 0:
+            raise ValueError("for_() step argument must not be zero")
+
+        return self._sh.Int(start), stop, step
+
+    def _emit_statement(self):
+        self._sh._emit('for (')
+        self._counter._define(self._sh, self._var_name)
+        cond = (
+            self._counter < self._stop
+            if self._step > 0
+            else self._counter > self._stop
+        )
+        self._sh._emit(f'; {cond}; ')
+        if self._step > 0:
+            self._counter._assign_op(self._step, '+')
+        else:
+            self._counter._assign_op(-self._step, '-')
+        self._sh._emit(')\n')
+
+    def __enter__(self):
+        super().__enter__()
+        self._scope._locals[self._var_name] = self._counter
+        return self._counter
+
