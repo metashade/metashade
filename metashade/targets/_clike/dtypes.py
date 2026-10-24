@@ -101,13 +101,17 @@ class BaseType(base.BaseType):
         self._sh._emit_indent()
         self._sh._emit( f'{self} = {value_ref};\n' )
 
-    def _assign_op(self, value, op):
+    def _emit_assign_op(self, value, op):
         value_ref = self.__class__._get_value_ref(value)
         if value_ref is None:
             raise ArithmeticError('Type mismatch')
 
+        self._sh._emit(f'{self} {op}= {value_ref}')
+
+    def _assign_op(self, value, op):
         self._sh._emit_indent()
-        self._sh._emit( f'{self} {op}= {value_ref};\n' )
+        self._emit_assign_op(value, op)
+        self._sh._emit(';\n')
 
     @classmethod
     def _get_target_type_name(cls):
@@ -262,6 +266,15 @@ class Float(_ScalarComparisons, ArithmeticType, Scalar):
 
 class Int(_ScalarComparisons, ArithmeticType, Scalar):
     _target_name = 'int'
+
+    @staticmethod
+    def _get_value_ref_static(concrete_cls, value):
+        if (
+            isinstance(value, numbers.Number)
+            and not isinstance(value, numbers.Integral)
+        ):
+            return None
+        return Scalar._get_value_ref_static(concrete_cls, value)
 
 class Bool(Scalar):
     _target_name = 'bool'

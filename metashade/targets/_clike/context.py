@@ -345,20 +345,7 @@ class For(_ConditionalStatement):
         sh._check_unique_attr(var_name)
 
         self._var_name = var_name
-        self._dtype_cls = sh.Int._get_dtype()
-        self._start_ref, self._cond_str, self._step_str = (
-            self._parse_range(range_spec)
-        )
-
-    def _format_bound(self, value, label: str) -> str:
-        if isinstance(value, int) and not isinstance(value, bool):
-            return str(value)
-        if isinstance(value, self._dtype_cls):
-            return str(value)
-        raise TypeError(
-            f"for_() {label} must be an int or Int, "
-            f"got '{type(value).__name__}'"
-        )
+        self._counter, self._stop, self._step = self._parse_range(range_spec)
 
     def _parse_range(self, range_spec):
         if isinstance(range_spec, range):
@@ -382,9 +369,6 @@ class For(_ConditionalStatement):
         else:
             start, stop, step = 0, range_spec, 1
 
-        start_ref = self._format_bound(start, "start")
-        stop_ref = self._format_bound(stop, "stop")
-
         if not isinstance(step, int) or isinstance(step, bool):
             raise TypeError(
                 f"for_() step must be an int, "
@@ -392,33 +376,26 @@ class For(_ConditionalStatement):
             )
         if step == 0:
             raise ValueError("for_() step argument must not be zero")
-        if step > 0:
-            cmp_op = '<'
-            step_str = (
-                f'++{self._var_name}' if step == 1
-                else f'{self._var_name} += {step}'
-            )
-        else:
-            cmp_op = '>'
-            step_str = (
-                f'--{self._var_name}' if step == -1
-                else f'{self._var_name} -= {-step}'
-            )
 
-        cond_str = f'{self._var_name} {cmp_op} {stop_ref}'
-        return start_ref, cond_str, step_str
+        return self._sh.Int(start), stop, step
 
     def _emit_statement(self):
-        type_name = self._dtype_cls._get_target_type_name()
-        self._sh._emit(
-            f'for ({type_name} {self._var_name} = {self._start_ref}; '
-            f'{self._cond_str}; {self._step_str})\n'
+        self._sh._emit('for (')
+        self._counter._define(self._sh, self._var_name)
+        cond = (
+            self._counter < self._stop
+            if self._step > 0
+            else self._counter > self._stop
         )
+        self._sh._emit(f'; {cond}; ')
+        if self._step > 0:
+            self._counter._emit_assign_op(self._step, '+')
+        else:
+            self._counter._emit_assign_op(-self._step, '-')
+        self._sh._emit(')\n')
 
     def __enter__(self):
         body = super().__enter__()
-        counter = self._sh._instantiate_dtype(self._dtype_cls)
-        counter._bind(self._sh, self._var_name, allow_init=False)
-        body._locals[self._var_name] = counter
-        return counter
+        body._locals[self._var_name] = self._counter
+        return self._counter
 

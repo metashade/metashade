@@ -36,7 +36,7 @@ class TestFor:
                     assert i is sh.i
                     sh.total += i
 
-                with sh.for_(i=(1, sh.n)):
+                with sh.for_(i=(1, sh.n + 1)):
                     sh.total += sh.i
 
                 with sh.for_(i=range(0, 8, 2)):
@@ -92,11 +92,15 @@ class TestFor:
                     with sh.for_(i=(0, 1, 2, 3)):
                         pass
 
-                with pytest.raises(TypeError, match="must be an int or Int"):
+                with pytest.raises(TypeError):
                     with sh.for_(i=1.5):
                         pass
 
-                with pytest.raises(TypeError, match="must be an int or Int"):
+                with pytest.raises(TypeError):
+                    with sh.for_(i=(1.5, 4)):
+                        pass
+
+                with pytest.raises(TypeError):
                     with sh.for_(i=True):
                         pass
 
