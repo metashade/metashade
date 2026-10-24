@@ -1,4 +1,4 @@
-int range_variants(int n, int step)
+int range_variants(int n)
 {
 	int total = 0;
 	for (int i = 0; i < 4; ++i)
@@ -18,10 +18,6 @@ int range_variants(int n, int step)
 		total += i;
 	}
 	for (int i = 10; i > 0; i -= 2)
-	{
-		total += i;
-	}
-	for (int i = 0; i < n; i += step)
 	{
 		total += i;
 	}

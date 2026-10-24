@@ -29,9 +29,7 @@ class TestFor:
     @ctx_cls_hg
     def test_for_range_variants(self, ctx_cls):
         with ctx_cls(dummy_entry_point=True) as sh:
-            with sh.function('range_variants', sh.Int)(
-                n=sh.Int, step=sh.Int
-            ):
+            with sh.function('range_variants', sh.Int)(n=sh.Int):
                 sh.total = sh.Int(0)
 
                 with sh.for_(i=4) as i:
@@ -48,9 +46,6 @@ class TestFor:
                     sh.total += sh.i
 
                 with sh.for_(i=(10, 0, -2)):
-                    sh.total += sh.i
-
-                with sh.for_(i=(0, sh.n, sh.step)):
                     sh.total += sh.i
 
                 sh.return_(sh.total)
@@ -103,4 +98,8 @@ class TestFor:
 
                 with pytest.raises(TypeError, match="must be an int or Int"):
                     with sh.for_(i=True):
+                        pass
+
+                with pytest.raises(TypeError, match="step must be an int"):
+                    with sh.for_(i=(0, sh.n, sh.n)):
                         pass

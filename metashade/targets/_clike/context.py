@@ -385,28 +385,24 @@ class For(_ConditionalStatement):
         start_ref = self._format_bound(start, "start")
         stop_ref = self._format_bound(stop, "stop")
 
-        if isinstance(step, int) and not isinstance(step, bool):
-            if step == 0:
-                raise ValueError("for_() step argument must not be zero")
-            if step > 0:
-                cmp_op = '<'
-                step_str = (
-                    f'++{self._var_name}' if step == 1
-                    else f'{self._var_name} += {step}'
-                )
-            else:
-                cmp_op = '>'
-                step_str = (
-                    f'--{self._var_name}' if step == -1
-                    else f'{self._var_name} -= {-step}'
-                )
-        elif isinstance(step, self._dtype_cls):
-            cmp_op = '<'
-            step_str = f'{self._var_name} += {step}'
-        else:
+        if not isinstance(step, int) or isinstance(step, bool):
             raise TypeError(
-                f"for_() step must be an int or Int, "
+                f"for_() step must be an int, "
                 f"got '{type(step).__name__}'"
+            )
+        if step == 0:
+            raise ValueError("for_() step argument must not be zero")
+        if step > 0:
+            cmp_op = '<'
+            step_str = (
+                f'++{self._var_name}' if step == 1
+                else f'{self._var_name} += {step}'
+            )
+        else:
+            cmp_op = '>'
+            step_str = (
+                f'--{self._var_name}' if step == -1
+                else f'{self._var_name} -= {-step}'
             )
 
         cond_str = f'{self._var_name} {cmp_op} {stop_ref}'
