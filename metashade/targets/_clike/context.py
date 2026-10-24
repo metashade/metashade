@@ -330,3 +330,99 @@ class If(_ConditionalStatement):
 class Else(_ConditionalStatement):
     def _emit_statement(self):
         self._sh._emit('else\n')
+
+
+class For(_ConditionalStatement):
+    def __init__(self, sh, **kwargs):
+        super().__init__(sh)
+        if len(kwargs) != 1:
+            raise ValueError(
+                "for_() requires exactly one keyword argument "
+                "specifying the loop variable and range"
+            )
+        var_name, range_spec = next(iter(kwargs.items()))
+        sh._check_public_name(var_name)
+        sh._check_unique_attr(var_name)
+
+        self._var_name = var_name
+        self._dtype_cls = sh.Int._get_dtype()
+        self._start_ref, self._cond_str, self._step_str = (
+            self._parse_range(range_spec)
+        )
+
+    def _format_bound(self, value, label: str) -> str:
+        if isinstance(value, int) and not isinstance(value, bool):
+            return str(value)
+        if isinstance(value, self._dtype_cls):
+            return str(value)
+        raise TypeError(
+            f"for_() {label} must be an int or Int, "
+            f"got '{type(value).__name__}'"
+        )
+
+    def _parse_range(self, range_spec):
+        if isinstance(range_spec, range):
+            start, stop, step = (
+                range_spec.start, range_spec.stop, range_spec.step
+            )
+        elif isinstance(range_spec, (tuple, list)):
+            if len(range_spec) == 1:
+                start, stop, step = 0, range_spec[0], 1
+            elif len(range_spec) == 2:
+                start, stop, step = range_spec[0], range_spec[1], 1
+            elif len(range_spec) == 3:
+                start, stop, step = (
+                    range_spec[0], range_spec[1], range_spec[2]
+                )
+            else:
+                raise ValueError(
+                    "for_() range tuple must have 1, 2, or 3 elements: "
+                    "(stop,), (start, stop), or (start, stop, step)"
+                )
+        else:
+            start, stop, step = 0, range_spec, 1
+
+        start_ref = self._format_bound(start, "start")
+        stop_ref = self._format_bound(stop, "stop")
+
+        if isinstance(step, int) and not isinstance(step, bool):
+            if step == 0:
+                raise ValueError("for_() step argument must not be zero")
+            if step > 0:
+                cmp_op = '<'
+                step_str = (
+                    f'++{self._var_name}' if step == 1
+                    else f'{self._var_name} += {step}'
+                )
+            else:
+                cmp_op = '>'
+                step_str = (
+                    f'--{self._var_name}' if step == -1
+                    else f'{self._var_name} -= {-step}'
+                )
+        elif isinstance(step, self._dtype_cls):
+            cmp_op = '<'
+            step_str = f'{self._var_name} += {step}'
+        else:
+            raise TypeError(
+                f"for_() step must be an int or Int, "
+                f"got '{type(step).__name__}'"
+            )
+
+        cond_str = f'{self._var_name} {cmp_op} {stop_ref}'
+        return start_ref, cond_str, step_str
+
+    def _emit_statement(self):
+        type_name = self._dtype_cls._get_target_type_name()
+        self._sh._emit(
+            f'for ({type_name} {self._var_name} = {self._start_ref}; '
+            f'{self._cond_str}; {self._step_str})\n'
+        )
+
+    def __enter__(self):
+        body = super().__enter__()
+        counter = self._sh._instantiate_dtype(self._dtype_cls)
+        counter._bind(self._sh, self._var_name, allow_init=False)
+        body._locals[self._var_name] = counter
+        return counter
+

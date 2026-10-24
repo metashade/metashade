@@ -59,6 +59,9 @@ class Generator(base.Generator):
     def else_(self):
         return context.Else(self)
 
+    def for_(self, **kwargs):
+        return context.For(self, **kwargs)
+
     def block(self):
         """Bare ``{ ... }`` block for narrowing variable lifetimes."""
         return context._Block(self)
