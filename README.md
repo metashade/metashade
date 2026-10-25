@@ -244,3 +244,21 @@ For example, the following code is generated conditionally if the input geometry
         sh.vsOut.Tw = sh.g_WorldXf.xform(sh.vsIn.Tobj.xyz).xyz.normalize()
         sh.vsOut.Bw = sh.vsOut.Nw.cross(sh.vsOut.Tw) * sh.vsIn.Tobj.w
 ```
+
+### `for` loops
+
+Similarly, C-like `for` loops are modeled with `sh.for_()` (accepting a stop bound, a `(start, stop[, step])` tuple, or a Python `range`), while native Python `for` loops unroll at generation time:
+
+```Python
+    with sh.for_(i = sh.n):
+        sh.total += sh.i
+```
+
+generates:
+
+```HLSL
+    for (int i = 0; i < n; i += 1)
+    {
+        total += i;
+    }
+```
