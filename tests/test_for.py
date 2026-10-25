@@ -93,6 +93,14 @@ class TestFor:
                         pass
 
                 with pytest.raises(TypeError):
+                    with sh.for_(i=1.5):
+                        pass
+
+                with pytest.raises(TypeError):
+                    with sh.for_(i=(1.5, 4)):
+                        pass
+
+                with pytest.raises(TypeError):
                     with sh.for_(i=True):
                         pass
 
