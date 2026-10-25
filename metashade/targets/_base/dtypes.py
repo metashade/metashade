@@ -26,8 +26,16 @@ class BaseType:
         self._sh = None
         self._name = None
         self._is_lvalue = False
-        self._expression = _ if (isinstance(_, str) or _ is None) \
-            else str(self.__class__._get_value_ref(_))
+        if isinstance(_, str) or _ is None:
+            self._expression = _
+        else:
+            ref = self.__class__._get_value_ref(_)
+            if ref is None:
+                raise TypeError(
+                    f"Cannot initialize '{type(self).__name__}' "
+                    f"from '{type(_).__name__}'"
+                )
+            self._expression = str(ref)
 
     @property
     def _(self):
