@@ -1,0 +1,11 @@
+void func_with_inout(output float inout_val)
+{
+	inout_val = inout_val + 1.0;
+}
+
+shader main()
+{
+	float val = 1.0;
+	func_with_inout(val);
+}
+

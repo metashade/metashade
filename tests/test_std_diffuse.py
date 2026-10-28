@@ -14,12 +14,12 @@
 
 """Tests for metashade.std.surf.pbr.diffuse module."""
 
-from metashade.util.testing import ctx_cls_hg
+from metashade.util.testing import ctx_cls_hgo
 from metashade.std.surf.pbr import diffuse
 
 
 class TestFdLambert:
-    @ctx_cls_hg
+    @ctx_cls_hgo
     def test_Fd_Lambert(self, ctx_cls):
         """Test Fd_Lambert generates correct code."""
         ctx = ctx_cls(dummy_entry_point=True)

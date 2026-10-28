@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import pytest
-from metashade.util.testing import ctx_cls_hg
+from metashade.util.testing import ctx_cls_hg, ctx_cls_hgo
 
 class TestDTypes:
     @ctx_cls_hg
@@ -74,7 +74,7 @@ class TestDTypes:
             ):
                 dtype_factory(value)
 
-    @ctx_cls_hg
+    @ctx_cls_hgo
     def test_init_type_mismatch_in_local(self, ctx_cls):
         """A mismatched initializer must not emit 'float f = None;'."""
         with ctx_cls(no_file = True) as sh:

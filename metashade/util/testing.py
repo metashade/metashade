@@ -21,6 +21,8 @@ from metashade.targets.glsl import frag
 from metashade.targets.glsl.util import glslang
 from metashade.targets.hlsl.sm6 import ps_6_0
 from metashade.targets.hlsl.util import dxc
+from metashade.targets.osl import generator as osl
+from metashade.targets.osl.util import oslc
 
 class RefDiffer:
     def __init__(self, ref_dir : Path):
@@ -153,8 +155,37 @@ class GlslTestContext(_TestContext):
             output_path = os.devnull
         )
 
+class OslTestContext(_TestContext):
+    _file_extension = 'osl'
+
+    def _create_generator(self):
+        return osl.Generator(self._file)
+
+    def _compile(self):
+        # The output has already been compared against its reference, so
+        # without oslc only the compilation check is skipped.
+        try:
+            oslc.find_executable()
+        except FileNotFoundError as error:
+            pytest.skip(f'{error}; skipping OSL compilation')
+
+        oslc.compile(
+            src_path = self._src_path,
+            include_paths = [ self._parent_dir ]
+        )
+
 def ctx_cls_hg(func):
     wrapped_deco = pytest.mark.parametrize(
         'ctx_cls', [HlslTestContext, GlslTestContext]
+    )
+    return wrapped_deco(func)
+
+def ctx_cls_hgo(func):
+    '''
+    Like ``ctx_cls_hg``, plus OSL, for tests that only use the subset of
+    Metashade that the OSL target supports.
+    '''
+    wrapped_deco = pytest.mark.parametrize(
+        'ctx_cls', [HlslTestContext, GlslTestContext, OslTestContext]
     )
     return wrapped_deco(func)

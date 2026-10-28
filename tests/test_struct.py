@@ -19,7 +19,7 @@ Tests for struct definition and acquisition.
 from __future__ import annotations
 
 import pytest
-from metashade.util.testing import ctx_cls_hg, HlslTestContext
+from metashade.util.testing import ctx_cls_hg, ctx_cls_hgo, HlslTestContext
 
 
 class TestStructDefinition:
@@ -36,7 +36,7 @@ class TestStructDefinition:
                 c=sh.Float2
             )
 
-    @ctx_cls_hg
+    @ctx_cls_hgo
     def test_struct_registration(self, ctx_cls):
         """Test that struct type is registered on generator."""
         ctx = ctx_cls(dummy_entry_point=True)
