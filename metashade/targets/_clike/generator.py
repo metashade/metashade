@@ -30,6 +30,18 @@ class Generator(base.Generator):
     def function(self, name : str, return_type = None):
         return context.FunctionDecl(self, name, return_type)
 
+    def In(self, base_type, default=None):
+        """Create an input parameter type for function signatures"""
+        return context.In(base_type, default=default)
+
+    def Out(self, base_type):
+        """Create an output parameter type for function signatures"""
+        return context.Out(base_type)
+
+    def InOut(self, base_type):
+        """Create an input-output parameter type for function signatures"""
+        return context.InOut(base_type)
+
     def struct(self, name, emit=True):
         return struct.StructDef(self, name, emit=emit)
     

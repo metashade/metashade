@@ -86,17 +86,17 @@ class FunctionDecl:
         # Return self, so that it can be entered in a with scope
         return self
 
-    def _emit_signature(self):
-        '''Emit the function signature.'''
-        return_type = (
+    def _format_return_type(self):
+        return (
             self._return_dtype_factory._get_dtype()._get_target_type_name()
             if self._return_dtype_factory is not None
             else 'void'
         )
 
-        # Emit the function signature
+    def _emit_signature(self):
+        '''Emit the function signature.'''
         self._sh._emit_indent()
-        self._sh._emit(f'{return_type} {self._name}(')
+        self._sh._emit(f'{self._format_return_type()} {self._name}(')
         
         # Emit the argument declarations
         first = True
