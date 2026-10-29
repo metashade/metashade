@@ -14,21 +14,13 @@
 
 import metashade.targets._clike.dtypes as clike
 
-class _OutputQualifierMixin:
-    @classmethod
-    def _emit_qualifier(cls, sh, qualifier):
-        # OSL has a single "output" qualifier for both out and inout
-        # parameters, since output parameters are also readable.
-        if qualifier:
-            sh._emit('output ')
-
-class Float(_OutputQualifierMixin, clike.Float):
+class Float(clike.Float):
     pass
 
-class Int(_OutputQualifierMixin, clike.Int):
+class Int(clike.Int):
     pass
 
-class Bool(_OutputQualifierMixin, clike.Bool):
+class Bool(clike.Bool):
     # OSL has no bool type: conditions and comparison results are ints.
     _target_name = 'int'
 

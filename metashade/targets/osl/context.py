@@ -12,7 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import metashade.targets._clike.context as clike
 from metashade.targets._clike.context import FunctionDecl
+
+# OSL has a single "output" qualifier for both out and inout parameters,
+# since output parameters are also readable.
+class Out(clike.Out):
+    _direction_str = 'output'
+
+class InOut(clike.InOut):
+    _direction_str = 'output'
 
 class ShaderDecl(FunctionDecl):
     '''

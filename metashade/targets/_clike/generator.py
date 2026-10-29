@@ -88,9 +88,9 @@ class Generator(base.Generator):
             qualifier_str, inner_type_name = match.groups()
             inner_type = getattr(self, inner_type_name)
             if qualifier_str == 'Out':
-                return context.Out(inner_type)
+                return self.Out(inner_type)
             else:
-                return context.InOut(inner_type)
+                return self.InOut(inner_type)
 
         return getattr(self, annotation)
 

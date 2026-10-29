@@ -20,6 +20,12 @@ class Generator(clike.Generator):
         super().__init__(file_)
         self._register_dtypes(dtypes.__name__)
 
+    def Out(self, base_type):
+        return context.Out(base_type)
+
+    def InOut(self, base_type):
+        return context.InOut(base_type)
+
     def shader(self, name : str):
         return context.ShaderDecl(self, name)
 
