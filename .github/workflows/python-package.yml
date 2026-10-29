@@ -67,7 +67,7 @@ jobs:
       run: |
         dxc --version
         glslang --version
-        oslc --version
+        oslc --help | head -n 1
     - name: Test with pytest
       run: |
         pytest -rs
