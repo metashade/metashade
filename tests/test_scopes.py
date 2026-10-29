@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import pytest
-from metashade.util.testing import ctx_cls_hg
+from metashade.util.testing import ctx_cls_hg, ctx_cls_hgo
 
 class TestScopes:
     @ctx_cls_hg
@@ -26,7 +26,7 @@ class TestScopes:
                 ):
                     sh.return_(sh.a + sh.c)
 
-    @ctx_cls_hg
+    @ctx_cls_hgo
     def test_block_scope(self, ctx_cls):
         """Variables declared inside sh.block() are scoped to the block."""
         with ctx_cls(no_file = True) as sh:
@@ -44,7 +44,7 @@ class TestScopes:
                 ):
                     sh.result = sh.tmp
 
-    @ctx_cls_hg
+    @ctx_cls_hgo
     def test_for_scope(self, ctx_cls):
         """Loop counter and body locals are scoped to sh.for_()."""
         with ctx_cls(no_file = True) as sh:

@@ -21,12 +21,12 @@ These tests verify that:
 3. Mixed precedence scenarios produce correct output
 """
 
-from metashade.util.testing import ctx_cls_hg
+from metashade.util.testing import ctx_cls_hg, ctx_cls_hgo
 
 class TestPrecedence:
     """Tests for mixed operator precedence scenarios."""
     
-    @ctx_cls_hg
+    @ctx_cls_hgo
     def test_mixed_precedence(self, ctx_cls):
         """
         Test that compound expressions maintain parentheses when used
@@ -70,7 +70,7 @@ class TestPrecedence:
 class TestNegation:
     """Tests for negation operator with compound expressions."""
     
-    @ctx_cls_hg
+    @ctx_cls_hgo
     def test_negation_simple(self, ctx_cls):
         """Test negation of simple variables."""
         with ctx_cls(dummy_entry_point=True) as sh:
@@ -88,7 +88,7 @@ class TestNegation:
                 
                 sh.return_(sh.r1)
     
-    @ctx_cls_hg
+    @ctx_cls_hgo
     def test_negation_compound(self, ctx_cls):
         """
         Test negation of compound expressions.
@@ -121,7 +121,7 @@ class TestNegation:
                 
                 sh.return_(sh.r1)
     
-    @ctx_cls_hg
+    @ctx_cls_hgo
     def test_negation_in_operations(self, ctx_cls):
         """Test negation results used as operands in binary operations."""
         with ctx_cls(dummy_entry_point=True) as sh:

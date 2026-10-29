@@ -5,6 +5,8 @@ The tests also run as part of [GitHub Actions CI](https://github.com/metashade/m
 
 Both HLSL (Shader Model 6.0) and GLSL (Vulkan 1.1 / SPIR-V) generators are tested. The automated tests don't involve any actual rendering yet, but rendering can be tested manually in the [glTF demo](https://github.com/metashade/metashade-glTFSample).
 
+The OSL generator is experimental and supports only a subset of Metashade: scalar types, functions, flow control and structs. Tests that only use that subset are parametrized with `ctx_cls_hgo`, which adds OSL to the HLSL and GLSL contexts of `ctx_cls_hg`.
+
 # Testing error handling
 
 Some of the test cases cover situations where the Metashade framework is supposed to gracefully handle logical errors in user scripts. Ideally, all such errors must be handled at generation time by raising Python exceptions, as opposed to compilation time. I.e. any shaders generated with Metashade without exceptions should compile.
@@ -19,6 +21,7 @@ Other tests are supposed to generate valid shaders. For these, we verify correct
 * The output shader file compiles successfully:
   * **HLSL**: [DXC](https://github.com/microsoft/DirectXShaderCompiler) (`dxc` must be in `PATH`)
   * **GLSL**: [glslang](https://github.com/KhronosGroup/glslang) (`glslangValidator` must be in `PATH`)
+  * **OSL**: [oslc](https://github.com/AcademySoftwareFoundation/OpenShadingLanguage) (`oslc` must be in `PATH` or in `$OSL_ROOT/bin`)
 
 ## Comparing the generated files against references
 

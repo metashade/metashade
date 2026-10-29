@@ -1,0 +1,43 @@
+# Copyright 2026 Pavlo Penenko
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import metashade.targets._clike.context as clike
+from metashade.targets._clike.context import FunctionDecl
+
+# OSL has a single "output" qualifier for both out and inout parameters,
+# since output parameters are also readable.
+class Out(clike.Out):
+    _direction_str = 'output'
+
+class InOut(clike.InOut):
+    _direction_str = 'output'
+
+class ShaderDecl(FunctionDecl):
+    '''
+    An OSL shader, declared with the ``shader`` keyword in place of a
+    return type.
+    '''
+    def __init__(self, sh, name):
+        super().__init__(sh, name, return_type = None)
+
+    def _init_param_defs(self, **param_annotations):
+        if param_annotations:
+            raise NotImplementedError(
+                'OSL shader parameters are not supported yet: '
+                'OSL requires a default value for each of them'
+            )
+        return super()._init_param_defs()
+
+    def _format_return_type(self):
+        return 'shader'

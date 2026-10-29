@@ -1,0 +1,23 @@
+struct Pair
+{
+	float x;
+	float y;
+};
+
+void fill(output Pair dst)
+{
+	dst.x = 1.0;
+	dst.y = 2.0;
+}
+
+void swap(output Pair pair)
+{
+	float tmp = pair.x;
+	pair.x = pair.y;
+	pair.y = tmp;
+}
+
+shader main()
+{
+}
+

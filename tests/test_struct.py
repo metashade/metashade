@@ -19,7 +19,7 @@ Tests for struct definition and acquisition.
 from __future__ import annotations
 
 import pytest
-from metashade.util.testing import ctx_cls_hg, HlslTestContext
+from metashade.util.testing import ctx_cls_hg, ctx_cls_hgo, HlslTestContext
 
 
 class TestStructDefinition:
@@ -36,7 +36,7 @@ class TestStructDefinition:
                 c=sh.Float2
             )
 
-    @ctx_cls_hg
+    @ctx_cls_hgo
     def test_struct_registration(self, ctx_cls):
         """Test that struct type is registered on generator."""
         ctx = ctx_cls(dummy_entry_point=True)
@@ -45,6 +45,22 @@ class TestStructDefinition:
             
             # Struct type should be accessible
             assert hasattr(sh, 'MyStruct')
+
+    @ctx_cls_hgo
+    def test_struct_out_params(self, ctx_cls):
+        """Test out and inout parameters of struct types."""
+        ctx = ctx_cls(dummy_entry_point=True)
+        with ctx as sh:
+            sh.struct('Pair')(x=sh.Float, y=sh.Float)
+
+            with sh.function('fill')(dst=sh.Out(sh.Pair)):
+                sh.dst.x = 1.0
+                sh.dst.y = 2.0
+
+            with sh.function('swap')(pair=sh.InOut(sh.Pair)):
+                sh.tmp = sh.pair.x
+                sh.pair.x = sh.pair.y
+                sh.pair.y = sh.tmp
 
 
     def _generate_test_uniforms(self, sh):

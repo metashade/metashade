@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from metashade.util.testing import ctx_cls_hg, HlslTestContext
+from metashade.util.testing import ctx_cls_hgo, HlslTestContext
 from metashade.modules import export
 
 @export
@@ -24,7 +24,7 @@ def func_with_inout(sh, inout_val: "InOut[Float]"):
     inout_val._ = inout_val + sh.Float(1.0)
 
 class TestOutParams:
-    @ctx_cls_hg
+    @ctx_cls_hgo
     def test_out_param_instantiation(self, ctx_cls):
         ctx = ctx_cls()
         with ctx as sh:
@@ -34,7 +34,7 @@ class TestOutParams:
                 sh.val = sh.Float(0.0)
                 sh.func_with_out(out_val=sh.val)
 
-    @ctx_cls_hg
+    @ctx_cls_hgo
     def test_inout_param_instantiation(self, ctx_cls):
         ctx = ctx_cls()
         with ctx as sh:

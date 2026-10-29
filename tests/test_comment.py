@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from metashade.util.testing import ctx_cls_hg
+from metashade.util.testing import ctx_cls_hgo
 
 class TestComment:
-    @ctx_cls_hg
+    @ctx_cls_hgo
     def test_comment(self, ctx_cls):
         with ctx_cls(dummy_entry_point = True) as sh:
             sh // "This is a comment documenting the function"

@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from metashade.util.testing import ctx_cls_hg, HlslTestContext
+from metashade.util.testing import ctx_cls_hg, ctx_cls_hgo, HlslTestContext
 
 class TestBoolType:
     """Tests for the Bool data type."""
@@ -88,21 +88,21 @@ class TestBoolLiterals:
 class TestBoolTypeStrictness:
     """Tests that Bool rejects inappropriate operations."""
 
-    @ctx_cls_hg
+    @ctx_cls_hgo
     def test_float_rejects_bool_literal(self, ctx_cls):
         """Float must reject Python bool literals."""
         with ctx_cls(no_file = True) as sh:
             Float = sh.Float._get_dtype()
             assert Float._get_value_ref(True) is None
 
-    @ctx_cls_hg
+    @ctx_cls_hgo
     def test_int_rejects_bool_literal(self, ctx_cls):
         """Int must reject Python bool literals."""
         with ctx_cls(no_file = True) as sh:
             Int = sh.Int._get_dtype()
             assert Int._get_value_ref(True) is None
 
-    @ctx_cls_hg
+    @ctx_cls_hgo
     def test_bool_no_arithmetic(self, ctx_cls):
         """Bool must not support arithmetic operators."""
         with ctx_cls(no_file = True) as sh:
@@ -112,7 +112,7 @@ class TestBoolTypeStrictness:
             assert not hasattr(Bool, '__mul__')
             assert not hasattr(Bool, '__neg__')
 
-    @ctx_cls_hg
+    @ctx_cls_hgo
     def test_bool_rejects_numeric_literal(self, ctx_cls):
         """Bool must reject numeric literals."""
         with ctx_cls(no_file = True) as sh:

@@ -13,11 +13,11 @@
 # limitations under the License.
 
 import pytest
-from metashade.util.testing import ctx_cls_hg
+from metashade.util.testing import ctx_cls_hg, ctx_cls_hgo
 
 
 class TestFor:
-    @ctx_cls_hg
+    @ctx_cls_hgo
     def test_for_stop(self, ctx_cls):
         with ctx_cls(dummy_entry_point=True) as sh:
             with sh.function('sum_up_to', sh.Int)(n=sh.Int):
@@ -26,7 +26,7 @@ class TestFor:
                     sh.total += sh.i
                 sh.return_(sh.total)
 
-    @ctx_cls_hg
+    @ctx_cls_hgo
     def test_for_range_variants(self, ctx_cls):
         with ctx_cls(dummy_entry_point=True) as sh:
             with sh.function('range_variants', sh.Int)(n=sh.Int):
@@ -50,7 +50,7 @@ class TestFor:
 
                 sh.return_(sh.total)
 
-    @ctx_cls_hg
+    @ctx_cls_hgo
     def test_nested_for(self, ctx_cls):
         with ctx_cls(dummy_entry_point=True) as sh:
             with sh.function('nested_sum', sh.Int)(
@@ -72,7 +72,7 @@ class TestFor:
                     sh.total += sh.arr[sh.i]
                 sh.return_(sh.total)
 
-    @ctx_cls_hg
+    @ctx_cls_hgo
     def test_for_invalid_args(self, ctx_cls):
         with ctx_cls(no_file=True) as sh:
             with sh.function('invalid_for')(n=sh.Int):

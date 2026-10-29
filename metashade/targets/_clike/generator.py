@@ -30,6 +30,18 @@ class Generator(base.Generator):
     def function(self, name : str, return_type = None):
         return context.FunctionDecl(self, name, return_type)
 
+    def In(self, base_type, default=None):
+        """Create an input parameter type for function signatures"""
+        return context.In(base_type, default=default)
+
+    def Out(self, base_type):
+        """Create an output parameter type for function signatures"""
+        return context.Out(base_type)
+
+    def InOut(self, base_type):
+        """Create an input-output parameter type for function signatures"""
+        return context.InOut(base_type)
+
     def struct(self, name, emit=True):
         return struct.StructDef(self, name, emit=emit)
     
@@ -76,9 +88,9 @@ class Generator(base.Generator):
             qualifier_str, inner_type_name = match.groups()
             inner_type = getattr(self, inner_type_name)
             if qualifier_str == 'Out':
-                return context.Out(inner_type)
+                return self.Out(inner_type)
             else:
-                return context.InOut(inner_type)
+                return self.InOut(inner_type)
 
         return getattr(self, annotation)
 
