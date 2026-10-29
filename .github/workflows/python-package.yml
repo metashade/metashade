@@ -16,16 +16,28 @@ on:
 jobs:
   build:
 
+    name: build (${{ matrix.python-version }}${{ matrix.osl && ', OSL' || '' }})
     runs-on: ubuntu-latest
-    # Fedora packages OSL, which provides oslc; Ubuntu doesn't.
-    container: fedora:43
+    container: ${{ matrix.container }}
+    env:
+      OSL_ROOT: ${{ matrix.osl_root }}
     strategy:
       fail-fast: false
       matrix:
         python-version: ["3.9", "3.11", "3.13", "3.14"]
+        include:
+          # Installing OSL is slow, so only one job compiles OSL. The other
+          # jobs still diff the generated OSL against the references.
+          # Fedora packages OSL, which provides oslc; Ubuntu doesn't.
+          # Setting OSL_ROOT makes the tests fail if oslc is missing.
+          - python-version: "3.13"
+            osl: true
+            container: fedora:43
+            osl_root: /usr
 
     steps:
-    - name: Install system packages
+    - name: Install OSL
+      if: matrix.osl
       run: dnf install -y --setopt=install_weak_deps=False git tar gzip unzip openshadinglanguage openshadinglanguage-common-headers
     - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}
@@ -67,6 +79,9 @@ jobs:
       run: |
         dxc --version
         glslang --version
+    - name: Print OSL version
+      if: matrix.osl
+      run: |
         oslc --help | head -n 1
         rpm -ql openshadinglanguage-common-headers | grep stdosl.h
     - name: Test with pytest
