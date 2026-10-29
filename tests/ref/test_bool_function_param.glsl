@@ -1,5 +1,5 @@
 #version 450
-vec4 _py_func(bool flag, vec4 a, vec4 b)
+float _py_func(bool flag, float a, float b)
 {
 	if (flag)
 	{

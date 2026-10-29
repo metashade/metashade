@@ -1,4 +1,4 @@
-float4 _py_func(bool flag, float4 a, float4 b)
+float _py_func(bool flag, float a, float b)
 {
 	if (flag)
 	{
