@@ -16,22 +16,26 @@ on:
 jobs:
   build:
 
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
+    # Fedora packages OSL, which provides oslc; Ubuntu doesn't.
+    container: fedora:43
     strategy:
       fail-fast: false
       matrix:
         python-version: ["3.9", "3.11", "3.13", "3.14"]
 
     steps:
+    - name: Install system packages
+      run: dnf install -y --setopt=install_weak_deps=False git tar gzip unzip openshadinglanguage
     - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
+      uses: astral-sh/setup-uv@v6
       with:
         python-version: ${{ matrix.python-version }}
+        activate-environment: true
     - name: Install Python dependencies
       run: |
-        python -m pip install --upgrade pip
-        python -m pip install flake8 pytest MaterialX==1.39.5
+        uv pip install flake8 pytest MaterialX==1.39.5
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
@@ -43,24 +47,27 @@ jobs:
         repository: microsoft/DirectXShaderCompiler
         extract: true
         tag: v1.8.2407
-        fileName: dxc_2024_07_31.zip
+        fileName: linux_dxc_2024_07_31.x86_64.tar.gz
         out-file-path: '.dxc'
     - uses: robinraju/release-downloader@v1.10
       with:
         repository: KhronosGroup/glslang
         extract: true
         tag: main-tot
-        fileName: glslang-main-windows-x86_64-release.zip
+        fileName: glslang-main-linux-x86_64-release.tar.gz
         out-file-path: '.glslang'
-    - name: Print the directory tree
-      run: |
-        pwd
-        tree /F
     - name: Configure the environment for tests
       run: |
-        Add-Content $env:GITHUB_PATH $env:GITHUB_WORKSPACE\.dxc\bin\x64
-        Add-Content $env:GITHUB_PATH $env:GITHUB_WORKSPACE\.glslang\bin
-        Add-Content $env:GITHUB_ENV METASHADE_PYTEST_OUT_DIR=$env:GITHUB_WORKSPACE/tests/out
+        chmod +x .dxc/bin/* .glslang/bin/*
+        echo "$GITHUB_WORKSPACE/.dxc/bin" >> $GITHUB_PATH
+        echo "$GITHUB_WORKSPACE/.glslang/bin" >> $GITHUB_PATH
+        echo "LD_LIBRARY_PATH=$GITHUB_WORKSPACE/.dxc/lib" >> $GITHUB_ENV
+        echo "METASHADE_PYTEST_OUT_DIR=$GITHUB_WORKSPACE/tests/out" >> $GITHUB_ENV
+    - name: Print tool versions
+      run: |
+        dxc --version
+        glslang --version
+        oslc --version
     - name: Test with pytest
       run: |
-        pytest
+        pytest -rs
