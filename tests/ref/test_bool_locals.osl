@@ -1,0 +1,18 @@
+float select(float a, float b)
+{
+	int enabled = 1;
+	int greater = a > b;
+	if (enabled)
+	{
+		if (greater)
+		{
+			return a;
+		}
+	}
+	return b;
+}
+
+shader main()
+{
+}
+

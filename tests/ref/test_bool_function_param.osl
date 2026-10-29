@@ -1,0 +1,13 @@
+float _py_func(int flag, float a, float b)
+{
+	if (flag)
+	{
+		return a;
+	}
+	return b;
+}
+
+shader main()
+{
+}
+

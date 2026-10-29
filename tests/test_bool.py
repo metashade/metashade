@@ -11,7 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from metashade.util.testing import ctx_cls_hg, ctx_cls_hgo, HlslTestContext
+from metashade.util.testing import (
+    ctx_cls_hg, ctx_cls_hgo, HlslTestContext, OslTestContext
+)
 
 class TestBoolType:
     """Tests for the Bool data type."""
@@ -54,10 +56,10 @@ class TestBoolType:
                     with sh.else_():
                         sh.out_color = sh.g_f4B
 
-    @ctx_cls_hg
+    @ctx_cls_hgo
     def test_bool_function_param(self, ctx_cls):
         """Bool can be used as a function parameter annotation."""
-        def _py_func(sh, flag : 'Bool', a : 'Float4', b : 'Float4') -> 'Float4':
+        def _py_func(sh, flag : 'Bool', a : 'Float', b : 'Float') -> 'Float':
             with sh.if_(flag):
                 sh.return_(a)
             sh.return_(b)
@@ -66,23 +68,40 @@ class TestBoolType:
         with ctx as sh:
             sh.instantiate(_py_func)
 
+    @ctx_cls_hgo
+    def test_bool_locals(self, ctx_cls):
+        """Bool locals can be initialized from literals and comparisons."""
+        ctx = ctx_cls(dummy_entry_point = True)
+        with ctx as sh:
+            with sh.function('select', sh.Float)(a = sh.Float, b = sh.Float):
+                sh.enabled = sh.Bool(True)
+                sh.greater = sh.a > sh.b
+                with sh.if_(sh.enabled):
+                    with sh.if_(sh.greater):
+                        sh.return_(sh.a)
+                sh.return_(sh.b)
+
 
 class TestBoolLiterals:
     """Tests for Bool literal conversion."""
 
-    @ctx_cls_hg
-    def test_bool_literal_true(self, ctx_cls):
-        """Python True converts to 'true' for Bool."""
-        with ctx_cls(no_file = True) as sh:
-            Bool = sh.Bool._get_dtype()
-            assert Bool._get_value_ref(True) == 'true'
+    # OSL has no bool type, so Bool literals are ints there.
 
-    @ctx_cls_hg
-    def test_bool_literal_false(self, ctx_cls):
-        """Python False converts to 'false' for Bool."""
+    @ctx_cls_hgo
+    def test_bool_literal_true(self, ctx_cls):
+        """Python True converts to the target's true literal for Bool."""
         with ctx_cls(no_file = True) as sh:
             Bool = sh.Bool._get_dtype()
-            assert Bool._get_value_ref(False) == 'false'
+            expected = '1' if ctx_cls is OslTestContext else 'true'
+            assert Bool._get_value_ref(True) == expected
+
+    @ctx_cls_hgo
+    def test_bool_literal_false(self, ctx_cls):
+        """Python False converts to the target's false literal for Bool."""
+        with ctx_cls(no_file = True) as sh:
+            Bool = sh.Bool._get_dtype()
+            expected = '0' if ctx_cls is OslTestContext else 'false'
+            assert Bool._get_value_ref(False) == expected
 
 
 class TestBoolTypeStrictness:
