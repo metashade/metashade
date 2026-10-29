@@ -1,0 +1,14 @@
+[flake8]
+extend-exclude = .venv,.venv-*,.dxc,.glslang
+# F821 (undefined name) misfires on Metashade's string type annotations,
+# e.g. 'Float4' or 'Out[Float]', which are resolved against the generator,
+# and on dtypes created with globals().
+per-file-ignores =
+    metashade/mtlx/standard_surface.py:F821
+    metashade/std/surf/pbr/*.py:F821
+    metashade/targets/hlsl/sm6/dtypes.py:F821
+    tests/_exports.py:F821
+    tests/test_arrays.py:F821
+    tests/test_bool.py:F821
+    tests/test_instantiate.py:F821
+    tests/test_out_params.py:F821
