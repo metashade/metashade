@@ -22,5 +22,13 @@ class ShaderDecl(FunctionDecl):
     def __init__(self, sh, name):
         super().__init__(sh, name, return_type = None)
 
+    def _init_param_defs(self, **param_annotations):
+        if param_annotations:
+            raise NotImplementedError(
+                'OSL shader parameters are not supported yet: '
+                'OSL requires a default value for each of them'
+            )
+        return super()._init_param_defs()
+
     def _format_return_type(self):
         return 'shader'
