@@ -16,6 +16,7 @@ from metashade.targets._base.dtypes import BaseType, check_valid_index
 import metashade.targets._rtsl.generator as rtsl
 from . import dtypes
 from . import samplers
+from . import stage_interface
 
 import metashade.targets._rtsl.vk as vk
 

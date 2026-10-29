@@ -163,10 +163,13 @@ class OslTestContext(_TestContext):
 
     def _compile(self):
         # The output has already been compared against its reference, so
-        # without oslc only the compilation check is skipped.
+        # without oslc only the compilation check is skipped. Setting
+        # $OSL_ROOT makes a missing oslc an error instead.
         try:
             oslc.find_executable()
         except FileNotFoundError as error:
+            if os.environ.get('OSL_ROOT'):
+                raise
             pytest.skip(f'{error}; skipping OSL compilation')
 
         oslc.compile(
