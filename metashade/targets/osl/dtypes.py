@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import metashade.targets._clike.dtypes as clike
+import metashade.targets._rtsl.dtypes as rtsl
 
 class Float(clike.Float):
     pass
@@ -29,3 +30,28 @@ class Bool(clike.Bool):
         if isinstance(value, bool):
             return '1' if value else '0'
         return clike.Bool._get_value_ref_static(concrete_cls, value)
+
+# OSL only has 3-component vectors, which support single named components
+# but no multi-component swizzles.
+class _RawVector3(rtsl.RawVector3):
+    _element_type = Float
+
+    def __init__(self, _ = None):
+        element_ref = Float._get_value_ref(_)
+        super().__init__(
+            f'{self.__class__._target_name}({element_ref})'
+            if element_ref is not None else _
+        )
+
+class Float3(_RawVector3):
+    _target_name = 'vector'
+
+class Vector3f(rtsl.Vector3, Float3):
+    pass
+
+class Point3f(rtsl.Point3, _RawVector3):
+    _target_name = 'point'
+
+class RgbF(rtsl.RgbF, _RawVector3):
+    _target_name = 'color'
+    _swizzle_str = 'rgb'

@@ -1,0 +1,13 @@
+color test(color tint, vector v, point p, point q, float s)
+{
+	color magenta = color(1.0, 0.0, 1.0);
+	vector offset = p - q;
+	float d = dot(v, offset);
+	float red = magenta.r + p.x;
+	return (tint * magenta) * (s + (d * red));
+}
+
+shader main()
+{
+}
+

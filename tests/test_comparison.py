@@ -13,86 +13,85 @@
 # limitations under the License.
 
 import pytest
-from metashade.util.testing import ctx_cls_hg, HlslTestContext, GlslTestContext
+from metashade.util.testing import ctx_cls_hg, ctx_cls_hgo, HlslTestContext, GlslTestContext
 
 
 class TestComparisonOperators:
     """Tests for comparison operators on ArithmeticType."""
 
-    @ctx_cls_hg
+    @ctx_cls_hgo
     def test_gt_returns_bool(self, ctx_cls):
         """Greater-than produces a Bool expression."""
         with ctx_cls(no_file=True) as sh:
-            sh.uniform('g_x', sh.Float)
-            result = sh.g_x > 0.0
-            assert isinstance(result, sh.Bool._get_dtype())
-            assert str(result) == 'g_x > 0.0'
+            with sh.function('f')(x=sh.Float):
+                result = sh.x > 0.0
+                assert isinstance(result, sh.Bool._get_dtype())
+                assert str(result) == 'x > 0.0'
 
-    @ctx_cls_hg
+    @ctx_cls_hgo
     def test_lt_returns_bool(self, ctx_cls):
         """Less-than produces a Bool expression."""
         with ctx_cls(no_file=True) as sh:
-            sh.uniform('g_x', sh.Float)
-            result = sh.g_x < 1.0
-            assert isinstance(result, sh.Bool._get_dtype())
-            assert str(result) == 'g_x < 1.0'
+            with sh.function('f')(x=sh.Float):
+                result = sh.x < 1.0
+                assert isinstance(result, sh.Bool._get_dtype())
+                assert str(result) == 'x < 1.0'
 
-    @ctx_cls_hg
+    @ctx_cls_hgo
     def test_ge_returns_bool(self, ctx_cls):
         """Greater-or-equal produces a Bool expression."""
         with ctx_cls(no_file=True) as sh:
-            sh.uniform('g_x', sh.Float)
-            result = sh.g_x >= 0.5
-            assert isinstance(result, sh.Bool._get_dtype())
-            assert str(result) == 'g_x >= 0.5'
+            with sh.function('f')(x=sh.Float):
+                result = sh.x >= 0.5
+                assert isinstance(result, sh.Bool._get_dtype())
+                assert str(result) == 'x >= 0.5'
 
-    @ctx_cls_hg
+    @ctx_cls_hgo
     def test_le_returns_bool(self, ctx_cls):
         """Less-or-equal produces a Bool expression."""
         with ctx_cls(no_file=True) as sh:
-            sh.uniform('g_x', sh.Float)
-            result = sh.g_x <= 2.0
-            assert isinstance(result, sh.Bool._get_dtype())
-            assert str(result) == 'g_x <= 2.0'
+            with sh.function('f')(x=sh.Float):
+                result = sh.x <= 2.0
+                assert isinstance(result, sh.Bool._get_dtype())
+                assert str(result) == 'x <= 2.0'
 
-    @ctx_cls_hg
+    @ctx_cls_hgo
     def test_eq_returns_bool(self, ctx_cls):
         """Equality produces a Bool expression."""
         with ctx_cls(no_file=True) as sh:
-            sh.uniform('g_x', sh.Float)
-            result = sh.g_x == 0.0
-            assert isinstance(result, sh.Bool._get_dtype())
-            assert str(result) == 'g_x == 0.0'
+            with sh.function('f')(x=sh.Float):
+                result = sh.x == 0.0
+                assert isinstance(result, sh.Bool._get_dtype())
+                assert str(result) == 'x == 0.0'
 
-    @ctx_cls_hg
+    @ctx_cls_hgo
     def test_ne_returns_bool(self, ctx_cls):
         """Not-equal produces a Bool expression."""
         with ctx_cls(no_file=True) as sh:
-            sh.uniform('g_x', sh.Float)
-            result = sh.g_x != 0.0
-            assert isinstance(result, sh.Bool._get_dtype())
-            assert str(result) == 'g_x != 0.0'
+            with sh.function('f')(x=sh.Float):
+                result = sh.x != 0.0
+                assert isinstance(result, sh.Bool._get_dtype())
+                assert str(result) == 'x != 0.0'
 
 
 class TestComparisonWithArithmeticSubexpressions:
     """Compound arithmetic subexpressions are parenthesized in comparisons."""
 
-    @ctx_cls_hg
+    @ctx_cls_hgo
     def test_compound_lhs_parenthesized(self, ctx_cls):
         """Arithmetic expression on LHS gets parenthesized."""
         with ctx_cls(no_file=True) as sh:
-            sh.uniform('g_a', sh.Float)
-            sh.uniform('g_b', sh.Float)
-            result = (sh.g_a + sh.g_b) > 1.0
-            assert str(result) == '(g_a + g_b) > 1.0'
+            with sh.function('f')(a=sh.Float, b=sh.Float):
+                result = (sh.a + sh.b) > 1.0
+                assert str(result) == '(a + b) > 1.0'
 
-    @ctx_cls_hg
+    @ctx_cls_hgo
     def test_simple_lhs_not_parenthesized(self, ctx_cls):
         """Simple variable on LHS is not parenthesized."""
         with ctx_cls(no_file=True) as sh:
-            sh.uniform('g_a', sh.Float)
-            result = sh.g_a > 0.0
-            assert str(result) == 'g_a > 0.0'
+            with sh.function('f')(a=sh.Float):
+                result = sh.a > 0.0
+                assert str(result) == 'a > 0.0'
 
 
 class TestComparisonInIf:
@@ -140,73 +139,72 @@ class TestComparisonInIf:
 class TestComparisonIntOperands:
     """Comparison operators work on Int types too."""
 
-    @ctx_cls_hg
+    @ctx_cls_hgo
     def test_int_gt(self, ctx_cls):
         """Int > int literal produces a Bool."""
         with ctx_cls(no_file=True) as sh:
-            sh.uniform('g_i', sh.Int)
-            result = sh.g_i > 0
-            assert isinstance(result, sh.Bool._get_dtype())
-            assert str(result) == 'g_i > 0'
+            with sh.function('f')(i=sh.Int):
+                result = sh.i > 0
+                assert isinstance(result, sh.Bool._get_dtype())
+                assert str(result) == 'i > 0'
 
 
 class TestComparisonTypeRejection:
     """Comparisons reject incompatible operands."""
 
-    @ctx_cls_hg
+    @ctx_cls_hgo
     def test_gt_rejects_string(self, ctx_cls):
         """Comparison with a string raises TypeError."""
         with ctx_cls(no_file=True) as sh:
-            sh.uniform('g_x', sh.Float)
-            with pytest.raises(TypeError):
-                sh.g_x > "hello"
+            with sh.function('f')(x=sh.Float):
+                with pytest.raises(TypeError):
+                    sh.x > "hello"
 
-    @ctx_cls_hg
+    @ctx_cls_hgo
     def test_eq_rejects_string(self, ctx_cls):
         """Equality with a string raises TypeError."""
         with ctx_cls(no_file=True) as sh:
-            sh.uniform('g_x', sh.Float)
-            with pytest.raises(TypeError):
-                sh.g_x == "hello"
+            with sh.function('f')(x=sh.Float):
+                with pytest.raises(TypeError):
+                    sh.x == "hello"
 
-    @ctx_cls_hg
+    @ctx_cls_hgo
     def test_ne_rejects_string(self, ctx_cls):
         """Not-equal with a string raises TypeError."""
         with ctx_cls(no_file=True) as sh:
-            sh.uniform('g_x', sh.Float)
-            with pytest.raises(TypeError):
-                sh.g_x != "hello"
+            with sh.function('f')(x=sh.Float):
+                with pytest.raises(TypeError):
+                    sh.x != "hello"
 
-    @ctx_cls_hg
+    @ctx_cls_hgo
     def test_gt_rejects_bool(self, ctx_cls):
         """Comparison with a Python bool raises TypeError."""
         with ctx_cls(no_file=True) as sh:
-            sh.uniform('g_x', sh.Float)
-            with pytest.raises(TypeError):
-                sh.g_x > True
+            with sh.function('f')(x=sh.Float):
+                with pytest.raises(TypeError):
+                    sh.x > True
 
-    @ctx_cls_hg
+    @ctx_cls_hgo
     def test_eq_rejects_bool(self, ctx_cls):
         """Equality with a Python bool raises TypeError."""
         with ctx_cls(no_file=True) as sh:
-            sh.uniform('g_x', sh.Float)
-            with pytest.raises(TypeError):
-                sh.g_x == True
+            with sh.function('f')(x=sh.Float):
+                with pytest.raises(TypeError):
+                    sh.x == True
 
 
 class TestComparisonHashability:
     """Float and Int remain hashable after adding __eq__."""
 
-    @ctx_cls_hg
+    @ctx_cls_hgo
     def test_hashable(self, ctx_cls):
         """Instances can be used in sets and as dict keys."""
         with ctx_cls(no_file=True) as sh:
-            sh.uniform('g_x', sh.Float)
-            sh.uniform('g_y', sh.Float)
-            s = {sh.g_x, sh.g_y}
-            assert sh.g_x in s
-            d = {sh.g_x: 'a'}
-            assert d[sh.g_x] == 'a'
+            with sh.function('f')(x=sh.Float, y=sh.Float):
+                s = {sh.x, sh.y}
+                assert sh.x in s
+                d = {sh.x: 'a'}
+                assert d[sh.x] == 'a'
 
 
 class TestVectorComparisonAbsent:
