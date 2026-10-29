@@ -26,7 +26,7 @@ jobs:
 
     steps:
     - name: Install system packages
-      run: dnf install -y --setopt=install_weak_deps=False git tar gzip unzip openshadinglanguage
+      run: dnf install -y --setopt=install_weak_deps=False git tar gzip unzip openshadinglanguage openshadinglanguage-common-headers
     - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}
       uses: astral-sh/setup-uv@v6
@@ -68,6 +68,7 @@ jobs:
         dxc --version
         glslang --version
         oslc --help | head -n 1
+        rpm -ql openshadinglanguage-common-headers | grep stdosl.h
     - name: Test with pytest
       run: |
         pytest -rs
