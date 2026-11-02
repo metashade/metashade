@@ -103,6 +103,10 @@ class GeneratorContext:
             input_metadata: Mapping of parameter names to
                             ``InputMetadata``.  The ``.doc`` field overrides
                             the generic ``"Input parameter {name}"`` default.
+
+        Returns:
+            The new nodedef, or ``None`` if *nodedef_name* references an
+            existing one or this context is ``impl_only``.
         """
         # Get the function from the generator to access reflection data
         func = getattr(self._sh, func_name)
@@ -155,6 +159,7 @@ class GeneratorContext:
         impl.setFile(self._src_file_name)
         impl.setFunction(func_name)
         impl.setDocString(mx_doc_string)
+        return nodedef
 
 class GlslGeneratorContext(GeneratorContext):
     @property
