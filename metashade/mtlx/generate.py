@@ -16,12 +16,43 @@ from __future__ import annotations
 
 import sys
 import abc
+import inspect
+import re
 
 import MaterialX as mx
 from metashade.targets.glsl import frag
 from metashade.targets._clike.context import Out, InOut
 
 from metashade.mtlx import dtypes
+
+# MaterialX stdlib conventions for inputs bound to geometric properties.
+_DEFAULT_GEOMPROPS = {
+    'texcoord': 'UV0',
+    'position': 'Pobject',
+}
+
+
+class _InputDoc:
+    def __init__(self, doc: str):
+        self.doc = doc
+
+
+def _parse_docstring(docstring: str | None) -> tuple[str, dict]:
+    """Split a Google-style docstring into a summary and per-arg docs."""
+    lines = inspect.cleandoc(docstring or '').splitlines()
+    summary = lines[0] if lines else ''
+    arg_docs = {}
+    in_args = False
+    for line in lines[1:]:
+        if line.strip() == 'Args:':
+            in_args = True
+        elif in_args:
+            match = re.match(r'\s+(\w+):\s*(.*)', line)
+            if match is None:
+                break
+            arg_docs[match.group(1)] = _InputDoc(match.group(2))
+    return summary, arg_docs
+
 
 class GeneratorContext:
     def __init__(self, base_name, out_dir, impl_only: bool = False):
@@ -103,6 +134,10 @@ class GeneratorContext:
             input_metadata: Mapping of parameter names to
                             ``InputMetadata``.  The ``.doc`` field overrides
                             the generic ``"Input parameter {name}"`` default.
+
+        Returns:
+            The new nodedef, or ``None`` if *nodedef_name* references an
+            existing one or this context is ``impl_only``.
         """
         # Get the function from the generator to access reflection data
         func = getattr(self._sh, func_name)
@@ -155,6 +190,67 @@ class GeneratorContext:
         impl.setFile(self._src_file_name)
         impl.setFunction(func_name)
         impl.setDocString(mx_doc_string)
+        return nodedef
+
+    def add_std_node_impl(self, py_func, nodegroup: str):
+        """Add a node implemented by a ``metashade.std`` function.
+
+        MaterialX source-code nodes return their results through output
+        parameters, so this generates a wrapper that assigns the return
+        value of *py_func* to the output ``out``.  The node category is
+        the function name, and the nodedef takes its input defaults and
+        docs from the function's signature and docstring.
+
+        Args:
+            py_func: A function exported with ``@metashade.modules.export``
+            nodegroup: MaterialX nodegroup, e.g. ``procedural2d``
+        """
+        sh = self._sh
+        sh.instantiate(py_func)
+
+        signature = inspect.signature(py_func)
+        params = [
+            p for name, p in signature.parameters.items() if name != 'sh'
+        ]
+        return_type = sh._resolve_annotation(signature.return_annotation)
+
+        node_category = py_func.__name__
+        mtlx_type = dtypes.metashade_to_mtlx(return_type)
+        func_name = f'mx_{node_category}_{mtlx_type}'
+
+        param_defs = {
+            p.name: sh._resolve_annotation(p.annotation) for p in params
+        }
+        with sh.function(func_name)(**param_defs, out_=sh.Out(return_type)):
+            sh.out_ = getattr(sh, node_category)(
+                **{p.name: getattr(sh, p.name) for p in params}
+            )
+
+        summary, arg_docs = _parse_docstring(py_func.__doc__)
+        nodedef = self.add_node_impl(
+            func_name=func_name,
+            mx_doc_string=summary,
+            nodedef_name=f'ND_{node_category}_{mtlx_type}',
+            input_metadata=arg_docs,
+        )
+        if nodedef is None:
+            return
+
+        nodedef.setNodeString(node_category)
+        nodedef.setNodeGroup(nodegroup)
+        for p in params:
+            mx_input = nodedef.getInput(p.name)
+            if p.default is not inspect.Parameter.empty:
+                mx_input.setValueString(str(p.default))
+            geomprop = _DEFAULT_GEOMPROPS.get(p.name)
+            if geomprop is not None:
+                mx_input.setDefaultGeomPropString(geomprop)
+
+        # MaterialX binds source-code outputs by position, so the nodedef can
+        # use the conventional name even though ``out`` is a GLSL keyword.
+        mx_output = nodedef.getOutput('out_')
+        mx_output.setName('out')
+        mx_output.setDocString(summary)
 
 class GlslGeneratorContext(GeneratorContext):
     @property
