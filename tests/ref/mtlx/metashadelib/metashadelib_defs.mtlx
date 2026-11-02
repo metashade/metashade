@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<materialx version="1.39">
+  <nodedef name="ND_julia2d_color3" node="julia2d" doc="Color of the Julia set of z^2 + c, a placeholder returning hot pink." nodegroup="procedural2d">
+    <input name="texcoord" type="vector2" doc="Point in the complex plane, before scaling" defaultgeomprop="UV0" />
+    <input name="cx" type="float" doc="Real part of the constant c" value="-0.74543" />
+    <input name="cy" type="float" doc="Imaginary part of the constant c" value="0.11301" />
+    <input name="scale" type="float" doc="Extent of the complex plane per unit of texcoord" value="3.0" />
+    <input name="max_iterations" type="integer" doc="Maximum number of iterations of z^2 + c" value="64" />
+    <input name="phase" type="float" doc="Offset of the color palette" value="0.0" />
+    <output name="out" type="color3" doc="Color of the Julia set of z^2 + c, a placeholder returning hot pink." />
+  </nodedef>
+</materialx>
