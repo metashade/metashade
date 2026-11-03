@@ -221,10 +221,12 @@ class GeneratorContext:
 
         nodedef.setNodeString(node_category)
         nodedef.setNodeGroup(nodegroup)
+
         for name, param in param_defs.items():
             mx_input = nodedef.getInput(name)
             if param.default is not None:
                 mx_input.setValueString(str(param.default))
+
             geomprop = _DEFAULT_GEOMPROPS.get(name)
             if geomprop is not None:
                 mx_input.setDefaultGeomPropString(geomprop)
