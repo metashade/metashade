@@ -33,9 +33,14 @@ _DEFAULT_GEOMPROPS = {
 def _to_mtlx_value_string(value) -> str:
     if isinstance(value, bool):
         return 'true' if value else 'false'
+    if isinstance(value, (int, float)):
+        return str(value)
     if isinstance(value, (tuple, list)):
         return ', '.join(_to_mtlx_value_string(v) for v in value)
-    return str(value)
+    raise TypeError(
+        f'Default value {value!r} can\'t be written as a MaterialX value; '
+        'use a Python number, Boolean, or a tuple of them'
+    )
 
 class GeneratorContext:
     def __init__(self, base_name, out_dir, impl_only: bool = False):
