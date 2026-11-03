@@ -5,6 +5,7 @@ extend-exclude = .venv,.venv-*,.dxc,.glslang
 # and on dtypes created with globals().
 per-file-ignores =
     metashade/mtlx/standard_surface.py:F821
+    metashade/std/procedural/*.py:F821
     metashade/std/surf/pbr/*.py:F821
     metashade/targets/hlsl/sm6/dtypes.py:F821
     tests/_exports.py:F821
