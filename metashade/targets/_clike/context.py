@@ -130,7 +130,8 @@ class FunctionDecl:
                 sh=self._sh,
                 name=self._name,
                 return_type=self._return_dtype_factory,
-                param_defs=dict(self._param_defs)
+                param_defs=dict(self._param_defs),
+                doc=self._doc
             )
         )
 
@@ -167,7 +168,8 @@ class FunctionDecl:
                 sh=self._sh,
                 name=self._name,
                 return_type=self._return_dtype_factory,
-                param_defs=dict(self._param_defs)
+                param_defs=dict(self._param_defs),
+                doc=self._doc
             )
         )
         
@@ -232,12 +234,13 @@ class Function:
     Callable representing a function. Holds metadata for reflection
     and function calls. Has independent lifetime from FunctionDecl.
     '''
-    def __init__(self, sh, name, return_type, param_defs):
+    def __init__(self, sh, name, return_type, param_defs, doc = None):
         self._sh = sh
         self._name = name
         self._return_dtype_factory = return_type
         # Make a copy of parameter definitions for reflection
         self._param_defs = dict(param_defs)
+        self._doc = doc
 
     def __call__(self, **kwargs):
         '''Generate a function call.'''
