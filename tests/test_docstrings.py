@@ -38,3 +38,22 @@ def test_docstring():
     ).strip()
 
     assert expected_substring in out.getvalue()
+    assert sh.ps_main._doc == ps_main.__doc__
+
+def test_function_doc():
+    '''Tests if the doc of sh.function() is translated to comments.'''
+    out = io.StringIO()
+    sh = ps_6_0.Generator(out)
+    with sh.function('ps_main', doc='This is a doc.')():
+        pass
+
+    expected_substring = textwrap.dedent(
+        '''
+        // This is a doc.
+        //
+        void ps_main()
+        '''
+    ).strip()
+
+    assert expected_substring in out.getvalue()
+    assert sh.ps_main._doc == 'This is a doc.'
