@@ -43,6 +43,15 @@ class _RawVector3(rtsl.RawVector3):
             if element_ref is not None else _
         )
 
+    @classmethod
+    def _get_related_type(cls, dim : int):
+        # Rejects both reads and writes of multi-component swizzle masks.
+        if dim != 1:
+            raise AttributeError(
+                f'OSL has no {dim}-component swizzles, only single components'
+            )
+        return cls._element_type
+
 class Float3(_RawVector3):
     _target_name = 'vector'
 
