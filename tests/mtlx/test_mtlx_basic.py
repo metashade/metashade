@@ -17,7 +17,7 @@ from metashade.mtlx.util.testing import GlslTestContext
 class TestBasic:
     def test_dummy_purple(self):
         """Generate a simple purple color function."""
-        ctx = GlslTestContext()
+        ctx = GlslTestContext(subdir='basic')
         
         with ctx as test_ctx:
             sh = test_ctx._sh
@@ -35,7 +35,7 @@ class TestBasic:
 
     def test_metashade_add_color3(self):
         """Generate a color3 addition function."""
-        ctx = GlslTestContext()
+        ctx = GlslTestContext(subdir='basic')
         
         with ctx as test_ctx:
             sh = test_ctx._sh

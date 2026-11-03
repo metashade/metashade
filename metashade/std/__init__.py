@@ -18,5 +18,6 @@ Metashade Standard Library (std)
 A collection of reusable shader building blocks, analogous to C++'s std::.
 
 Subpackages:
+    procedural: Procedural patterns
     surf: Surface shading libraries (PBR, etc.)
 """

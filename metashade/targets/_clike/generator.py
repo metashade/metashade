@@ -27,8 +27,8 @@ class Generator(base.Generator):
         """
         return f"{type_name}({', '.join(member_strs)})"
 
-    def function(self, name : str, return_type = None):
-        return context.FunctionDecl(self, name, return_type)
+    def function(self, name : str, return_type = None, doc : str = None):
+        return context.FunctionDecl(self, name, return_type, doc)
 
     def In(self, base_type, default=None):
         """Create an input parameter type for function signatures"""

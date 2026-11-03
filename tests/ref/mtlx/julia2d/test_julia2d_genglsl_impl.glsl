@@ -1,0 +1,41 @@
+// Color of the Julia set of z^2 + c, centered on texcoord 0.5.
+// 
+// Points in the set are black, and escaping points cycle through a
+// cosine palette with the number of iterations before they escape.
+// 
+// Args:
+// texcoord: Point in the complex plane, before scaling
+// cx: Real part of the constant c
+// cy: Imaginary part of the constant c
+// scale: Extent of the complex plane per unit of texcoord
+// max_iterations: Maximum number of iterations of z^2 + c
+// phase: Offset of the color palette
+//
+vec3 julia2d(vec2 texcoord, float cx, float cy, float scale, int max_iterations, float phase)
+{
+	float zx = (texcoord.x - 0.5) * scale;
+	float zy = (texcoord.y - 0.5) * scale;
+	float count = 0.0;
+	for (int i = 0; i < max_iterations; i += 1)
+	{
+		if (((zx * zx) + (zy * zy)) < 4.0)
+		{
+			float next_zx = ((zx * zx) - (zy * zy)) + cx;
+			zy = ((zx * zy) * 2.0) + cy;
+			zx = next_zx;
+			count += 1.0;
+		}
+	}
+	if (((zx * zx) + (zy * zy)) < 4.0)
+	{
+		return vec3(0.0);
+	}
+	float hue = (count * 0.23) + phase;
+	return vec3((sin(hue) * 0.5) + 0.5, (sin(hue + 2.09439) * 0.5) + 0.5, (sin(hue + 4.18879) * 0.5) + 0.5);
+}
+
+void mx_julia2d_color3(vec2 texcoord, float cx, float cy, float scale, int max_iterations, float phase, out vec3 out_)
+{
+	out_ = julia2d(texcoord, cx, cy, scale, max_iterations, phase);
+}
+

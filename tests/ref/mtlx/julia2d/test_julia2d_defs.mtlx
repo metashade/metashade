@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<materialx version="1.39">
+  <nodedef name="ND_julia2d_color3" node="julia2d" doc="Color of the Julia set of z^2 + c, centered on texcoord 0.5." nodegroup="procedural2d">
+    <input name="texcoord" type="vector2" doc="Input parameter texcoord" defaultgeomprop="UV0" />
+    <input name="cx" type="float" doc="Input parameter cx" value="-0.74543" />
+    <input name="cy" type="float" doc="Input parameter cy" value="0.11301" />
+    <input name="scale" type="float" doc="Input parameter scale" value="3.0" />
+    <input name="max_iterations" type="integer" doc="Input parameter max_iterations" value="64" />
+    <input name="phase" type="float" doc="Input parameter phase" value="0.0" />
+    <output name="out" type="color3" doc="Color of the Julia set of z^2 + c, centered on texcoord 0.5." />
+  </nodedef>
+</materialx>
