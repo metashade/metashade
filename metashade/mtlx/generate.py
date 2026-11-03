@@ -20,6 +20,7 @@ from collections.abc import Callable
 
 import MaterialX as mx
 from metashade.targets.glsl import frag
+from metashade.targets.osl import generator as osl
 from metashade.targets._clike.context import Function, Out, InOut
 
 from metashade.mtlx import dtypes
@@ -263,3 +264,15 @@ class GlslGeneratorContext(GeneratorContext):
 
     def _create_generator(self):
         return frag.Generator(self._src_file, glsl_version = '')
+
+class OslGeneratorContext(GeneratorContext):
+    @property
+    def _src_extension(self):
+        return 'osl'
+
+    @property
+    def _mx_target_name(self):
+        return 'genosl'
+
+    def _create_generator(self):
+        return osl.Generator(self._src_file)

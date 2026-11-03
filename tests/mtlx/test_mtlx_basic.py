@@ -12,12 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from metashade.mtlx.util.testing import GlslTestContext
+import pytest
+
+from metashade.mtlx.util.testing import GlslTestContext, OslTestContext
+
+# OSL only adds implementations of the nodedefs written by the GLSL run.
+_ctx_cls_go = pytest.mark.parametrize(
+    'ctx_cls, impl_only',
+    [(GlslTestContext, False), (OslTestContext, True)],
+    ids=['glsl', 'osl']
+)
 
 class TestBasic:
-    def test_dummy_purple(self):
+    @_ctx_cls_go
+    def test_dummy_purple(self, ctx_cls, impl_only):
         """Generate a simple purple color function."""
-        ctx = GlslTestContext(subdir='basic')
+        ctx = ctx_cls(subdir='basic', impl_only=impl_only)
         
         with ctx as test_ctx:
             sh = test_ctx._sh
@@ -33,9 +43,10 @@ class TestBasic:
                 mx_doc_string='Metashade-generated dummy node that returns a purple color'
             )
 
-    def test_metashade_add_color3(self):
+    @_ctx_cls_go
+    def test_metashade_add_color3(self, ctx_cls, impl_only):
         """Generate a color3 addition function."""
-        ctx = GlslTestContext(subdir='basic')
+        ctx = ctx_cls(subdir='basic', impl_only=impl_only)
         
         with ctx as test_ctx:
             sh = test_ctx._sh

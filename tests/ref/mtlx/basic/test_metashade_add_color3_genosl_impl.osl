@@ -1,0 +1,5 @@
+void metashade_add_color3(color in1, color in2, output color result)
+{
+	result = in1 + in2;
+}
+

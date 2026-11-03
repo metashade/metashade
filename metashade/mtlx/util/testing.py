@@ -18,7 +18,7 @@ from pathlib import Path
 import MaterialX as mx
 
 from metashade.util.testing import get_test_func_name, RefDiffer
-from metashade.mtlx.generate import GlslGeneratorContext
+from metashade.mtlx.generate import GlslGeneratorContext, OslGeneratorContext
 
 
 class TestContextBase:
@@ -67,11 +67,16 @@ class TestContextBase:
         return out_dir, ref_dir
 
 
-class GlslTestContext(TestContextBase, GlslGeneratorContext):
+class _GeneratorTestContext(TestContextBase):
+    """Writes a target's generated library and RefDiffs it on exit.
+
+    Combine with a target's ``GeneratorContext``, e.g.
+    ``class GlslTestContext(_GeneratorTestContext, GlslGeneratorContext)``.
+    """
     def __init__(self, base_name: str = None, impl_only: bool = False,
                  subdir: str = None):
         """
-        Initialize a GLSL test context.
+        Initialize a test context.
 
         Args:
             base_name: Optional custom base name for output files.
@@ -99,6 +104,14 @@ class GlslTestContext(TestContextBase, GlslGeneratorContext):
             ref_differ(self._src_path)
 
         return success
+
+
+class GlslTestContext(_GeneratorTestContext, GlslGeneratorContext):
+    pass
+
+
+class OslTestContext(_GeneratorTestContext, OslGeneratorContext):
+    pass
 
 
 class MtlxTestContext(TestContextBase):
