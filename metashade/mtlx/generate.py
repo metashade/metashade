@@ -16,10 +16,11 @@ from __future__ import annotations
 
 import sys
 import abc
+from collections.abc import Callable
 
 import MaterialX as mx
 from metashade.targets.glsl import frag
-from metashade.targets._clike.context import Out, InOut
+from metashade.targets._clike.context import Function, Out, InOut
 
 from metashade.mtlx import dtypes
 
@@ -97,7 +98,7 @@ class GeneratorContext:
         mx_doc_string: str,
         nodedef_name: str = None,
         input_metadata: dict | None = None,
-    ):
+    ) -> mx.NodeDef | None:
         """
         Add a node implementation.
         
@@ -167,7 +168,7 @@ class GeneratorContext:
         impl.setDocString(mx_doc_string)
         return nodedef
 
-    def add_std_node_impl(self, py_func, nodegroup: str):
+    def add_std_node_impl(self, py_func: Callable, nodegroup: str) -> None:
         """Add a node implemented by a ``metashade.std`` function.
 
         Instantiates *py_func* and calls :meth:`add_function_node_impl`.
@@ -181,7 +182,7 @@ class GeneratorContext:
             getattr(self._sh, py_func.__name__), nodegroup
         )
 
-    def add_function_node_impl(self, func, nodegroup: str):
+    def add_function_node_impl(self, func: Function, nodegroup: str) -> None:
         """Add a node implemented by a Metashade function.
 
         MaterialX source-code nodes return their results through output
