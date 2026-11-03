@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import pytest
-from metashade.util.testing import ctx_cls_hg, ctx_cls_hgo
+from metashade.util.testing import ctx_cls_hg, ctx_cls_hgo, OslTestContext
 
 class TestDTypes:
     @ctx_cls_hg
@@ -50,7 +50,7 @@ class TestDTypes:
         ('Float4', lambda sh: sh.Float3(1.0), 'Float3'),
     ]
 
-    @ctx_cls_hg
+    @ctx_cls_hgo
     @pytest.mark.parametrize(
         'dtype_name, make_value, value_type_name',
         _invalid_initializers,
@@ -62,6 +62,9 @@ class TestDTypes:
     def test_init_type_mismatch(
         self, ctx_cls, dtype_name, make_value, value_type_name
     ):
+        if ctx_cls is OslTestContext and dtype_name == 'Float4':
+            pytest.skip('OSL has no Float4')
+
         with ctx_cls(no_file = True) as sh:
             dtype_factory = getattr(sh, dtype_name)
             value = make_value(sh)
@@ -84,3 +87,20 @@ class TestDTypes:
                     match = "Cannot initialize 'Float' from 'Int'"
                 ):
                     sh.f = sh.Float(sh.i)
+
+    @ctx_cls_hgo
+    def test_vector3_types(self, ctx_cls):
+        """3-component vector, point and color types."""
+        with ctx_cls(dummy_entry_point = True) as sh:
+            with sh.function('test', sh.RgbF)(
+                tint = sh.RgbF,
+                v = sh.Vector3f,
+                p = sh.Point3f,
+                q = sh.Point3f,
+                s = sh.Float
+            ):
+                sh.magenta = sh.RgbF((1.0, 0.0, 1.0))
+                sh.offset = sh.p - sh.q
+                sh.d = sh.v.dot(sh.offset)
+                sh.red = sh.magenta.r + sh.p.x
+                sh.return_(sh.tint * sh.magenta * (sh.s + sh.d * sh.red))

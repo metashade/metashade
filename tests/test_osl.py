@@ -20,3 +20,22 @@ class TestOslShader:
         with OslTestContext(no_file=True) as sh:
             with pytest.raises(NotImplementedError):
                 sh.shader('main')(gain=sh.In(sh.Float, default=1.0))
+
+class TestOslSwizzles:
+    @pytest.mark.parametrize('dtype, mask', [
+        ('Float3', 'xy'),
+        ('Float3', 'xyz'),
+        ('RgbF', 'rgb'),
+    ])
+    def test_mask_read_rejected(self, dtype, mask):
+        with OslTestContext(no_file=True) as sh:
+            with sh.function('f', sh.Float)(v=getattr(sh, dtype)):
+                with pytest.raises(AttributeError):
+                    getattr(sh.v, mask)
+                sh.return_(sh.v.x if dtype == 'Float3' else sh.v.r)
+
+    def test_mask_write_rejected(self):
+        with OslTestContext(no_file=True) as sh:
+            with sh.function('f')(v=sh.Out(sh.Float3), w=sh.Float3):
+                with pytest.raises(AttributeError):
+                    sh.v.xyz = sh.w

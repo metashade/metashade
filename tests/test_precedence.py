@@ -147,7 +147,7 @@ class TestNegation:
 class TestVectorPrecedence:
     """Tests for precedence with vector types."""
     
-    @ctx_cls_hg
+    @ctx_cls_hgo
     def test_vector_mixed_precedence(self, ctx_cls):
         """Test mixed precedence with vector operations."""
         with ctx_cls(dummy_entry_point=True) as sh:
