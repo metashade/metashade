@@ -170,34 +170,46 @@ class GeneratorContext:
     def add_std_node_impl(self, py_func, nodegroup: str):
         """Add a node implemented by a ``metashade.std`` function.
 
-        MaterialX source-code nodes return their results through output
-        parameters, so this generates a wrapper that assigns the return
-        value of *py_func* to the output ``out``.  The node category is
-        the function name, and the nodedef takes its input defaults from
-        the function's parameters.
+        Instantiates *py_func* and calls :meth:`add_function_node_impl`.
 
         Args:
             py_func: A function exported with ``@metashade.modules.export``
             nodegroup: MaterialX nodegroup, e.g. ``procedural2d``
         """
-        sh = self._sh
-        sh.instantiate(py_func)
+        self._sh.instantiate(py_func)
+        self.add_function_node_impl(
+            getattr(self._sh, py_func.__name__), nodegroup
+        )
 
-        node_category = py_func.__name__
-        std_func = getattr(sh, node_category)
-        param_defs = std_func._param_defs
-        return_type = std_func._return_dtype_factory
+    def add_function_node_impl(self, func, nodegroup: str):
+        """Add a node implemented by a Metashade function.
+
+        MaterialX source-code nodes return their results through output
+        parameters, so this generates a wrapper that assigns the return
+        value of *func* to the output ``out``.  The node category is the
+        function name, and the nodedef takes its doc and input defaults
+        from the function's reflection data.
+
+        Args:
+            func: A function defined in this context's generator, with
+                  either ``sh.function()`` or ``sh.instantiate()``
+            nodegroup: MaterialX nodegroup, e.g. ``procedural2d``
+        """
+        sh = self._sh
+        node_category = func._name
+        param_defs = func._param_defs
+        return_type = func._return_dtype_factory
         mtlx_type = dtypes.metashade_to_mtlx(return_type)
         func_name = f'mx_{node_category}_{mtlx_type}'
 
         with sh.function(func_name)(**param_defs, out_=sh.Out(return_type)):
-            sh.out_ = std_func(
+            sh.out_ = func(
                 **{name: getattr(sh, name) for name in param_defs}
             )
 
-        # TODO: take the docs from Metashade's reflection data, see
+        # TODO: parameter docs, see
         # https://github.com/metashade/metashade/issues/274
-        summary = (py_func.__doc__ or '').strip().split('\n')[0]
+        summary = (func._doc or '').strip().split('\n')[0]
         nodedef = self.add_node_impl(
             func_name=func_name,
             mx_doc_string=summary,
