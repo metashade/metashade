@@ -30,6 +30,13 @@ _DEFAULT_GEOMPROPS = {
     'position': 'Pobject',
 }
 
+def _to_mtlx_value_string(value) -> str:
+    if isinstance(value, bool):
+        return 'true' if value else 'false'
+    if isinstance(value, (tuple, list)):
+        return ', '.join(_to_mtlx_value_string(v) for v in value)
+    return str(value)
+
 class GeneratorContext:
     def __init__(self, base_name, out_dir, impl_only: bool = False):
         """
@@ -224,8 +231,11 @@ class GeneratorContext:
 
         for name, param in param_defs.items():
             mx_input = nodedef.getInput(name)
+            if mx_input is None:
+                continue
+
             if param.default is not None:
-                mx_input.setValueString(str(param.default))
+                mx_input.setValueString(_to_mtlx_value_string(param.default))
 
             geomprop = _DEFAULT_GEOMPROPS.get(name)
             if geomprop is not None:
