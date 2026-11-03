@@ -22,4 +22,4 @@ from metashade.std.procedural import julia
 
 def test_julia2d():
     with GlslTestContext(subdir='julia2d') as ctx:
-        ctx.add_std_node_impl(julia.julia2d, nodegroup='procedural2d')
+        ctx.add_std_pyfunc_node_impl(julia.julia2d, nodegroup='procedural2d')
