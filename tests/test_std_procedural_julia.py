@@ -20,7 +20,7 @@ from metashade.std.procedural import julia
 
 class TestJulia2d:
     @ctx_cls_hg
-    def test_julia2d(self, ctx_cls):
+    def test_std_procedural_julia_julia2d(self, ctx_cls):
         """Test julia2d generates correct code."""
         ctx = ctx_cls(dummy_entry_point=True)
         with ctx as sh:
