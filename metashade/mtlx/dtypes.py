@@ -18,6 +18,8 @@ from __future__ import annotations
 Type mappings between Metashade and MaterialX.
 """
 
+from metashade.targets._clike.struct import Struct
+
 # Canonical map from Metashade dtype class names to MaterialX type strings
 _METASHADE_TO_MTLX = {
     'Float': 'float',
@@ -53,11 +55,6 @@ _MTLX_TO_METASHADE.update({
     'lightshader': 'LightShader',
     'material': 'Material',
 })
-
-# MaterialX structs standing in for types that a target lacks, e.g. OSL's
-# vector2.  Kept out of the forward map so the inverse map is unaffected.
-_MTLX_STRUCTS = frozenset({'vector2'})
-
 # Types that don't have Metashade equivalents (for documentation)
 _UNSUPPORTED_MTLX_TYPES = frozenset({
     'filename',     # Texture references
@@ -74,14 +71,16 @@ def metashade_to_mtlx(dtype_factory):
     dtype = dtype_factory._get_dtype()
     dtype_name = dtype.__name__
 
-    if dtype_name in _MTLX_STRUCTS:
-        return dtype_name
-    if dtype_name not in _METASHADE_TO_MTLX:
-        raise ValueError(
-            f"No MaterialX type mapping for Metashade dtype '{dtype_name}'"
-        )
-    
-    return _METASHADE_TO_MTLX[dtype_name]
+    mtlx_type = _METASHADE_TO_MTLX.get(dtype_name)
+    if mtlx_type is not None:
+        return mtlx_type
+    # A struct's name is the same in Metashade, the target and MaterialX.
+    # Other types' target names differ from MaterialX's, e.g. vec3.
+    if issubclass(dtype, Struct):
+        return dtype._get_target_type_name()
+    raise ValueError(
+        f"No MaterialX type mapping for Metashade dtype '{dtype_name}'"
+    )
 
 def mtlx_to_metashade_dtype(mtlx_type: str, sh):
     """
