@@ -276,5 +276,8 @@ class OslGeneratorContext(GeneratorContext):
 
     def _create_generator(self):
         sh = osl.Generator(self._src_file)
-        dtypes.register_mtlx_osl_vector2(sh)
+        # OSL has no 2-component vector, so MaterialX's OSL includes define a
+        # vector2 struct.  Only its members are modeled, not its operators.
+        sh.struct('vector2', emit=False)(x=sh.Float, y=sh.Float)
+        sh._set_global('Float2', sh.vector2)
         return sh
