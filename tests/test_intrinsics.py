@@ -89,6 +89,65 @@ class TestFloatIntrinsics:
         with ctx_cls(no_file=True) as sh:
             self._check(sh, sh.Float3, lambda v: v.radians(), 'radians(v)')
 
+    @ctx_cls_hgo
+    def test_clamp_scalar(self, ctx_cls):
+        with ctx_cls(no_file=True) as sh:
+            self._check(
+                sh, sh.Float, lambda v: v.clamp(0.25, 0.75),
+                'clamp(v, 0.25, 0.75)'
+            )
+
+    @ctx_cls_hgo
+    def test_clamp_vec3(self, ctx_cls):
+        with ctx_cls(no_file=True) as sh:
+            self._check(
+                sh, sh.Float3, lambda v: v.clamp(0.25, 0.75),
+                'clamp(v, 0.25, 0.75)'
+            )
+
+    @ctx_cls_hgo
+    def test_pow_scalar(self, ctx_cls):
+        with ctx_cls(no_file=True) as sh:
+            self._check(sh, sh.Float, lambda v: v.pow(v), 'pow(v, v)')
+
+    @ctx_cls_hgo
+    def test_pow_vec3(self, ctx_cls):
+        with ctx_cls(no_file=True) as sh:
+            self._check(sh, sh.Float3, lambda v: v.pow(v), 'pow(v, v)')
+
+    @staticmethod
+    def _saturate_expr(ctx_cls):
+        # GLSL and OSL have no saturate, so it's emitted as a clamp.
+        if issubclass(ctx_cls, HlslTestContext):
+            return 'saturate(v)'
+        return 'clamp(v, 0.0, 1.0)'
+
+    @ctx_cls_hgo
+    def test_saturate_scalar(self, ctx_cls):
+        with ctx_cls(no_file=True) as sh:
+            self._check(
+                sh, sh.Float, lambda v: v.saturate(),
+                self._saturate_expr(ctx_cls)
+            )
+
+    @ctx_cls_hgo
+    def test_saturate_vec3(self, ctx_cls):
+        with ctx_cls(no_file=True) as sh:
+            self._check(
+                sh, sh.Float3, lambda v: v.saturate(),
+                self._saturate_expr(ctx_cls)
+            )
+
+    @ctx_cls_hgo
+    def test_sqrt_scalar(self, ctx_cls):
+        with ctx_cls(no_file=True) as sh:
+            self._check(sh, sh.Float, lambda v: v.sqrt(), 'sqrt(v)')
+
+    @ctx_cls_hgo
+    def test_sqrt_vec3(self, ctx_cls):
+        with ctx_cls(no_file=True) as sh:
+            self._check(sh, sh.Float3, lambda v: v.sqrt(), 'sqrt(v)')
+
 
 class TestLerpReturnType:
     """lerp must return the type of the interpolated values, not the weight."""
