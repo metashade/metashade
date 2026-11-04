@@ -12,25 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for metashade.std.surf.pbr.microfacet module."""
+"""Tests for metashade.std.surf.pbr.diffuse module."""
 
-from metashade.util.testing import ctx_cls_hg
-from metashade.std.surf.pbr import microfacet
+from metashade.util.testing import ctx_cls_hgo
+from metashade.std.surf.pbr import diffuse
 
 
-class TestDGgx:
-    @ctx_cls_hg
-    def test_D_Ggx(self, ctx_cls):
-        """Test D_Ggx generates correct code."""
+class TestFdLambert:
+    @ctx_cls_hgo
+    def test_std_surf_pbr_diffuse_Fd_Lambert(self, ctx_cls):
+        """Test Fd_Lambert generates correct code."""
         ctx = ctx_cls(dummy_entry_point=True)
         with ctx as sh:
-            sh.instantiate(microfacet.D_Ggx)
-
-
-class TestVSmithGgxCorrelated:
-    @ctx_cls_hg
-    def test_V_SmithGgxCorrelated(self, ctx_cls):
-        """Test V_SmithGgxCorrelated generates correct code."""
-        ctx = ctx_cls(dummy_entry_point=True)
-        with ctx as sh:
-            sh.instantiate(microfacet.V_SmithGgxCorrelated)
+            sh.instantiate(diffuse.Fd_Lambert)

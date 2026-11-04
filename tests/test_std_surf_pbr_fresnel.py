@@ -1,4 +1,4 @@
-# Copyright 2026 Pavlo Penenko
+# Copyright 2025 Pavlo Penenko
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,20 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for metashade.std.procedural.julia module."""
+"""Tests for metashade.std.surf.pbr.fresnel module."""
 
-from metashade.util.testing import ctx_cls_hgo
-from metashade.std.procedural import julia
+from metashade.util.testing import ctx_cls_hg
+from metashade.std.surf.pbr import fresnel
 
 
-class TestJulia2d:
-    @ctx_cls_hgo
-    def test_julia2d(self, ctx_cls):
-        """Test julia2d generates correct code."""
+class TestFSchlick:
+    @ctx_cls_hg
+    def test_std_surf_pbr_fresnel_F_Schlick(self, ctx_cls):
+        """Test F_Schlick generates correct code."""
         ctx = ctx_cls(dummy_entry_point=True)
         with ctx as sh:
-            # OSL has no 2-component vector.  julia2d only reads the x and y
-            # of its Float2 texcoord, so a struct with those members will do.
-            if not hasattr(sh, 'Float2'):
-                sh.struct('Float2')(x=sh.Float, y=sh.Float)
-            sh.instantiate(julia.julia2d)
+            sh.instantiate(fresnel.F_Schlick)

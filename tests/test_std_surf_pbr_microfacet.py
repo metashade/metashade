@@ -12,16 +12,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for metashade.std.surf.pbr.fresnel module."""
+"""Tests for metashade.std.surf.pbr.microfacet module."""
 
 from metashade.util.testing import ctx_cls_hg
-from metashade.std.surf.pbr import fresnel
+from metashade.std.surf.pbr import microfacet
 
 
-class TestFSchlick:
+class TestDGgx:
     @ctx_cls_hg
-    def test_F_Schlick(self, ctx_cls):
-        """Test F_Schlick generates correct code."""
+    def test_std_surf_pbr_microfacet_D_Ggx(self, ctx_cls):
+        """Test D_Ggx generates correct code."""
         ctx = ctx_cls(dummy_entry_point=True)
         with ctx as sh:
-            sh.instantiate(fresnel.F_Schlick)
+            sh.instantiate(microfacet.D_Ggx)
+
+
+class TestVSmithGgxCorrelated:
+    @ctx_cls_hg
+    def test_std_surf_pbr_microfacet_V_SmithGgxCorrelated(self, ctx_cls):
+        """Test V_SmithGgxCorrelated generates correct code."""
+        ctx = ctx_cls(dummy_entry_point=True)
+        with ctx as sh:
+            sh.instantiate(microfacet.V_SmithGgxCorrelated)

@@ -12,7 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from metashade.util.testing import ctx_cls_hg, HlslTestContext, GlslTestContext
+from metashade.util.testing import (
+    ctx_cls_hg, ctx_cls_hgo, HlslTestContext, GlslTestContext
+)
 import _auto_float_intrinsics, _auto_numeric_intrinsics
 
 class TestIntrinsics:
@@ -43,93 +45,143 @@ class TestIntrinsics:
 
 
 class TestFloatIntrinsics:
-    """Tests for float intrinsics across HLSL and GLSL.
+    """Tests for float intrinsics across HLSL, GLSL and OSL.
 
     Each test validates return type and expression string for scalar
     and vector types.  New intrinsics should be added as additional
-    test methods following the same pattern.
+    test methods following the same pattern.  Inputs are function
+    parameters because OSL has no uniforms.
     """
 
-    def _check(self, sh, uniform_name, dtype, intrinsic, expected_expr):
-        sh.uniform(uniform_name, dtype)
-        result = intrinsic(getattr(sh, uniform_name))
-        assert isinstance(result, dtype._get_dtype())
-        assert str(result) == expected_expr
+    def _check(self, sh, dtype, intrinsic, expected_expr):
+        with sh.function('f')(v = dtype):
+            result = intrinsic(sh.v)
+            assert isinstance(result, dtype._get_dtype())
+            assert str(result) == expected_expr
 
-    @ctx_cls_hg
+    @ctx_cls_hgo
     def test_sin_scalar(self, ctx_cls):
         with ctx_cls(no_file=True) as sh:
-            self._check(sh, 'g_f', sh.Float, lambda v: v.sin(), 'sin(g_f)')
+            self._check(sh, sh.Float, lambda v: v.sin(), 'sin(v)')
 
-    @ctx_cls_hg
+    @ctx_cls_hgo
     def test_sin_vec3(self, ctx_cls):
         with ctx_cls(no_file=True) as sh:
-            self._check(sh, 'g_v', sh.Float3, lambda v: v.sin(), 'sin(g_v)')
+            self._check(sh, sh.Float3, lambda v: v.sin(), 'sin(v)')
 
-    @ctx_cls_hg
+    @ctx_cls_hgo
     def test_cos_scalar(self, ctx_cls):
         with ctx_cls(no_file=True) as sh:
-            self._check(sh, 'g_f', sh.Float, lambda v: v.cos(), 'cos(g_f)')
+            self._check(sh, sh.Float, lambda v: v.cos(), 'cos(v)')
 
-    @ctx_cls_hg
+    @ctx_cls_hgo
     def test_cos_vec3(self, ctx_cls):
         with ctx_cls(no_file=True) as sh:
-            self._check(sh, 'g_v', sh.Float3, lambda v: v.cos(), 'cos(g_v)')
+            self._check(sh, sh.Float3, lambda v: v.cos(), 'cos(v)')
 
-    @ctx_cls_hg
+    @ctx_cls_hgo
     def test_radians_scalar(self, ctx_cls):
         with ctx_cls(no_file=True) as sh:
-            self._check(sh, 'g_f', sh.Float, lambda v: v.radians(), 'radians(g_f)')
+            self._check(sh, sh.Float, lambda v: v.radians(), 'radians(v)')
 
-    @ctx_cls_hg
+    @ctx_cls_hgo
     def test_radians_vec3(self, ctx_cls):
         with ctx_cls(no_file=True) as sh:
-            self._check(sh, 'g_v', sh.Float3, lambda v: v.radians(), 'radians(g_v)')
+            self._check(sh, sh.Float3, lambda v: v.radians(), 'radians(v)')
+
+    @ctx_cls_hgo
+    def test_clamp_scalar(self, ctx_cls):
+        with ctx_cls(no_file=True) as sh:
+            self._check(
+                sh, sh.Float, lambda v: v.clamp(0.25, 0.75),
+                'clamp(v, 0.25, 0.75)'
+            )
+
+    @ctx_cls_hgo
+    def test_clamp_vec3(self, ctx_cls):
+        with ctx_cls(no_file=True) as sh:
+            self._check(
+                sh, sh.Float3, lambda v: v.clamp(0.25, 0.75),
+                'clamp(v, 0.25, 0.75)'
+            )
+
+    @ctx_cls_hgo
+    def test_pow_scalar(self, ctx_cls):
+        with ctx_cls(no_file=True) as sh:
+            self._check(sh, sh.Float, lambda v: v.pow(v), 'pow(v, v)')
+
+    @ctx_cls_hgo
+    def test_pow_vec3(self, ctx_cls):
+        with ctx_cls(no_file=True) as sh:
+            self._check(sh, sh.Float3, lambda v: v.pow(v), 'pow(v, v)')
+
+    @staticmethod
+    def _saturate_expr(ctx_cls):
+        # GLSL and OSL have no saturate, so it's emitted as a clamp.
+        if issubclass(ctx_cls, HlslTestContext):
+            return 'saturate(v)'
+        return 'clamp(v, 0.0, 1.0)'
+
+    @ctx_cls_hgo
+    def test_saturate_scalar(self, ctx_cls):
+        with ctx_cls(no_file=True) as sh:
+            self._check(
+                sh, sh.Float, lambda v: v.saturate(),
+                self._saturate_expr(ctx_cls)
+            )
+
+    @ctx_cls_hgo
+    def test_saturate_vec3(self, ctx_cls):
+        with ctx_cls(no_file=True) as sh:
+            self._check(
+                sh, sh.Float3, lambda v: v.saturate(),
+                self._saturate_expr(ctx_cls)
+            )
+
+    @ctx_cls_hgo
+    def test_sqrt_scalar(self, ctx_cls):
+        with ctx_cls(no_file=True) as sh:
+            self._check(sh, sh.Float, lambda v: v.sqrt(), 'sqrt(v)')
+
+    @ctx_cls_hgo
+    def test_sqrt_vec3(self, ctx_cls):
+        with ctx_cls(no_file=True) as sh:
+            self._check(sh, sh.Float3, lambda v: v.sqrt(), 'sqrt(v)')
 
 
 class TestLerpReturnType:
     """lerp must return the type of the interpolated values, not the weight."""
 
-    @ctx_cls_hg
+    def _lerp(self, sh, dtype):
+        with sh.function('f')(t = sh.Float, a = dtype, b = dtype):
+            result = sh.t.lerp(sh.a, sh.b)
+            assert isinstance(result, dtype._get_dtype())
+            return str(result)
+
+    @ctx_cls_hgo
     def test_scalar_lerp_scalar(self, ctx_cls):
         """float.lerp(float, float) returns float."""
         with ctx_cls(no_file=True) as sh:
-            sh.uniform('g_t', sh.Float)
-            sh.uniform('g_a', sh.Float)
-            sh.uniform('g_b', sh.Float)
-            result = sh.g_t.lerp(sh.g_a, sh.g_b)
-            assert isinstance(result, sh.Float._get_dtype())
+            self._lerp(sh, sh.Float)
 
-    @ctx_cls_hg
+    @ctx_cls_hgo
     def test_scalar_lerp_vec3(self, ctx_cls):
         """float.lerp(Float3, Float3) returns Float3, not Float."""
         with ctx_cls(no_file=True) as sh:
-            sh.uniform('g_t', sh.Float)
-            sh.uniform('g_a', sh.Float3)
-            sh.uniform('g_b', sh.Float3)
-            result = sh.g_t.lerp(sh.g_a, sh.g_b)
-            assert isinstance(result, sh.Float3._get_dtype())
+            self._lerp(sh, sh.Float3)
 
     @ctx_cls_hg
     def test_scalar_lerp_vec4(self, ctx_cls):
         """float.lerp(Float4, Float4) returns Float4."""
         with ctx_cls(no_file=True) as sh:
-            sh.uniform('g_t', sh.Float)
-            sh.uniform('g_a', sh.Float4)
-            sh.uniform('g_b', sh.Float4)
-            result = sh.g_t.lerp(sh.g_a, sh.g_b)
-            assert isinstance(result, sh.Float4._get_dtype())
+            self._lerp(sh, sh.Float4)
 
-    @ctx_cls_hg
+    @ctx_cls_hgo
     def test_lerp_expression_string(self, ctx_cls):
         """lerp emits the correct intrinsic call."""
         with ctx_cls(no_file=True) as sh:
-            sh.uniform('g_t', sh.Float)
-            sh.uniform('g_a', sh.Float3)
-            sh.uniform('g_b', sh.Float3)
-            result = sh.g_t.lerp(sh.g_a, sh.g_b)
-            result_str = str(result)
+            result_str = self._lerp(sh, sh.Float3)
             if isinstance(ctx_cls(), HlslTestContext):
-                assert result_str == 'lerp(g_a, g_b, g_t)'
+                assert result_str == 'lerp(a, b, t)'
             else:
-                assert result_str == 'mix(g_a, g_b, g_t)'
+                assert result_str == 'mix(a, b, t)'

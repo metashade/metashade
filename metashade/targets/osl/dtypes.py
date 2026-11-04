@@ -14,12 +14,10 @@
 
 import metashade.targets._clike.dtypes as clike
 import metashade.targets._rtsl.dtypes as rtsl
+from . import _intrinsics
 
-class Float(clike.Float):
-    def sin(self):
-        return self._sh._instantiate_dtype(
-            self.__class__, f'sin({self})'
-        )
+class Float(_intrinsics.FloatIntrinsicsMixin, clike.Float):
+    pass
 
 class Int(clike.Int):
     pass
@@ -36,7 +34,7 @@ class Bool(clike.Bool):
 
 # OSL only has 3-component vectors, which support single named components
 # but no multi-component swizzles.
-class _RawVector3(rtsl.RawVector3):
+class _RawVector3(_intrinsics.FloatIntrinsicsMixin, rtsl.RawVector3):
     _element_type = Float
 
     def __init__(self, _ = None):

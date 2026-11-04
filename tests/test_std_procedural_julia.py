@@ -1,4 +1,4 @@
-# Copyright 2025 Pavlo Penenko
+# Copyright 2026 Pavlo Penenko
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,16 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for metashade.std.surf.pbr.diffuse module."""
+"""Tests for metashade.std.procedural.julia module."""
 
 from metashade.util.testing import ctx_cls_hgo
-from metashade.std.surf.pbr import diffuse
+from metashade.std.procedural import julia
 
 
-class TestFdLambert:
+class TestJulia2d:
     @ctx_cls_hgo
-    def test_Fd_Lambert(self, ctx_cls):
-        """Test Fd_Lambert generates correct code."""
+    def test_std_procedural_julia_julia2d(self, ctx_cls):
+        """Test julia2d generates correct code."""
         ctx = ctx_cls(dummy_entry_point=True)
         with ctx as sh:
-            sh.instantiate(diffuse.Fd_Lambert)
+            # OSL has no 2-component vector.  julia2d only reads the x and y
+            # of its Float2 texcoord, so a struct with those members will do.
+            if not hasattr(sh, 'Float2'):
+                sh.struct('Float2')(x=sh.Float, y=sh.Float)
+            sh.instantiate(julia.julia2d)
