@@ -14,24 +14,18 @@
 
 """Tests for metashade.std.procedural.julia module."""
 
-from metashade.util.testing import ctx_cls_hg, OslTestContext
+from metashade.util.testing import ctx_cls_hgo
 from metashade.std.procedural import julia
 
 
 class TestJulia2d:
-    @ctx_cls_hg
+    @ctx_cls_hgo
     def test_julia2d(self, ctx_cls):
         """Test julia2d generates correct code."""
         ctx = ctx_cls(dummy_entry_point=True)
         with ctx as sh:
-            sh.instantiate(julia.julia2d)
-
-    def test_julia2d_osl(self):
-        """Test julia2d on OSL, which has no builtin 2-component vector.
-
-        julia2d only reads the ``x`` and ``y`` of its ``Float2`` texcoord,
-        so a struct with those members stands in for it.
-        """
-        with OslTestContext(dummy_entry_point=True) as sh:
-            sh.struct('Float2')(x=sh.Float, y=sh.Float)
+            # OSL has no 2-component vector.  julia2d only reads the x and y
+            # of its Float2 texcoord, so a struct with those members will do.
+            if not hasattr(sh, 'Float2'):
+                sh.struct('Float2')(x=sh.Float, y=sh.Float)
             sh.instantiate(julia.julia2d)
