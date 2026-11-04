@@ -275,4 +275,6 @@ class OslGeneratorContext(GeneratorContext):
         return 'genosl'
 
     def _create_generator(self):
-        return osl.Generator(self._src_file)
+        sh = osl.Generator(self._src_file)
+        dtypes.register_mtlx_osl_vector2(sh)
+        return sh

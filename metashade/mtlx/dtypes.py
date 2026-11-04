@@ -54,6 +54,10 @@ _MTLX_TO_METASHADE.update({
     'material': 'Material',
 })
 
+# MaterialX structs standing in for types that a target lacks, e.g. OSL's
+# vector2.  Kept out of the forward map so the inverse map is unaffected.
+_MTLX_STRUCTS = frozenset({'vector2'})
+
 # Types that don't have Metashade equivalents (for documentation)
 _UNSUPPORTED_MTLX_TYPES = frozenset({
     'filename',     # Texture references
@@ -69,7 +73,9 @@ def metashade_to_mtlx(dtype_factory):
     
     dtype = dtype_factory._get_dtype()
     dtype_name = dtype.__name__
-    
+
+    if dtype_name in _MTLX_STRUCTS:
+        return dtype_name
     if dtype_name not in _METASHADE_TO_MTLX:
         raise ValueError(
             f"No MaterialX type mapping for Metashade dtype '{dtype_name}'"
@@ -120,4 +126,19 @@ def register_mtlx_closure_structs(sh):
         response=sh.Float3,
         throughput=sh.Float3
     )
+
+
+def register_mtlx_osl_vector2(sh):
+    """Declare MaterialX's OSL ``vector2`` struct as ``Float2``.
+
+    OSL has no 2-component vector type, so MaterialX defines a ``vector2``
+    struct in its OSL standard library includes, and the struct is declared
+    with ``emit=False``.  Only its ``x`` and ``y`` members are modeled, not
+    the operator overloads and functions defined alongside it.
+
+    Args:
+        sh: A Metashade OSL generator instance.
+    """
+    sh.struct('vector2', emit=False)(x=sh.Float, y=sh.Float)
+    sh._set_global('Float2', sh.vector2)
 

@@ -16,7 +16,10 @@ import metashade.targets._clike.dtypes as clike
 import metashade.targets._rtsl.dtypes as rtsl
 
 class Float(clike.Float):
-    pass
+    def sin(self):
+        return self._sh._instantiate_dtype(
+            self.__class__, f'sin({self})'
+        )
 
 class Int(clike.Int):
     pass

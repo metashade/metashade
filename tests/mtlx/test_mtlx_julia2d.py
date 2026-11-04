@@ -16,10 +16,16 @@ import pytest
 
 pytest.importorskip("MaterialX")
 
-from metashade.mtlx.util.testing import GlslTestContext
+from metashade.mtlx.util.testing import GlslTestContext, OslTestContext
 from metashade.std.procedural import julia
 
 
-def test_julia2d():
-    with GlslTestContext(subdir='julia2d') as ctx:
+# OSL only adds implementations of the nodedefs written by the GLSL run.
+@pytest.mark.parametrize(
+    'ctx_cls, impl_only',
+    [(GlslTestContext, False), (OslTestContext, True)],
+    ids=['glsl', 'osl']
+)
+def test_julia2d(ctx_cls, impl_only):
+    with ctx_cls(subdir='julia2d', impl_only=impl_only) as ctx:
         ctx.add_std_pyfunc_node_impl(julia.julia2d, nodegroup='procedural2d')

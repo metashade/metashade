@@ -1,0 +1,4 @@
+<?xml version="1.0"?>
+<materialx version="1.39">
+  <implementation name="IM_julia2d_color3_genosl" nodedef="ND_julia2d_color3" target="genosl" file="test_julia2d_genosl_impl.osl" function="mx_julia2d_color3" doc="Color of the Julia set of z^2 + c, centered on texcoord 0.5." />
+</materialx>
