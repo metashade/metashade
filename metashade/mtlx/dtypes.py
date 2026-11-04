@@ -55,6 +55,7 @@ _MTLX_TO_METASHADE.update({
     'lightshader': 'LightShader',
     'material': 'Material',
 })
+
 # Types that don't have Metashade equivalents (for documentation)
 _UNSUPPORTED_MTLX_TYPES = frozenset({
     'filename',     # Texture references
