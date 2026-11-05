@@ -15,7 +15,7 @@
 from metashade.modules import export
 
 @export
-def meta_squares(
+def noisy_squares2d(
     sh,
     texcoord: 'Float2',
     scale: 'Float' = 10.0,

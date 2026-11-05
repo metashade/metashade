@@ -24,13 +24,6 @@ this module provides the appropriate GLSL equivalent.
 class FloatIntrinsicsMixin:
     """Mixin providing float intrinsic methods for GLSL types."""
 
-    def floor(self):
-        """Floor a value."""
-        return self._sh._instantiate_dtype(
-            self.__class__,
-            f'floor({self})'
-        )
-
     def clamp(self, min_val, max_val):
         """Clamp value to range [min_val, max_val]."""
         return self._sh._instantiate_dtype(
@@ -61,6 +54,13 @@ class FloatIntrinsicsMixin:
         return self._sh._instantiate_dtype(
             self.__class__,
             f'sqrt({self})'
+        )
+
+    def floor(self):
+        """Round down to the nearest integer."""
+        return self._sh._instantiate_dtype(
+            self.__class__,
+            f'floor({self})'
         )
 
     def sin(self):
