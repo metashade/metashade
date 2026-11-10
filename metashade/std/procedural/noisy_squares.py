@@ -21,8 +21,7 @@ def noisy_squares2d(
     scale: 'Float' = 10.0,
 ) -> 'RgbF':
     """
-    Procedural randomized cell colors with
-    sinusoidal UV distortion.
+    Procedural randomized cell colors with sinusoidal UV distortion.
     """
 
     # Scale UV coordinates
