@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<materialx version="1.39">
+  <nodedef name="ND_noisy_squares2d_color3" node="noisy_squares2d" doc="Procedural randomized cell colors with sinusoidal UV distortion." nodegroup="procedural2d">
+    <input name="texcoord" type="vector2" doc="Input parameter texcoord" defaultgeomprop="UV0" />
+    <input name="scale" type="float" doc="Input parameter scale" value="10.0" />
+    <output name="out" type="color3" doc="Procedural randomized cell colors with sinusoidal UV distortion." />
+  </nodedef>
+</materialx>
