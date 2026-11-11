@@ -60,6 +60,16 @@ class TestFloatIntrinsics:
             assert str(result) == expected_expr
 
     @ctx_cls_hgo
+    def test_floor_scalar(self, ctx_cls):
+        with ctx_cls(no_file=True) as sh:
+            self._check(sh, sh.Float, lambda v: v.floor(), 'floor(v)')
+
+    @ctx_cls_hgo
+    def test_floor_vec3(self, ctx_cls):
+        with ctx_cls(no_file=True) as sh:
+            self._check(sh, sh.Float3, lambda v: v.floor(), 'floor(v)')
+
+    @ctx_cls_hgo
     def test_sin_scalar(self, ctx_cls):
         with ctx_cls(no_file=True) as sh:
             self._check(sh, sh.Float, lambda v: v.sin(), 'sin(v)')

@@ -56,6 +56,13 @@ class FloatIntrinsicsMixin:
             f'sqrt({self})'
         )
 
+    def floor(self):
+        """Round down to the nearest integer."""
+        return self._sh._instantiate_dtype(
+            self.__class__,
+            f'floor({self})'
+        )
+
     def sin(self):
         return self._sh._instantiate_dtype(
             self.__class__, f'sin({self})'
