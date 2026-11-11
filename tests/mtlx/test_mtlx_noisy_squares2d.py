@@ -16,14 +16,18 @@ import pytest
 
 pytest.importorskip("MaterialX")
 
-from metashade.mtlx.util.testing import GlslTestContext
+from metashade.mtlx.util.testing import GlslTestContext, OslTestContext
 from metashade.std.procedural import noisy_squares
 
 
-# GLSL only: noisy_squares2d uses Float2 arithmetic, which Metashade's OSL
-# target doesn't support yet.
-def test_noisy_squares2d():
-    with GlslTestContext(subdir='noisy_squares2d') as ctx:
+# OSL only adds implementations of the nodedefs written by the GLSL run.
+@pytest.mark.parametrize(
+    'ctx_cls, impl_only',
+    [(GlslTestContext, False), (OslTestContext, True)],
+    ids=['glsl', 'osl']
+)
+def test_noisy_squares2d(ctx_cls, impl_only):
+    with ctx_cls(subdir='noisy_squares2d', impl_only=impl_only) as ctx:
         ctx.add_std_pyfunc_node_impl(
             noisy_squares.noisy_squares2d, nodegroup='procedural2d'
         )

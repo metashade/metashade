@@ -1,0 +1,4 @@
+<?xml version="1.0"?>
+<materialx version="1.39">
+  <implementation name="IM_noisy_squares2d_color3_genosl" nodedef="ND_noisy_squares2d_color3" target="genosl" file="test_noisy_squares2d_genosl_impl.osl" function="mx_noisy_squares2d_color3" doc="Procedural randomized cell colors with sinusoidal UV distortion." />
+</materialx>
