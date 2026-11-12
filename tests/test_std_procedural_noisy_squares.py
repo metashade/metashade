@@ -19,8 +19,8 @@ from metashade.std.procedural import noisy_squares
 
 
 class TestNoisySquares2d:
-    # Not on OSL yet: noisy_squares2d uses Float2 arithmetic, and OSL's Float2
-    # is a struct with only x and y members.
+    # Not on OSL: OSL has no Float2 of its own, only MaterialX's vector2, so
+    # tests/mtlx/test_mtlx_noisy_squares2d.py covers OSL.
     @ctx_cls_hg
     def test_std_procedural_noisy_squares_noisy_squares2d(self, ctx_cls):
         """Test noisy_squares2d generates correct code."""

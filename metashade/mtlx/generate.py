@@ -23,7 +23,7 @@ from metashade.targets.glsl import frag
 from metashade.targets.osl import generator as osl
 from metashade.targets._clike.context import Function, Out, InOut
 
-from metashade.mtlx import dtypes
+from metashade.mtlx import dtypes, _osl
 
 # MaterialX stdlib conventions for inputs bound to geometric properties.
 _DEFAULT_GEOMPROPS = {
@@ -276,8 +276,5 @@ class OslGeneratorContext(GeneratorContext):
 
     def _create_generator(self):
         sh = osl.Generator(self._src_file)
-        # OSL has no 2-component vector, so MaterialX's OSL includes define a
-        # vector2 struct.  Only its members are modeled, not its operators.
-        sh.struct('vector2', emit=False)(x=sh.Float, y=sh.Float)
-        sh._set_global('Float2', sh.vector2)
+        sh._register_dtypes(_osl.__name__)
         return sh
